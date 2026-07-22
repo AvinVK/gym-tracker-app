@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gym Tracker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <h1>Gym Tracker</h1>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="log">Log Workout</button>
+  <button class="tab-btn" data-tab="history">History</button>
+</nav>
+
+<main>
+  <!-- ================= LOG WORKOUT ================= -->
+  <section id="tab-log" class="tab-panel active">
+    <div class="card">
+      <h2>Log a Gym Visit</h2>
+      <form id="form-workout" class="grid-form">
+        <label>Date
+          <input type="date" name="date" id="workout-date" required>
+        </label>
+        <label>Start Time
+          <input type="time" name="start_time">
+        </label>
+        <label>End Time
+          <input type="time" name="end_time">
+        </label>
+        <label>Energy Level
+          <input type="number" name="energy_level" min="1" max="10" placeholder="1-10">
+        </label>
+        <label class="full">Notes
+          <input type="text" name="notes" placeholder="optional">
+        </label>
+        <button type="submit" class="primary">Save Visit</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Log Exercises Done</h2>
+      <form id="form-exercise-log" class="grid-form">
+        <label class="full">Date
+          <input type="date" name="date" id="exlog-date" required>
+        </label>
+        <div class="full" id="exlog-exercises"></div>
+        <button type="button" id="exlog-add-exercise" class="secondary">+ Add Exercise</button>
+        <button type="submit" class="primary">Save Exercises</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ================= HISTORY ================= -->
+  <section id="tab-history" class="tab-panel">
+    <div class="card">
+      <h2>Workout Log</h2>
+      <table class="data-table" id="table-workout-log">
+        <thead>
+          <tr><th>Date</th><th>Start</th><th>End</th><th>Duration (hrs)</th><th>Energy Level</th><th>Notes</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Exercises Done</h2>
+      <table class="data-table" id="table-exercise-log">
+        <thead>
+          <tr><th>Date</th><th>Muscle Group</th><th>Exercise</th><th>Set #</th><th>Reps</th><th>Weight (kg)</th><th>Notes</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
