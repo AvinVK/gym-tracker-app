@@ -3,12 +3,57 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f172a">
 <title>Gym Tracker</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏋️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div id="onboarding-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>Welcome 👋</h2>
+    <p class="modal-sub">Let's set up your profile before you get started.</p>
+    <form id="form-onboarding" class="grid-form">
+      <label class="full">Name
+        <input type="text" name="name" placeholder="Your name" required>
+      </label>
+      <label>Age
+        <input type="number" name="age" min="1" max="120" placeholder="Age" required>
+      </label>
+      <label>Last Period Date
+        <input type="date" name="last_period_date" required>
+      </label>
+      <button type="submit" class="primary">Continue</button>
+    </form>
+  </div>
+</div>
+
+<div id="confirm-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>Confirm</h2>
+    <p class="modal-sub" id="confirm-modal-message"></p>
+    <div class="confirm-actions">
+      <button type="button" class="secondary" id="confirm-modal-cancel">Cancel</button>
+      <button type="button" class="primary" id="confirm-modal-ok">Yes, Save</button>
+    </div>
+  </div>
+</div>
+
 <header class="topbar">
-  <h1>Gym Tracker</h1>
+  <div class="user-menu" id="user-menu" hidden>
+    <button type="button" class="topbar-greeting" id="user-greeting-btn">
+      <span id="user-greeting-text"></span>
+      <span class="caret">&#9662;</span>
+    </button>
+    <div class="user-menu-dropdown" id="user-menu-dropdown" hidden>
+      <button type="button" id="view-profile-btn">View Profile</button>
+    </div>
+  </div>
+  <h1><span class="topbar-icon">🏋️</span>Gym Tracker</h1>
+  <p class="topbar-sub">Log it. Track it. Crush it.</p>
 </header>
 
 <nav class="tabs">
@@ -26,10 +71,28 @@
           <input type="date" name="date" id="workout-date" required>
         </label>
         <label>Start Time
-          <input type="time" name="start_time">
+          <div class="time-select" data-time-group>
+            <select class="time-hour" aria-label="Hour"></select>
+            <span class="time-sep">:</span>
+            <select class="time-minute" aria-label="Minute"></select>
+            <select class="time-ampm" aria-label="AM or PM">
+              <option value="AM">AM</option>
+              <option value="PM">PM</option>
+            </select>
+            <input type="hidden" name="start_time">
+          </div>
         </label>
         <label>End Time
-          <input type="time" name="end_time">
+          <div class="time-select" data-time-group>
+            <select class="time-hour" aria-label="Hour"></select>
+            <span class="time-sep">:</span>
+            <select class="time-minute" aria-label="Minute"></select>
+            <select class="time-ampm" aria-label="AM or PM">
+              <option value="AM">AM</option>
+              <option value="PM">PM</option>
+            </select>
+            <input type="hidden" name="end_time">
+          </div>
         </label>
         <label>Energy Level
           <input type="number" name="energy_level" min="1" max="10" placeholder="1-10">
@@ -37,11 +100,11 @@
         <label class="full">Notes
           <input type="text" name="notes" placeholder="optional">
         </label>
-        <button type="submit" class="primary">Save Visit</button>
+        <button type="submit" class="primary">Save Visit and Add Exercises Done</button>
       </form>
     </div>
 
-    <div class="card">
+    <div class="card" id="card-exlog" hidden>
       <h2>Log Exercises Done</h2>
       <form id="form-exercise-log" class="grid-form">
         <label class="full">Date
@@ -56,24 +119,57 @@
 
   <!-- ================= HISTORY ================= -->
   <section id="tab-history" class="tab-panel">
-    <div class="card">
+    <div class="card" id="card-workout-log">
       <h2>Workout Log</h2>
       <table class="data-table" id="table-workout-log">
         <thead>
-          <tr><th>Date</th><th>Start</th><th>End</th><th>Duration (hrs)</th><th>Energy Level</th><th>Notes</th><th></th></tr>
+          <tr><th>Date</th><th>Start</th><th>End</th><th>Duration</th><th>Energy Level</th><th>Notes</th><th></th></tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
 
-    <div class="card">
-      <h2>Exercises Done</h2>
+    <div class="card" id="card-exercise-detail" hidden>
+      <div class="card-header-row">
+        <h2 id="exercise-detail-title">Exercises Done</h2>
+        <button type="button" class="secondary back-btn" id="exercise-detail-back">&larr; Back</button>
+      </div>
       <table class="data-table" id="table-exercise-log">
         <thead>
-          <tr><th>Date</th><th>Muscle Group</th><th>Exercise</th><th>Set #</th><th>Reps</th><th>Weight (kg)</th><th>Notes</th><th></th></tr>
+          <tr><th>Muscle Group</th><th>Exercise</th><th>Set #</th><th>Reps</th><th>Weight (kg)</th><th>Notes</th><th></th></tr>
         </thead>
         <tbody></tbody>
       </table>
+    </div>
+  </section>
+
+  <!-- ================= PROFILE ================= -->
+  <section id="tab-profile" class="tab-panel">
+    <div class="card">
+      <div class="card-header-row">
+        <h2>Profile</h2>
+        <button type="button" class="secondary back-btn" id="profile-back">&larr; Back</button>
+      </div>
+      <div class="profile-avatar-row">
+        <img id="profile-avatar-img" class="profile-avatar" src="" alt="Profile picture" hidden>
+        <div id="profile-avatar-placeholder" class="profile-avatar profile-avatar-placeholder"></div>
+        <label class="secondary profile-upload-btn">
+          Change Photo
+          <input type="file" id="profile-avatar-input" accept="image/*" hidden>
+        </label>
+      </div>
+      <form id="form-profile" class="grid-form">
+        <label class="full">Name
+          <input type="text" name="name" id="profile-name" required>
+        </label>
+        <label>Age
+          <input type="number" name="age" id="profile-age" min="1" max="120">
+        </label>
+        <label>Last Period Date
+          <input type="date" name="last_period_date" id="profile-last-period">
+        </label>
+        <button type="submit" class="primary">Save Changes</button>
+      </form>
     </div>
   </section>
 </main>

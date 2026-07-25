@@ -108,7 +108,22 @@ CREATE TABLE IF NOT EXISTS exercise_log (
     weight_kg REAL,
     notes TEXT
 );
+
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    age INTEGER,
+    last_period_date TEXT,
+    avatar TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 """
+
+
+def _ensure_column(conn, table, column, coltype):
+    cols = [r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()]
+    if column not in cols:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
 
 
 def get_db():
@@ -129,12 +144,13 @@ def init_db():
     first_run = not os.path.exists(DB_PATH)
     conn = sqlite3.connect(DB_PATH)
     conn.executescript(SCHEMA)
+    _ensure_column(conn, "users", "avatar", "TEXT")
     if first_run:
         conn.executemany(
             "INSERT INTO exercise_plan (target_muscle, exercise) VALUES (?, ?)",
             SEED_EXERCISES,
         )
-        conn.commit()
+    conn.commit()
     conn.close()
 
 
@@ -151,7 +167,7 @@ def reseed_exercise_plan():
     conn.close()
     print(f"Reseeded exercise_plan with {len(SEED_EXERCISES)} exercises.")
 
-VALID_TABLES = {"exercise_plan", "workout_log", "exercise_log"}
+VALID_TABLES = {"exercise_plan", "workout_log", "exercise_log", "users"}
 
 
 def delete_table(table_name):
