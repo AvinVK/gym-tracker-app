@@ -6,6 +6,7 @@ from flask import Flask, jsonify, request, send_from_directory, session
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
+import config
 from db import close_db, get_db, init_db
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -430,6 +431,6 @@ def delete_exercise_log(row_id):
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=int(config.get("PORT")), debug=False)
 else:
     init_db()
