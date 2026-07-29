@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS exercise_plan (
 
 CREATE TABLE IF NOT EXISTS workout_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id),
     date TEXT NOT NULL,
     start_time TEXT,
     end_time TEXT,
@@ -100,6 +101,7 @@ CREATE TABLE IF NOT EXISTS workout_log (
 
 CREATE TABLE IF NOT EXISTS exercise_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id),
     date TEXT NOT NULL,
     muscle_group TEXT NOT NULL,
     exercise TEXT NOT NULL,
@@ -112,6 +114,8 @@ CREATE TABLE IF NOT EXISTS exercise_log (
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    username TEXT,
+    password_hash TEXT,
     age INTEGER,
     last_period_date TEXT,
     avatar TEXT,
@@ -145,6 +149,17 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     conn.executescript(SCHEMA)
     _ensure_column(conn, "users", "avatar", "TEXT")
+    # Nullable here even though fresh installs declare it NOT NULL: SQLite can't
+    # ALTER TABLE ADD a NOT NULL column without a default, and existing rows on
+    # an already-deployed DB have no owner yet. Backfill those separately.
+    _ensure_column(conn, "workout_log", "user_id", "INTEGER REFERENCES users(id)")
+    _ensure_column(conn, "exercise_log", "user_id", "INTEGER REFERENCES users(id)")
+    # Pre-auth profiles (created before login existed) have no username/password
+    # yet; NULL is allowed here and multiple NULLs don't violate the unique
+    # index below (SQLite treats NULLs as distinct). They get claimed later.
+    _ensure_column(conn, "users", "username", "TEXT")
+    _ensure_column(conn, "users", "password_hash", "TEXT")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username)")
     if first_run:
         conn.executemany(
             "INSERT INTO exercise_plan (target_muscle, exercise) VALUES (?, ?)",
@@ -166,6 +181,22 @@ def reseed_exercise_plan():
     conn.commit()
     conn.close()
     print(f"Reseeded exercise_plan with {len(SEED_EXERCISES)} exercises.")
+
+def backfill_owner(user_id):
+    """One-time cleanup: assign any pre-existing workout_log/exercise_log rows
+    with no owner (from before multi-user support) to the given user_id."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA foreign_keys = ON")
+    owner = conn.execute("SELECT id, name FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not owner:
+        conn.close()
+        raise ValueError(f"No user with id {user_id}")
+    w = conn.execute("UPDATE workout_log SET user_id = ? WHERE user_id IS NULL", (user_id,)).rowcount
+    e = conn.execute("UPDATE exercise_log SET user_id = ? WHERE user_id IS NULL", (user_id,)).rowcount
+    conn.commit()
+    conn.close()
+    print(f"Assigned {w} workout_log row(s) and {e} exercise_log row(s) to user {user_id} ({owner[1]}).")
+
 
 VALID_TABLES = {"exercise_plan", "workout_log", "exercise_log", "users"}
 

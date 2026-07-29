@@ -12,27 +12,68 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="onboarding-modal" class="modal-overlay" hidden>
+<div id="auth-modal" class="modal-overlay" hidden>
   <div class="modal-card">
-    <h2>Welcome 👋</h2>
-    <p class="modal-sub">Let's set up your profile before you get started.</p>
-    <form id="form-onboarding" class="grid-form">
-      <label class="full">Name
+    <h2 id="auth-title">Welcome back 👋</h2>
+    <p class="modal-sub" id="auth-sub">Log in to continue.</p>
+
+    <form id="form-login" class="grid-form">
+      <label class="full">Username
+        <input type="text" name="username" placeholder="Username" required autocomplete="username">
+      </label>
+      <label class="full">Password
+        <input type="password" name="password" placeholder="Password" required autocomplete="current-password">
+      </label>
+      <button type="submit" class="primary">Log In</button>
+    </form>
+
+    <form id="form-signup" class="grid-form" hidden>
+      <label class="full">Your Name
         <input type="text" name="name" placeholder="Your name" required>
       </label>
-      <label>Age
-        <input type="number" name="age" min="1" max="120" placeholder="Age" required>
+      <label class="full">Username
+        <input type="text" name="username" placeholder="Choose a username" required autocomplete="username">
       </label>
-      <label>Last Period Date
+      <label class="full">Password
+        <input type="password" name="password" placeholder="At least 8 characters" required minlength="8" autocomplete="new-password">
+      </label>
+      <label>Age <span class="field-optional">(optional)</span>
+        <input type="number" name="age" min="1" max="120" placeholder="Age">
+      </label>
+      <label>Last Period Date <span class="field-optional">(optional)</span>
         <div class="date-field" data-date-field data-max="today">
           <button type="button" class="date-field-btn">
             <span class="date-field-value placeholder">dd-mm-yyyy</span>
             <span class="date-field-icon" aria-hidden="true">📅</span>
           </button>
-          <input type="hidden" name="last_period_date" required>
+          <input type="hidden" name="last_period_date">
         </div>
       </label>
-      <button type="submit" class="primary">Continue</button>
+      <button type="submit" class="primary">Create Account</button>
+    </form>
+
+    <button type="button" class="link-toggle" id="auth-toggle">New here? Create an account</button>
+
+    <div id="claimable-section" hidden>
+      <p class="modal-sub">Or claim an existing profile:</p>
+      <div class="profile-picker-list" id="claimable-list"></div>
+    </div>
+  </div>
+</div>
+
+<div id="claim-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>Claim <span id="claim-name"></span>'s profile</h2>
+    <p class="modal-sub">Set a username and password to finish setting this profile up.</p>
+    <form id="form-claim" class="grid-form">
+      <label class="full">Username
+        <input type="text" name="username" placeholder="Choose a username" required autocomplete="username">
+      </label>
+      <label class="full">Password
+        <input type="password" name="password" placeholder="At least 8 characters" required minlength="8" autocomplete="new-password">
+      </label>
+      <button type="submit" class="primary">Claim Profile</button>
+      <button type="button" class="secondary" id="claim-cancel">Cancel</button>
     </form>
   </div>
 </div>
@@ -94,6 +135,7 @@
     </button>
     <div class="user-menu-dropdown" id="user-menu-dropdown" hidden>
       <button type="button" id="view-profile-btn">View Profile</button>
+      <button type="button" id="logout-btn">Log Out</button>
     </div>
   </div>
   <h1><span class="topbar-icon">🏋️</span>Gym Tracker</h1>
