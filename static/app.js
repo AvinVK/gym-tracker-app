@@ -1,3 +1,9 @@
+// Declared up-front: api.* calls (via checkAuth() etc.) start firing as
+// soon as the script runs, before the rest of this file is parsed. Auth
+// itself rides on the session cookie Flask sets on login (sent automatically
+// on same-origin fetches) — this is just the per-user localStorage draft key.
+let currentUserId = null;
+
 const api = {
   get: (url) => fetch(url).then(r => r.json()),
   post: (url, body) => fetch(url, {
@@ -27,8 +33,8 @@ const todayStr = new Date().toLocaleDateString("en-CA");
 // Starts true so that init-time DOM building can't clobber a saved draft
 // before restoreDraft() gets a chance to read it; restoreDraft() flips it
 // back off once restoration (or the decision that there's nothing to
-// restore) is complete.
-const DRAFT_KEY = "gymtracker-draft-v1";
+// restore) is complete. Also stays true across a profile switch so the
+// outgoing profile's UI reset doesn't overwrite their still-saved draft.
 let restoringDraft = true;
 
 function toast(msg) {
@@ -145,7 +151,7 @@ function initDateField(container) {
 
 document.querySelectorAll("[data-date-field]").forEach(initDateField);
 
-// ---------------- Onboarding ----------------
+// ---------------- Auth (login / signup / claim) ----------------
 let currentUser = null;
 
 function showGreeting(name) {
@@ -153,36 +159,144 @@ function showGreeting(name) {
   document.getElementById("user-menu").hidden = false;
 }
 
-async function checkOnboarding() {
-  const user = await api.get("/api/user");
-  if (user) {
-    currentUser = user;
-    showGreeting(user.name);
-  } else {
-    document.getElementById("onboarding-modal").hidden = false;
+async function onLoggedIn(user) {
+  // Block autosave while we tear down whatever was on screen before (e.g. a
+  // previous session on a shared device): it's a reset, not something that
+  // should overwrite the incoming user's own draft.
+  restoringDraft = true;
+  resetWorkoutFlowUI();
+
+  currentUser = user;
+  currentUserId = user.id;
+  document.getElementById("auth-modal").hidden = true;
+  document.getElementById("claim-modal").hidden = true;
+  document.getElementById("user-menu-dropdown").hidden = true;
+  showGreeting(user.name);
+
+  await muscleOptionsReady;
+  await restoreDraft(); // this user's own draft, if any; also resets restoringDraft when done
+
+  if (document.querySelector('.tab-btn[data-tab="history"]').classList.contains("active")) {
+    loadHistory();
   }
 }
 
-document.getElementById("form-onboarding").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const body = Object.fromEntries(fd.entries());
-  if (!body.last_period_date) {
-    toast("Please select a date");
+function setAuthMode(isSignup) {
+  document.getElementById("form-login").hidden = isSignup;
+  document.getElementById("form-signup").hidden = !isSignup;
+  document.getElementById("auth-title").textContent = isSignup ? "Create your account" : "Welcome back 👋";
+  document.getElementById("auth-sub").textContent = isSignup ? "Set up your profile to get started." : "Log in to continue.";
+  document.getElementById("auth-toggle").textContent = isSignup ? "Already have an account? Log in" : "New here? Create an account";
+}
+
+document.getElementById("auth-toggle").addEventListener("click", () => {
+  setAuthMode(document.getElementById("form-signup").hidden);
+});
+
+async function showClaimableProfiles() {
+  const claimable = await api.get("/api/claimable");
+  const section = document.getElementById("claimable-section");
+  if (!claimable.length) {
+    section.hidden = true;
     return;
   }
+  const list = document.getElementById("claimable-list");
+  list.innerHTML = claimable.map(u => `
+    <button type="button" class="profile-picker-item" data-id="${u.id}" data-name="${u.name}">
+      ${u.avatar
+        ? `<img src="${u.avatar}" class="profile-picker-avatar" alt="">`
+        : `<span class="profile-picker-avatar-placeholder">${u.name[0].toUpperCase()}</span>`}
+      <span>${u.name}</span>
+    </button>`).join("");
+  list.querySelectorAll(".profile-picker-item").forEach(btn => {
+    btn.addEventListener("click", () => openClaimModal(btn.dataset.id, btn.dataset.name));
+  });
+  section.hidden = false;
+}
+
+function openClaimModal(id, name) {
+  const form = document.getElementById("form-claim");
+  form.reset();
+  form.dataset.userId = id;
+  document.getElementById("claim-name").textContent = name;
+  document.getElementById("auth-modal").hidden = true;
+  document.getElementById("claim-modal").hidden = false;
+}
+
+document.getElementById("claim-cancel").addEventListener("click", () => {
+  document.getElementById("claim-modal").hidden = true;
+  document.getElementById("auth-modal").hidden = false;
+});
+
+document.getElementById("form-claim").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = e.target.dataset.userId;
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
   try {
-    const res = await api.post("/api/user", body);
-    currentUser = { id: res.id, avatar: null, ...body };
-    document.getElementById("onboarding-modal").hidden = true;
-    showGreeting(body.name);
-    toast(`Welcome, ${body.name}!`);
+    await api.post(`/api/claim/${id}`, body);
+    await onLoggedIn(await api.get("/api/me"));
+    toast("Profile claimed!");
   } catch (err) {
     toast(err.message);
   }
 });
 
-checkOnboarding();
+async function showAuthScreen() {
+  setAuthMode(false);
+  document.getElementById("claim-modal").hidden = true;
+  document.getElementById("auth-modal").hidden = false;
+  showClaimableProfiles();
+}
+
+document.getElementById("form-login").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  try {
+    await api.post("/api/login", body);
+    await onLoggedIn(await api.get("/api/me"));
+  } catch (err) {
+    toast(err.message);
+  }
+});
+
+document.getElementById("form-signup").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  try {
+    await api.post("/api/signup", body);
+    const user = await api.get("/api/me");
+    await onLoggedIn(user);
+    toast(`Welcome, ${user.name}!`);
+  } catch (err) {
+    toast(err.message);
+  }
+});
+
+document.getElementById("logout-btn").addEventListener("click", async () => {
+  document.getElementById("user-menu-dropdown").hidden = true;
+  await api.post("/api/logout", {});
+  currentUser = null;
+  currentUserId = null;
+  restoringDraft = true;
+  resetWorkoutFlowUI();
+  document.getElementById("user-menu").hidden = true;
+  await showAuthScreen();
+});
+
+async function checkAuth() {
+  const user = await api.get("/api/me");
+  if (user) {
+    await onLoggedIn(user);
+  } else {
+    await showAuthScreen();
+  }
+}
+
+const muscleOptionsReady = loadMuscleOptions();
+checkAuth();
 
 // ---------------- User menu / Profile ----------------
 const userMenuDropdown = document.getElementById("user-menu-dropdown");
@@ -612,24 +726,32 @@ document.getElementById("form-exercise-log").addEventListener("submit", async (e
   try {
     await api.post("/api/exercise-log", { date, exercises });
     toast("Exercises logged");
-    e.target.reset();
-    exercisesContainer.innerHTML = "";
-    addExerciseBlock();
-
-    const workoutForm = document.getElementById("form-workout");
-    workoutForm.reset();
-    workoutForm.querySelectorAll("input, select, button").forEach(el => el.disabled = false);
-    document.getElementById("card-exlog").hidden = true;
-    document.getElementById("workout-edit-btn").hidden = true;
-    savedWorkoutId = null;
-    setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), "");
-    setDateFieldValue(document.getElementById("exlog-date").closest(".date-field"), "");
-    workoutForm.querySelectorAll(".time-field").forEach(f => setTimeFieldValue(f, ""));
+    resetWorkoutFlowUI();
     clearDraft();
   } catch (err) {
     toast(err.message);
   }
 });
+
+// Shared by "finished logging exercises" and "switching to a different
+// profile": wipes the Log Workout / Log Exercises UI back to its blank
+// starting state. Does NOT touch localStorage drafts itself — callers
+// decide whether that draft should be cleared (flow finished) or left
+// alone (just switching away, might switch back later).
+function resetWorkoutFlowUI() {
+  const workoutForm = document.getElementById("form-workout");
+  document.getElementById("form-exercise-log").reset();
+  exercisesContainer.innerHTML = "";
+  addExerciseBlock();
+  workoutForm.reset();
+  workoutForm.querySelectorAll("input, select, button").forEach(el => el.disabled = false);
+  document.getElementById("card-exlog").hidden = true;
+  document.getElementById("workout-edit-btn").hidden = true;
+  savedWorkoutId = null;
+  setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), "");
+  setDateFieldValue(document.getElementById("exlog-date").closest(".date-field"), "");
+  workoutForm.querySelectorAll(".time-field").forEach(f => setTimeFieldValue(f, ""));
+}
 
 // ---------------- History ----------------
 const cardWorkoutLog = document.getElementById("card-workout-log");
@@ -864,20 +986,24 @@ async function loadExerciseDetail(date) {
 }
 
 // ---------------- Draft autosave (survive accidental reloads) ----------------
+function draftKey() {
+  return `gymtracker-draft-v1-${currentUserId}`;
+}
+
 function readDraft() {
   try {
-    return JSON.parse(localStorage.getItem(DRAFT_KEY));
+    return JSON.parse(localStorage.getItem(draftKey()));
   } catch {
     return null;
   }
 }
 
 function writeDraft(patch) {
-  localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...(readDraft() || {}), ...patch }));
+  localStorage.setItem(draftKey(), JSON.stringify({ ...(readDraft() || {}), ...patch }));
 }
 
 function clearDraft() {
-  localStorage.removeItem(DRAFT_KEY);
+  localStorage.removeItem(draftKey());
 }
 
 function collectExerciseBlocksDraft() {
@@ -972,5 +1098,6 @@ async function restoreDraft() {
   }
 }
 
-// ---------------- Init ----------------
-loadMuscleOptions().then(restoreDraft);
+// loadMuscleOptions()/checkOnboarding() already kicked off earlier
+// (see "Onboarding / profile picker"); restoreDraft() runs per-profile
+// from inside selectProfile() once we know who's using the app.

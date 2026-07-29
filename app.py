@@ -1,7 +1,9 @@
 import os
+import secrets
 import uuid
-from datetime import datetime
-from flask import Flask, jsonify, request, send_from_directory
+from datetime import datetime, timedelta
+from flask import Flask, jsonify, request, send_from_directory, session
+from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 from db import close_db, get_db, init_db
@@ -11,9 +13,29 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 UPLOAD_DIR = os.path.join(STATIC_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_AVATAR_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+SECRET_KEY_PATH = os.path.join(BASE_DIR, "secret_key.txt")
+
+
+def get_secret_key():
+    """Session cookies are signed with this. Prefer a real SECRET_KEY env var
+    (set one on the production host); fall back to a local file generated on
+    first run so sessions survive restarts without committing a secret to git."""
+    env_key = os.environ.get("SECRET_KEY")
+    if env_key:
+        return env_key
+    if os.path.exists(SECRET_KEY_PATH):
+        return open(SECRET_KEY_PATH, "r", encoding="utf-8").read().strip()
+    key = secrets.token_hex(32)
+    with open(SECRET_KEY_PATH, "w", encoding="utf-8") as f:
+        f.write(key)
+    return key
+
 
 app = Flask(__name__, static_folder=STATIC_DIR, static_url_path="")
 app.teardown_appcontext(close_db)
+app.secret_key = get_secret_key()
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 
 def is_future_date(date_str):
@@ -21,6 +43,20 @@ def is_future_date(date_str):
         return datetime.strptime(date_str, "%Y-%m-%d").date() > datetime.now().date()
     except ValueError:
         return False
+
+
+def get_current_user_id():
+    """The logged-in user, from the signed session cookie Flask verifies for
+    us — unlike a client-supplied header, this can't be spoofed to read or
+    write someone else's data."""
+    return session.get("user_id")
+
+
+def require_login():
+    user_id = get_current_user_id()
+    if not user_id:
+        return None, (jsonify({"error": "not logged in"}), 401)
+    return user_id, None
 
 
 # ---------------------------------------------------------------
@@ -32,34 +68,128 @@ def index():
 
 
 # ---------------------------------------------------------------
-# User API
+# Auth API
 # ---------------------------------------------------------------
-@app.route("/api/user", methods=["GET"])
-def get_user():
+MIN_PASSWORD_LENGTH = 8
+
+
+def _user_public_dict(row):
+    d = dict(row)
+    d.pop("password_hash", None)
+    return d
+
+
+@app.route("/api/me", methods=["GET"])
+def get_me():
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify(None)
     db = get_db()
-    row = db.execute("SELECT * FROM users ORDER BY id LIMIT 1").fetchone()
-    return jsonify(dict(row) if row else None)
+    row = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not row:
+        session.clear()
+        return jsonify(None)
+    return jsonify(_user_public_dict(row))
 
 
-@app.route("/api/user", methods=["POST"])
-def create_user():
+@app.route("/api/signup", methods=["POST"])
+def signup():
     data = request.get_json(force=True)
     name = (data.get("name") or "").strip()
-    if not name:
-        return jsonify({"error": "name is required"}), 400
+    username = (data.get("username") or "").strip().lower()
+    password = data.get("password") or ""
+    if not name or not username:
+        return jsonify({"error": "name and username are required"}), 400
+    if len(password) < MIN_PASSWORD_LENGTH:
+        return jsonify({"error": f"password must be at least {MIN_PASSWORD_LENGTH} characters"}), 400
     if data.get("last_period_date") and is_future_date(data["last_period_date"]):
         return jsonify({"error": "last_period_date cannot be in the future"}), 400
+
     db = get_db()
+    if db.execute("SELECT 1 FROM users WHERE username = ?", (username,)).fetchone():
+        return jsonify({"error": "that username is already taken"}), 409
+
     cur = db.execute(
-        "INSERT INTO users (name, age, last_period_date) VALUES (?, ?, ?)",
-        (name, data.get("age"), data.get("last_period_date") or None),
+        "INSERT INTO users (name, username, password_hash, age, last_period_date) VALUES (?, ?, ?, ?, ?)",
+        (name, username, generate_password_hash(password), data.get("age"), data.get("last_period_date") or None),
     )
     db.commit()
+    session.clear()
+    session.permanent = True
+    session["user_id"] = cur.lastrowid
     return jsonify({"id": cur.lastrowid}), 201
+
+
+@app.route("/api/login", methods=["POST"])
+def login():
+    data = request.get_json(force=True)
+    username = (data.get("username") or "").strip().lower()
+    password = data.get("password") or ""
+    db = get_db()
+    row = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+    if not row or not row["password_hash"] or not check_password_hash(row["password_hash"], password):
+        return jsonify({"error": "incorrect username or password"}), 401
+    session.clear()
+    session.permanent = True
+    session["user_id"] = row["id"]
+    return jsonify(_user_public_dict(row))
+
+
+@app.route("/api/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/claimable", methods=["GET"])
+def list_claimable():
+    """Profiles created before login existed (no password set yet). Once
+    someone claims theirs it drops off this list, so it self-empties over
+    time — it's a one-time migration aid, not a general user directory."""
+    db = get_db()
+    rows = db.execute(
+        "SELECT id, name, avatar FROM users WHERE password_hash IS NULL ORDER BY id"
+    ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route("/api/claim/<int:user_id>", methods=["POST"])
+def claim_profile(user_id):
+    data = request.get_json(force=True)
+    username = (data.get("username") or "").strip().lower()
+    password = data.get("password") or ""
+    if not username:
+        return jsonify({"error": "username is required"}), 400
+    if len(password) < MIN_PASSWORD_LENGTH:
+        return jsonify({"error": f"password must be at least {MIN_PASSWORD_LENGTH} characters"}), 400
+
+    db = get_db()
+    row = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "not found"}), 404
+    if row["password_hash"]:
+        return jsonify({"error": "this profile has already been claimed"}), 409
+    if db.execute("SELECT 1 FROM users WHERE username = ?", (username,)).fetchone():
+        return jsonify({"error": "that username is already taken"}), 409
+
+    db.execute(
+        "UPDATE users SET username = ?, password_hash = ? WHERE id = ?",
+        (username, generate_password_hash(password), user_id),
+    )
+    db.commit()
+    session.clear()
+    session.permanent = True
+    session["user_id"] = user_id
+    return jsonify({"id": user_id})
 
 
 @app.route("/api/user/<int:user_id>", methods=["PUT"])
 def update_user(user_id):
+    current_id, err = require_login()
+    if err:
+        return err
+    if current_id != user_id:
+        return jsonify({"error": "forbidden"}), 403
     data = request.get_json(force=True)
     name = (data.get("name") or "").strip()
     if not name:
@@ -77,6 +207,11 @@ def update_user(user_id):
 
 @app.route("/api/user/<int:user_id>/avatar", methods=["POST"])
 def upload_avatar(user_id):
+    current_id, err = require_login()
+    if err:
+        return err
+    if current_id != user_id:
+        return jsonify({"error": "forbidden"}), 403
     file = request.files.get("avatar")
     if not file or file.filename == "":
         return jsonify({"error": "avatar file is required"}), 400
@@ -143,13 +278,21 @@ def compute_duration(start_time, end_time):
 
 @app.route("/api/workout-log", methods=["GET"])
 def list_workout_log():
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "missing user"}), 401
     db = get_db()
-    rows = db.execute("SELECT * FROM workout_log ORDER BY date DESC, id DESC").fetchall()
+    rows = db.execute(
+        "SELECT * FROM workout_log WHERE user_id = ? ORDER BY date DESC, id DESC", (user_id,)
+    ).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
 @app.route("/api/workout-log", methods=["POST"])
 def add_workout_log():
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "missing user"}), 401
     data = request.get_json(force=True)
     date = (data.get("date") or "").strip()
     if not date:
@@ -161,9 +304,9 @@ def add_workout_log():
     duration = compute_duration(start_time, end_time)
     db = get_db()
     cur = db.execute(
-        "INSERT INTO workout_log (date, start_time, end_time, duration_hours, energy_level, notes) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (date, start_time, end_time, duration, data.get("energy_level"), data.get("notes", "")),
+        "INSERT INTO workout_log (user_id, date, start_time, end_time, duration_hours, energy_level, notes) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (user_id, date, start_time, end_time, duration, data.get("energy_level"), data.get("notes", "")),
     )
     db.commit()
     return jsonify({"id": cur.lastrowid, "duration_hours": duration}), 201
@@ -171,6 +314,9 @@ def add_workout_log():
 
 @app.route("/api/workout-log/<int:row_id>", methods=["PUT"])
 def update_workout_log(row_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "missing user"}), 401
     data = request.get_json(force=True)
     date = (data.get("date") or "").strip()
     if not date:
@@ -183,8 +329,8 @@ def update_workout_log(row_id):
     db = get_db()
     db.execute(
         "UPDATE workout_log SET date = ?, start_time = ?, end_time = ?, duration_hours = ?, "
-        "energy_level = ?, notes = ? WHERE id = ?",
-        (date, start_time, end_time, duration, data.get("energy_level"), data.get("notes", ""), row_id),
+        "energy_level = ?, notes = ? WHERE id = ? AND user_id = ?",
+        (date, start_time, end_time, duration, data.get("energy_level"), data.get("notes", ""), row_id, user_id),
     )
     db.commit()
     return jsonify({"id": row_id, "duration_hours": duration})
@@ -195,21 +341,27 @@ def update_workout_log(row_id):
 # ---------------------------------------------------------------
 @app.route("/api/exercise-log", methods=["GET"])
 def list_exercise_log():
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "missing user"}), 401
     date_filter = request.args.get("date")
     db = get_db()
     if date_filter:
         rows = db.execute(
-            "SELECT * FROM exercise_log WHERE date = ? ORDER BY id", (date_filter,)
+            "SELECT * FROM exercise_log WHERE user_id = ? AND date = ? ORDER BY id", (user_id, date_filter)
         ).fetchall()
     else:
         rows = db.execute(
-            "SELECT * FROM exercise_log ORDER BY date DESC, id DESC"
+            "SELECT * FROM exercise_log WHERE user_id = ? ORDER BY date DESC, id DESC", (user_id,)
         ).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
 @app.route("/api/exercise-log", methods=["POST"])
 def add_exercise_log():
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "missing user"}), 401
     data = request.get_json(force=True)
     date = (data.get("date") or "").strip()
     exercises = data.get("exercises") or []
@@ -220,7 +372,7 @@ def add_exercise_log():
 
     db = get_db()
     visit_count = db.execute(
-        "SELECT COUNT(*) AS c FROM workout_log WHERE date = ?", (date,)
+        "SELECT COUNT(*) AS c FROM workout_log WHERE user_id = ? AND date = ?", (user_id, date)
     ).fetchone()["c"]
     if visit_count == 0:
         return jsonify({"error": "Log a gym visit for this date before adding exercises"}), 400
@@ -233,11 +385,11 @@ def add_exercise_log():
         if not muscle_group or not exercise or not sets:
             return jsonify({"error": "each exercise needs a muscle_group, exercise and at least one set"}), 400
         for i, s in enumerate(sets):
-            rows.append((date, muscle_group, exercise, i + 1, s.get("reps"), s.get("weight_kg"), s.get("notes", "")))
+            rows.append((user_id, date, muscle_group, exercise, i + 1, s.get("reps"), s.get("weight_kg"), s.get("notes", "")))
 
     cur = db.executemany(
-        "INSERT INTO exercise_log (date, muscle_group, exercise, set_number, reps, weight_kg, notes) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO exercise_log (user_id, date, muscle_group, exercise, set_number, reps, weight_kg, notes) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         rows,
     )
     db.commit()
@@ -246,6 +398,9 @@ def add_exercise_log():
 
 @app.route("/api/exercise-log/<int:row_id>", methods=["PUT"])
 def update_exercise_log(row_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "missing user"}), 401
     data = request.get_json(force=True)
     muscle_group = (data.get("muscle_group") or "").strip()
     exercise = (data.get("exercise") or "").strip()
@@ -254,9 +409,9 @@ def update_exercise_log(row_id):
     db = get_db()
     db.execute(
         "UPDATE exercise_log SET muscle_group = ?, exercise = ?, set_number = ?, reps = ?, "
-        "weight_kg = ?, notes = ? WHERE id = ?",
+        "weight_kg = ?, notes = ? WHERE id = ? AND user_id = ?",
         (muscle_group, exercise, data.get("set_number"), data.get("reps"),
-         data.get("weight_kg"), data.get("notes", ""), row_id),
+         data.get("weight_kg"), data.get("notes", ""), row_id, user_id),
     )
     db.commit()
     return jsonify({"id": row_id})
@@ -264,14 +419,17 @@ def update_exercise_log(row_id):
 
 @app.route("/api/exercise-log/<int:row_id>", methods=["DELETE"])
 def delete_exercise_log(row_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "missing user"}), 401
     db = get_db()
-    db.execute("DELETE FROM exercise_log WHERE id = ?", (row_id,))
+    db.execute("DELETE FROM exercise_log WHERE id = ? AND user_id = ?", (row_id, user_id))
     db.commit()
     return "", 204
 
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=6000, debug=False)
 else:
     init_db()
