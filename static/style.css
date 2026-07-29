@@ -289,6 +289,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   letter-spacing: .04em;
   color: var(--muted);
   gap: 6px;
+  min-width: 0;
 }
 .grid-form .full { grid-column: 1 / -1; }
 .grid-form input, .grid-form select {
@@ -327,6 +328,7 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 4px;
+  min-width: 158px;
 }
 .time-select select {
   font-size: 14.5px;
@@ -358,6 +360,100 @@ button:disabled {
   font-weight: 700;
   color: var(--muted);
 }
+
+/* ---------------- Date field (custom in-app picker) ---------------- */
+.date-field-btn {
+  width: 100%;
+  min-width: 128px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14.5px;
+  font-weight: 500;
+  font-family: inherit;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fbfbfe;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.date-field-btn:hover { background: #fff; }
+.date-field-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(109, 94, 248, .14);
+}
+.date-field-btn:disabled {
+  background: #f1f1f6;
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: .85;
+}
+.date-field-value { white-space: nowrap; }
+.date-field-value.placeholder { color: #9aa1b5; }
+.date-field-icon { font-size: 14px; flex-shrink: 0; }
+
+.date-picker-card { max-width: 320px; padding: 18px; }
+.date-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.date-picker-nav {
+  background: #f1effe;
+  border: none;
+  color: var(--accent-dark);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+  transition: background .15s ease;
+}
+.date-picker-nav:hover { background: #e7e1fd; }
+.date-picker-weekdays, .date-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.date-picker-weekdays {
+  margin-bottom: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+  text-transform: uppercase;
+}
+.date-picker-day {
+  aspect-ratio: 1;
+  border: none;
+  background: none;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s ease, color .15s ease;
+}
+.date-picker-day:hover:not(:disabled) { background: #f1effe; }
+.date-picker-day.today { color: var(--accent-dark); }
+.date-picker-day.selected {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #fff;
+}
+.date-picker-day:disabled { color: #d5d8e3; cursor: not-allowed; }
+.date-picker-card .secondary { margin-top: 14px; }
 
 .primary {
   grid-column: 1 / -1;
@@ -440,7 +536,7 @@ button:disabled {
 
 .set-row {
   display: grid;
-  grid-template-columns: 48px 1fr 1fr 30px;
+  grid-template-columns: 48px 1fr 1fr 1.4fr 30px;
   gap: 8px;
   align-items: center;
   margin-bottom: 7px;
@@ -483,6 +579,12 @@ button:disabled {
 .set-row .set-remove:hover { background: #fbd8df; }
 
 /* ---------------- History table ---------------- */
+/* A plain <table> ignores overflow on itself in most engines, so the
+   scroll container has to be a wrapping block element instead. */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 .data-table {
   width: 100%;
   border-collapse: separate;
@@ -552,6 +654,47 @@ button:disabled {
   box-shadow: 0 0 0 3px rgba(109, 94, 248, .14);
 }
 
+/* Below this width a 6-7 column table can't fit; render each row as a
+   stacked card instead of forcing horizontal scroll over the actions. */
+@media (max-width: 700px) {
+  .data-table thead { display: none; }
+  .data-table, .data-table tbody, .data-table tr, .data-table td { display: block; width: 100%; }
+  .data-table tbody tr {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 10px;
+    padding: 2px 12px;
+  }
+  .data-table tbody tr:hover { background: none; }
+  .data-table tbody tr:last-child { margin-bottom: 0; }
+  .data-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    text-align: right;
+  }
+  .data-table tr td:last-child { border-bottom: none; }
+  .data-table td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--muted);
+    text-align: left;
+  }
+  .data-table td.row-actions {
+    justify-content: flex-end;
+    padding: 10px 0 8px;
+  }
+  .data-table td.row-actions::before { content: none; }
+  .data-table input, .data-table select { text-align: right; font-size: 16px; }
+}
+
 /* ---------------- Toast ---------------- */
 .toast {
   position: fixed;
@@ -577,7 +720,6 @@ button:disabled {
 
 @media (max-width: 480px) {
   .grid-form { grid-template-columns: 1fr; }
-  .data-table { display: block; overflow-x: auto; white-space: nowrap; }
   main { padding: 16px 12px 40px; }
   .user-menu {
     position: relative;
@@ -586,4 +728,24 @@ button:disabled {
     display: inline-block;
     margin-bottom: 10px;
   }
+
+  /* Prevent iOS Safari from zooming in when a field is focused. */
+  .grid-form input, .grid-form select,
+  .time-select select,
+  .set-row input {
+    font-size: 16px;
+  }
+
+  .set-row {
+    grid-template-columns: 40px 1fr 1fr 32px;
+    grid-template-areas:
+      "num reps weight remove"
+      "notes notes notes notes";
+    row-gap: 6px;
+  }
+  .set-row .set-number { grid-area: num; }
+  .set-row .set-reps { grid-area: reps; }
+  .set-row .set-weight { grid-area: weight; }
+  .set-row .set-remove { grid-area: remove; }
+  .set-row .set-notes { grid-area: notes; }
 }

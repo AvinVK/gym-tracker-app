@@ -16,6 +16,13 @@ app = Flask(__name__, static_folder=STATIC_DIR, static_url_path="")
 app.teardown_appcontext(close_db)
 
 
+def is_future_date(date_str):
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d").date() > datetime.now().date()
+    except ValueError:
+        return False
+
+
 # ---------------------------------------------------------------
 # Static frontend
 # ---------------------------------------------------------------
@@ -40,6 +47,8 @@ def create_user():
     name = (data.get("name") or "").strip()
     if not name:
         return jsonify({"error": "name is required"}), 400
+    if data.get("last_period_date") and is_future_date(data["last_period_date"]):
+        return jsonify({"error": "last_period_date cannot be in the future"}), 400
     db = get_db()
     cur = db.execute(
         "INSERT INTO users (name, age, last_period_date) VALUES (?, ?, ?)",
@@ -55,6 +64,8 @@ def update_user(user_id):
     name = (data.get("name") or "").strip()
     if not name:
         return jsonify({"error": "name is required"}), 400
+    if data.get("last_period_date") and is_future_date(data["last_period_date"]):
+        return jsonify({"error": "last_period_date cannot be in the future"}), 400
     db = get_db()
     db.execute(
         "UPDATE users SET name = ?, age = ?, last_period_date = ? WHERE id = ?",
@@ -143,6 +154,8 @@ def add_workout_log():
     date = (data.get("date") or "").strip()
     if not date:
         return jsonify({"error": "date is required"}), 400
+    if is_future_date(date):
+        return jsonify({"error": "date cannot be in the future"}), 400
     start_time = data.get("start_time") or None
     end_time = data.get("end_time") or None
     duration = compute_duration(start_time, end_time)
@@ -162,6 +175,8 @@ def update_workout_log(row_id):
     date = (data.get("date") or "").strip()
     if not date:
         return jsonify({"error": "date is required"}), 400
+    if is_future_date(date):
+        return jsonify({"error": "date cannot be in the future"}), 400
     start_time = data.get("start_time") or None
     end_time = data.get("end_time") or None
     duration = compute_duration(start_time, end_time)
@@ -200,6 +215,8 @@ def add_exercise_log():
     exercises = data.get("exercises") or []
     if not date or not exercises:
         return jsonify({"error": "date and at least one exercise are required"}), 400
+    if is_future_date(date):
+        return jsonify({"error": "date cannot be in the future"}), 400
 
     db = get_db()
     visit_count = db.execute(
@@ -215,9 +232,8 @@ def add_exercise_log():
         sets = ex.get("sets") or []
         if not muscle_group or not exercise or not sets:
             return jsonify({"error": "each exercise needs a muscle_group, exercise and at least one set"}), 400
-        notes = ex.get("notes", "")
         for i, s in enumerate(sets):
-            rows.append((date, muscle_group, exercise, i + 1, s.get("reps"), s.get("weight_kg"), notes))
+            rows.append((date, muscle_group, exercise, i + 1, s.get("reps"), s.get("weight_kg"), s.get("notes", "")))
 
     cur = db.executemany(
         "INSERT INTO exercise_log (date, muscle_group, exercise, set_number, reps, weight_kg, notes) "

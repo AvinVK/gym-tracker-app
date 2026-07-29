@@ -19,6 +19,18 @@ const api = {
   del: (url) => fetch(url, { method: "DELETE" }),
 };
 
+// ---------------- Date inputs: no future dates ----------------
+const todayStr = new Date().toLocaleDateString("en-CA");
+
+// Declared up-front: addExerciseBlock() runs during page init (before the
+// draft module further down), and it calls saveExerciseDraft() internally.
+// Starts true so that init-time DOM building can't clobber a saved draft
+// before restoreDraft() gets a chance to read it; restoreDraft() flips it
+// back off once restoration (or the decision that there's nothing to
+// restore) is complete.
+const DRAFT_KEY = "gymtracker-draft-v1";
+let restoringDraft = true;
+
 function toast(msg) {
   const el = document.getElementById("toast");
   el.textContent = msg;
@@ -48,6 +60,91 @@ function confirmModal(message) {
   });
 }
 
+// ---------------- Custom date picker ----------------
+const dpModal = document.getElementById("date-picker-modal");
+const dpGrid = document.getElementById("dp-grid");
+const dpMonthLabel = document.getElementById("dp-month-label");
+let dpViewYear, dpViewMonth, dpActiveField = null;
+
+function formatDateDisplay(iso) {
+  const [y, m, d] = iso.split("-");
+  return `${d}-${m}-${y}`;
+}
+
+function setDateFieldValue(container, iso) {
+  const input = container.querySelector("input[type=hidden]");
+  const valueEl = container.querySelector(".date-field-value");
+  input.value = iso || "";
+  valueEl.textContent = iso ? formatDateDisplay(iso) : "dd-mm-yyyy";
+  valueEl.classList.toggle("placeholder", !iso);
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function renderDatePickerGrid() {
+  dpMonthLabel.textContent = new Date(dpViewYear, dpViewMonth, 1)
+    .toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  dpGrid.innerHTML = "";
+  const firstDay = new Date(dpViewYear, dpViewMonth, 1).getDay();
+  const daysInMonth = new Date(dpViewYear, dpViewMonth + 1, 0).getDate();
+  const selectedIso = dpActiveField.container.querySelector("input[type=hidden]").value;
+  const maxIso = dpActiveField.max;
+  for (let i = 0; i < firstDay; i++) dpGrid.appendChild(document.createElement("span"));
+  for (let day = 1; day <= daysInMonth; day++) {
+    const iso = `${dpViewYear}-${String(dpViewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = day;
+    btn.className = "date-picker-day";
+    if (iso === selectedIso) btn.classList.add("selected");
+    if (iso === todayStr) btn.classList.add("today");
+    if (maxIso && iso > maxIso) {
+      btn.disabled = true;
+    } else {
+      btn.addEventListener("click", () => {
+        setDateFieldValue(dpActiveField.container, iso);
+        closeDatePicker();
+      });
+    }
+    dpGrid.appendChild(btn);
+  }
+}
+
+function openDatePicker(field) {
+  dpActiveField = field;
+  const current = field.container.querySelector("input[type=hidden]").value;
+  const base = current || field.max || todayStr;
+  const d = new Date(`${base}T00:00:00`);
+  dpViewYear = d.getFullYear();
+  dpViewMonth = d.getMonth();
+  renderDatePickerGrid();
+  dpModal.hidden = false;
+}
+
+function closeDatePicker() {
+  dpModal.hidden = true;
+  dpActiveField = null;
+}
+
+document.getElementById("dp-prev").addEventListener("click", () => {
+  dpViewMonth--; if (dpViewMonth < 0) { dpViewMonth = 11; dpViewYear--; }
+  renderDatePickerGrid();
+});
+document.getElementById("dp-next").addEventListener("click", () => {
+  dpViewMonth++; if (dpViewMonth > 11) { dpViewMonth = 0; dpViewYear++; }
+  renderDatePickerGrid();
+});
+document.getElementById("dp-cancel").addEventListener("click", closeDatePicker);
+dpModal.addEventListener("click", (e) => { if (e.target === dpModal) closeDatePicker(); });
+
+function initDateField(container) {
+  const btn = container.querySelector(".date-field-btn");
+  const max = container.dataset.max === "today" ? todayStr : null;
+  const field = { container, max };
+  btn.addEventListener("click", () => openDatePicker(field));
+}
+
+document.querySelectorAll("[data-date-field]").forEach(initDateField);
+
 // ---------------- Onboarding ----------------
 let currentUser = null;
 
@@ -70,6 +167,10 @@ document.getElementById("form-onboarding").addEventListener("submit", async (e) 
   e.preventDefault();
   const fd = new FormData(e.target);
   const body = Object.fromEntries(fd.entries());
+  if (!body.last_period_date) {
+    toast("Please select a date");
+    return;
+  }
   try {
     const res = await api.post("/api/user", body);
     currentUser = { id: res.id, avatar: null, ...body };
@@ -114,7 +215,7 @@ function showProfile() {
 
   document.getElementById("profile-name").value = currentUser.name || "";
   document.getElementById("profile-age").value = currentUser.age ?? "";
-  document.getElementById("profile-last-period").value = currentUser.last_period_date || "";
+  setDateFieldValue(document.getElementById("profile-last-period").closest(".date-field"), currentUser.last_period_date || "");
   renderProfileAvatar();
 }
 
@@ -187,7 +288,23 @@ async function loadMuscleOptions() {
 }
 
 // ---------------- Time selects (12hr UI -> 24hr storage) ----------------
-function initTimeSelect(group) {
+function setTimeSelectValue(group, value) {
+  if (!value) return;
+  const hourSel = group.querySelector(".time-hour");
+  const minuteSel = group.querySelector(".time-minute");
+  const ampmSel = group.querySelector(".time-ampm");
+  const hidden = group.querySelector("input[type=hidden]");
+  const [h24, m] = value.split(":");
+  const h24n = parseInt(h24, 10);
+  let h12 = h24n % 12;
+  if (h12 === 0) h12 = 12;
+  hourSel.value = String(h12);
+  minuteSel.value = m;
+  ampmSel.value = h24n >= 12 ? "PM" : "AM";
+  hidden.value = value;
+}
+
+function initTimeSelect(group, initialValue) {
   const hourSel = group.querySelector(".time-hour");
   const minuteSel = group.querySelector(".time-minute");
   const ampmSel = group.querySelector(".time-ampm");
@@ -212,26 +329,34 @@ function initTimeSelect(group) {
     hidden.value = `${String(hour24).padStart(2, "0")}:${m}`;
   }
 
+  if (initialValue) setTimeSelectValue(group, initialValue);
+
   [hourSel, minuteSel, ampmSel].forEach(sel => sel.addEventListener("change", sync));
-  group.closest("form").addEventListener("reset", () => setTimeout(sync));
+  const form = group.closest("form");
+  if (form) form.addEventListener("reset", () => setTimeout(sync));
 }
 
-document.querySelectorAll("[data-time-group]").forEach(initTimeSelect);
+document.querySelectorAll("[data-time-group]").forEach(group => initTimeSelect(group));
 
 // ---------------- Workout Log ----------------
-document.getElementById("workout-date").addEventListener("input", (e) => {
-  document.getElementById("exlog-date").value = e.target.value;
+document.getElementById("workout-date").addEventListener("change", (e) => {
+  setDateFieldValue(document.getElementById("exlog-date").closest(".date-field"), e.target.value);
 });
 
 document.getElementById("form-workout").addEventListener("submit", async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
   const body = Object.fromEntries(fd.entries());
+  if (!body.date) {
+    toast("Please select a date");
+    return;
+  }
   try {
     await api.post("/api/workout-log", body);
     toast("Workout logged");
     e.target.querySelectorAll("input, select, button").forEach(el => el.disabled = true);
     document.getElementById("card-exlog").hidden = false;
+    writeDraft({ workout: body, workoutSubmitted: true, exlogDate: body.date, exercises: collectExerciseBlocksDraft() });
   } catch (err) {
     toast(err.message);
   }
@@ -260,13 +385,16 @@ function addSetRow(block) {
     <span class="set-number"></span>
     <input type="number" class="set-reps" min="1" placeholder="Reps" required>
     <input type="number" step="0.5" class="set-weight" placeholder="Weight (kg)">
+    <input type="text" class="set-notes" placeholder="Note for this set (optional)">
     <button type="button" class="set-remove">✕</button>`;
   row.querySelector(".set-remove").addEventListener("click", () => {
     row.remove();
     renumberSets(block);
+    saveExerciseDraft();
   });
   setsDiv.appendChild(row);
   renumberSets(block);
+  saveExerciseDraft();
 }
 
 async function onBlockMuscleChange(block) {
@@ -302,10 +430,7 @@ function addExerciseBlock() {
       <label>Sets</label>
       <div class="ex-sets"></div>
       <button type="button" class="add-set secondary">+ Add Set</button>
-    </div>
-    <label class="full">Notes
-      <input type="text" class="ex-notes" placeholder="optional">
-    </label>`;
+    </div>`;
 
   populateMuscleSelect(block.querySelector(".ex-muscle"));
   block.querySelector(".ex-muscle").addEventListener("change", () => onBlockMuscleChange(block));
@@ -313,11 +438,13 @@ function addExerciseBlock() {
   block.querySelector(".exercise-remove").addEventListener("click", () => {
     block.remove();
     renumberExerciseBlocks();
+    saveExerciseDraft();
   });
 
   exercisesContainer.appendChild(block);
   addSetRow(block);
   renumberExerciseBlocks();
+  return block;
 }
 
 document.getElementById("exlog-add-exercise").addEventListener("click", addExerciseBlock);
@@ -329,10 +456,10 @@ document.getElementById("form-exercise-log").addEventListener("submit", async (e
   const exercises = [...exercisesContainer.querySelectorAll(".exercise-block")].map(block => ({
     muscle_group: block.querySelector(".ex-muscle").value,
     exercise: block.querySelector(".ex-exercise").value,
-    notes: block.querySelector(".ex-notes").value,
     sets: [...block.querySelectorAll(".set-row")].map(row => ({
       reps: parseInt(row.querySelector(".set-reps").value, 10) || null,
       weight_kg: parseFloat(row.querySelector(".set-weight").value) || null,
+      notes: row.querySelector(".set-notes").value,
     })),
   }));
   if (!(await confirmModal(`Do you want to save these exercises for ${date}?`))) {
@@ -349,6 +476,9 @@ document.getElementById("form-exercise-log").addEventListener("submit", async (e
     workoutForm.reset();
     workoutForm.querySelectorAll("input, select, button").forEach(el => el.disabled = false);
     document.getElementById("card-exlog").hidden = true;
+    setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), "");
+    setDateFieldValue(document.getElementById("exlog-date").closest(".date-field"), "");
+    clearDraft();
   } catch (err) {
     toast(err.message);
   }
@@ -399,11 +529,25 @@ function formatDuration(hours) {
   return parts.join(" ");
 }
 
+function timeSelectHtml(cls, value) {
+  return `
+    <div class="time-select" data-time-group>
+      <select class="time-hour" aria-label="Hour"></select>
+      <span class="time-sep">:</span>
+      <select class="time-minute" aria-label="Minute"></select>
+      <select class="time-ampm" aria-label="AM or PM">
+        <option value="AM">AM</option>
+        <option value="PM">PM</option>
+      </select>
+      <input type="hidden" class="${cls}" value="${value || ""}">
+    </div>`;
+}
+
 function workoutRowView(w) {
   return `
     <tr class="clickable-row" data-date="${w.date}" data-id="${w.id}">
-      <td>${w.date}</td><td>${formatTime12(w.start_time)}</td>
-      <td>${formatTime12(w.end_time)}</td><td>${formatDuration(w.duration_hours)}</td><td>${w.energy_level ?? ""}</td><td>${w.notes || ""}</td>
+      <td data-label="Date">${w.date}</td><td data-label="Start">${formatTime12(w.start_time)}</td>
+      <td data-label="End">${formatTime12(w.end_time)}</td><td data-label="Duration">${formatDuration(w.duration_hours)}</td><td data-label="Energy Level">${w.energy_level ?? ""}</td><td data-label="Notes">${w.notes || ""}</td>
       <td class="row-actions">
         <button class="edit-btn" data-id="${w.id}">Edit</button>
       </td>
@@ -413,12 +557,20 @@ function workoutRowView(w) {
 function workoutRowEdit(w) {
   return `
     <tr data-id="${w.id}">
-      <td><input type="date" class="edit-date" value="${w.date}"></td>
-      <td><input type="time" class="edit-start" value="${w.start_time || ""}"></td>
-      <td><input type="time" class="edit-end" value="${w.end_time || ""}"></td>
-      <td>${formatDuration(w.duration_hours)}</td>
-      <td><input type="number" class="edit-energy" min="1" max="10" value="${w.energy_level ?? ""}"></td>
-      <td><input type="text" class="edit-notes" value="${w.notes || ""}"></td>
+      <td data-label="Date">
+        <div class="date-field" data-max="today">
+          <button type="button" class="date-field-btn">
+            <span class="date-field-value">${formatDateDisplay(w.date)}</span>
+            <span class="date-field-icon" aria-hidden="true">📅</span>
+          </button>
+          <input type="hidden" class="edit-date" value="${w.date}">
+        </div>
+      </td>
+      <td data-label="Start">${timeSelectHtml("edit-start", w.start_time)}</td>
+      <td data-label="End">${timeSelectHtml("edit-end", w.end_time)}</td>
+      <td data-label="Duration">${formatDuration(w.duration_hours)}</td>
+      <td data-label="Energy Level"><input type="number" class="edit-energy" min="1" max="10" value="${w.energy_level ?? ""}"></td>
+      <td data-label="Notes"><input type="text" class="edit-notes" value="${w.notes || ""}"></td>
       <td class="row-actions">
         <button class="save-btn" data-id="${w.id}">Save</button>
         <button class="cancel-btn" data-id="${w.id}">Cancel</button>
@@ -449,6 +601,10 @@ function bindWorkoutRowEvents() {
 
 function bindWorkoutEditRowEvents(id) {
   const row = document.querySelector(`#table-workout-log tbody tr[data-id="${id}"]`);
+  initDateField(row.querySelector(".date-field"));
+  row.querySelectorAll("[data-time-group]").forEach(group => {
+    initTimeSelect(group, group.querySelector("input[type=hidden]").value);
+  });
   row.querySelector(".save-btn").addEventListener("click", async (e) => {
     e.stopPropagation();
     const body = {
@@ -482,8 +638,8 @@ async function loadHistory() {
 function exerciseRowView(x) {
   return `
     <tr data-id="${x.id}">
-      <td>${x.muscle_group}</td><td>${x.exercise}</td>
-      <td>${x.set_number ?? ""}</td><td>${x.reps ?? ""}</td><td>${x.weight_kg ?? ""}</td><td>${x.notes || ""}</td>
+      <td data-label="Muscle Group">${x.muscle_group}</td><td data-label="Exercise">${x.exercise}</td>
+      <td data-label="Set #">${x.set_number ?? ""}</td><td data-label="Reps">${x.reps ?? ""}</td><td data-label="Weight (kg)">${x.weight_kg ?? ""}</td><td data-label="Notes">${x.notes || ""}</td>
       <td class="row-actions">
         <button class="edit-btn" data-id="${x.id}">Edit</button>
         <button class="del-btn" data-id="${x.id}">Delete</button>
@@ -494,12 +650,12 @@ function exerciseRowView(x) {
 function exerciseRowEdit(x) {
   return `
     <tr data-id="${x.id}">
-      <td><input type="text" class="edit-muscle" value="${x.muscle_group}"></td>
-      <td><input type="text" class="edit-exercise" value="${x.exercise}"></td>
-      <td><input type="number" class="edit-set" value="${x.set_number ?? ""}"></td>
-      <td><input type="number" class="edit-reps" value="${x.reps ?? ""}"></td>
-      <td><input type="number" step="0.5" class="edit-weight" value="${x.weight_kg ?? ""}"></td>
-      <td><input type="text" class="edit-notes" value="${x.notes || ""}"></td>
+      <td data-label="Muscle Group"><input type="text" class="edit-muscle" value="${x.muscle_group}"></td>
+      <td data-label="Exercise"><input type="text" class="edit-exercise" value="${x.exercise}"></td>
+      <td data-label="Set #"><input type="number" class="edit-set" value="${x.set_number ?? ""}"></td>
+      <td data-label="Reps"><input type="number" class="edit-reps" value="${x.reps ?? ""}"></td>
+      <td data-label="Weight (kg)"><input type="number" step="0.5" class="edit-weight" value="${x.weight_kg ?? ""}"></td>
+      <td data-label="Notes"><input type="text" class="edit-notes" value="${x.notes || ""}"></td>
       <td class="row-actions">
         <button class="save-btn" data-id="${x.id}">Save</button>
         <button class="cancel-btn" data-id="${x.id}">Cancel</button>
@@ -560,5 +716,110 @@ async function loadExerciseDetail(date) {
   renderExerciseTable();
 }
 
+// ---------------- Draft autosave (survive accidental reloads) ----------------
+function readDraft() {
+  try {
+    return JSON.parse(localStorage.getItem(DRAFT_KEY));
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(patch) {
+  localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...(readDraft() || {}), ...patch }));
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+}
+
+function collectExerciseBlocksDraft() {
+  return [...exercisesContainer.querySelectorAll(".exercise-block")].map(block => ({
+    muscle_group: block.querySelector(".ex-muscle").value,
+    exercise: block.querySelector(".ex-exercise").value,
+    sets: [...block.querySelectorAll(".set-row")].map(row => ({
+      reps: row.querySelector(".set-reps").value,
+      weight_kg: row.querySelector(".set-weight").value,
+      notes: row.querySelector(".set-notes").value,
+    })),
+  }));
+}
+
+function saveWorkoutDraft() {
+  if (restoringDraft) return;
+  const form = document.getElementById("form-workout");
+  if (form.querySelector('[name="date"]').disabled) return; // already submitted; nothing left to draft here
+  writeDraft({ workout: Object.fromEntries(new FormData(form).entries()), workoutSubmitted: false });
+}
+
+function saveExerciseDraft() {
+  if (restoringDraft) return;
+  const draft = readDraft();
+  if (!draft || !draft.workoutSubmitted) return; // exercise card isn't open yet
+  writeDraft({ exlogDate: document.getElementById("exlog-date").value, exercises: collectExerciseBlocksDraft() });
+}
+
+document.getElementById("form-workout").addEventListener("input", saveWorkoutDraft);
+document.getElementById("form-workout").addEventListener("change", saveWorkoutDraft);
+document.getElementById("card-exlog").addEventListener("input", saveExerciseDraft);
+document.getElementById("card-exlog").addEventListener("change", saveExerciseDraft);
+
+async function restoreDraft() {
+  const draft = readDraft();
+  if (!draft) {
+    restoringDraft = false;
+    return;
+  }
+
+  try {
+    if (draft.workout) {
+      const w = draft.workout;
+      const form = document.getElementById("form-workout");
+      if (w.energy_level) form.querySelector('[name="energy_level"]').value = w.energy_level;
+      if (w.notes) form.querySelector('[name="notes"]').value = w.notes;
+      if (w.date) setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), w.date);
+      const startGroup = form.querySelector('input[name="start_time"]')?.closest(".time-select");
+      const endGroup = form.querySelector('input[name="end_time"]')?.closest(".time-select");
+      if (startGroup) setTimeSelectValue(startGroup, w.start_time);
+      if (endGroup) setTimeSelectValue(endGroup, w.end_time);
+    }
+
+    if (draft.workoutSubmitted) {
+      document.getElementById("form-workout").querySelectorAll("input, select, button").forEach(el => el.disabled = true);
+      document.getElementById("card-exlog").hidden = false;
+
+      if (draft.exlogDate) {
+        setDateFieldValue(document.getElementById("exlog-date").closest(".date-field"), draft.exlogDate);
+      }
+
+      if (draft.exercises && draft.exercises.length) {
+        exercisesContainer.innerHTML = "";
+        for (const ex of draft.exercises) {
+          const block = addExerciseBlock();
+          block.querySelector(".ex-muscle").value = ex.muscle_group || "";
+          if (ex.muscle_group) {
+            await onBlockMuscleChange(block);
+            block.querySelector(".ex-exercise").value = ex.exercise || "";
+          }
+          block.querySelector(".ex-sets").innerHTML = "";
+          const sets = ex.sets && ex.sets.length ? ex.sets : [{}];
+          sets.forEach(() => addSetRow(block));
+          const rows = block.querySelectorAll(".set-row");
+          sets.forEach((s, i) => {
+            rows[i].querySelector(".set-reps").value = s.reps || "";
+            rows[i].querySelector(".set-weight").value = s.weight_kg || "";
+            rows[i].querySelector(".set-notes").value = s.notes || "";
+          });
+        }
+      }
+      toast("Restored your unsaved entry");
+    } else if (draft.workout && Object.values(draft.workout).some(v => v)) {
+      toast("Restored your unsaved entry");
+    }
+  } finally {
+    restoringDraft = false;
+  }
+}
+
 // ---------------- Init ----------------
-loadMuscleOptions();
+loadMuscleOptions().then(restoreDraft);

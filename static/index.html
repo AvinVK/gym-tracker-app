@@ -24,7 +24,13 @@
         <input type="number" name="age" min="1" max="120" placeholder="Age" required>
       </label>
       <label>Last Period Date
-        <input type="date" name="last_period_date" required>
+        <div class="date-field" data-date-field data-max="today">
+          <button type="button" class="date-field-btn">
+            <span class="date-field-value placeholder">dd-mm-yyyy</span>
+            <span class="date-field-icon" aria-hidden="true">📅</span>
+          </button>
+          <input type="hidden" name="last_period_date" required>
+        </div>
       </label>
       <button type="submit" class="primary">Continue</button>
     </form>
@@ -39,6 +45,21 @@
       <button type="button" class="secondary" id="confirm-modal-cancel">Cancel</button>
       <button type="button" class="primary" id="confirm-modal-ok">Yes, Save</button>
     </div>
+  </div>
+</div>
+
+<div id="date-picker-modal" class="modal-overlay" hidden>
+  <div class="modal-card date-picker-card">
+    <div class="date-picker-header">
+      <button type="button" class="date-picker-nav" id="dp-prev" aria-label="Previous month">&#8249;</button>
+      <span id="dp-month-label"></span>
+      <button type="button" class="date-picker-nav" id="dp-next" aria-label="Next month">&#8250;</button>
+    </div>
+    <div class="date-picker-weekdays">
+      <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+    </div>
+    <div class="date-picker-grid" id="dp-grid"></div>
+    <button type="button" class="secondary" id="dp-cancel">Cancel</button>
   </div>
 </div>
 
@@ -68,7 +89,13 @@
       <h2>Log a Gym Visit</h2>
       <form id="form-workout" class="grid-form">
         <label>Date
-          <input type="date" name="date" id="workout-date" required>
+          <div class="date-field" data-date-field data-max="today">
+            <button type="button" class="date-field-btn">
+              <span class="date-field-value placeholder">dd-mm-yyyy</span>
+              <span class="date-field-icon" aria-hidden="true">📅</span>
+            </button>
+            <input type="hidden" name="date" id="workout-date" required>
+          </div>
         </label>
         <label>Start Time
           <div class="time-select" data-time-group>
@@ -108,7 +135,13 @@
       <h2>Log Exercises Done</h2>
       <form id="form-exercise-log" class="grid-form">
         <label class="full">Date
-          <input type="date" name="date" id="exlog-date" required>
+          <div class="date-field" data-date-field data-max="today">
+            <button type="button" class="date-field-btn">
+              <span class="date-field-value placeholder">dd-mm-yyyy</span>
+              <span class="date-field-icon" aria-hidden="true">📅</span>
+            </button>
+            <input type="hidden" name="date" id="exlog-date" required>
+          </div>
         </label>
         <div class="full" id="exlog-exercises"></div>
         <button type="button" id="exlog-add-exercise" class="secondary">+ Add Exercise</button>
@@ -121,12 +154,14 @@
   <section id="tab-history" class="tab-panel">
     <div class="card" id="card-workout-log">
       <h2>Workout Log</h2>
-      <table class="data-table" id="table-workout-log">
-        <thead>
-          <tr><th>Date</th><th>Start</th><th>End</th><th>Duration</th><th>Energy Level</th><th>Notes</th><th></th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="data-table" id="table-workout-log">
+          <thead>
+            <tr><th>Date</th><th>Start</th><th>End</th><th>Duration</th><th>Energy Level</th><th>Notes</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
 
     <div class="card" id="card-exercise-detail" hidden>
@@ -134,12 +169,14 @@
         <h2 id="exercise-detail-title">Exercises Done</h2>
         <button type="button" class="secondary back-btn" id="exercise-detail-back">&larr; Back</button>
       </div>
-      <table class="data-table" id="table-exercise-log">
-        <thead>
-          <tr><th>Muscle Group</th><th>Exercise</th><th>Set #</th><th>Reps</th><th>Weight (kg)</th><th>Notes</th><th></th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="data-table" id="table-exercise-log">
+          <thead>
+            <tr><th>Muscle Group</th><th>Exercise</th><th>Set #</th><th>Reps</th><th>Weight (kg)</th><th>Notes</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -166,7 +203,13 @@
           <input type="number" name="age" id="profile-age" min="1" max="120">
         </label>
         <label>Last Period Date
-          <input type="date" name="last_period_date" id="profile-last-period">
+          <div class="date-field" data-date-field data-max="today">
+            <button type="button" class="date-field-btn">
+              <span class="date-field-value placeholder">dd-mm-yyyy</span>
+              <span class="date-field-icon" aria-hidden="true">📅</span>
+            </button>
+            <input type="hidden" name="last_period_date" id="profile-last-period">
+          </div>
         </label>
         <button type="submit" class="primary">Save Changes</button>
       </form>
