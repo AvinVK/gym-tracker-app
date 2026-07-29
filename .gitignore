@@ -1,5 +1,5 @@
 __pycache__/
 *.pyc
-gym_tracker.db
+gym_tracker*.db
 secret_key.txt
 .claude/
