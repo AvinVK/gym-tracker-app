@@ -945,6 +945,13 @@ button:disabled {
     display: inline-block;
     margin-bottom: 10px;
   }
+  /* .user-menu now sits at the left edge of the header instead of the
+     right, so the dropdown (wider than the greeting pill) must grow
+     rightward from here, not leftward off the edge of the screen. */
+  .user-menu-dropdown {
+    right: auto;
+    left: 0;
+  }
 
   /* Prevent iOS Safari from zooming in when a field is focused. */
   .grid-form input, .grid-form select,
