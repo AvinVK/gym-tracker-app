@@ -236,6 +236,28 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   white-space: nowrap;
 }
 
+.card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-title-row h2 { margin-bottom: 14px; }
+.edit-link-btn {
+  background: #f1effe;
+  border: none;
+  color: var(--accent-dark);
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: inherit;
+  margin-bottom: 14px;
+  transition: background .15s ease;
+}
+.edit-link-btn:hover { background: #e7e1fd; }
+.edit-link-btn[hidden] { display: none; }
+
 /* ---------------- Profile ---------------- */
 .profile-avatar-row {
   display: flex;
@@ -324,41 +346,164 @@ button:disabled {
   transform: none !important;
 }
 
-.time-select {
+/* ---------------- Time field (custom in-app picker) ---------------- */
+.time-field-btn {
+  width: 100%;
+  min-width: 118px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  min-width: 158px;
-}
-.time-select select {
+  justify-content: space-between;
+  gap: 8px;
   font-size: 14.5px;
   font-weight: 500;
-  padding: 10px 6px;
+  font-family: inherit;
+  padding: 10px 12px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
-  font-family: inherit;
-  color: var(--ink);
   background: #fbfbfe;
-  min-width: 0;
-  flex: 1 1 0;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
   transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
 }
-.time-select select.time-ampm { flex: 1.2 1 0; }
-.time-select select:focus {
+.time-field-btn:hover { background: #fff; }
+.time-field-btn:focus-visible {
   outline: none;
   border-color: var(--accent);
-  background: #fff;
   box-shadow: 0 0 0 4px rgba(109, 94, 248, .14);
 }
-.time-select select:disabled {
+.time-field-btn:disabled {
   background: #f1f1f6;
   color: var(--muted);
   cursor: not-allowed;
   opacity: .85;
 }
-.time-select .time-sep {
+.time-field-value { white-space: nowrap; }
+.time-field-value.placeholder { color: #9aa1b5; }
+.time-field-icon { font-size: 13px; flex-shrink: 0; }
+
+.time-picker-card { max-width: 320px; padding: 18px; }
+.time-picker-card h2 {
+  margin: 0 0 12px;
+  font-size: 15px;
   font-weight: 700;
+  color: var(--ink);
+}
+.time-picker-columns {
+  display: flex;
+  gap: 8px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.time-picker-col {
+  flex: 1 1 0;
+  max-height: 200px;
+  overflow-y: auto;
+  scroll-snap-type: y proximity;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.time-picker-col + .time-picker-col { border-left: 1px solid var(--border); }
+.time-picker-option {
+  scroll-snap-align: center;
+  border: none;
+  background: none;
+  padding: 8px 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s ease, color .15s ease;
+}
+.time-picker-option:hover { background: #f6f5ff; }
+.time-picker-option.selected {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #fff;
+}
+.time-picker-card .confirm-actions { margin-top: 14px; }
+
+/* ---------------- Option field (custom in-app select, e.g. muscle group / exercise) ---------------- */
+.option-field-btn {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14.5px;
+  font-weight: 500;
+  font-family: inherit;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fbfbfe;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.option-field-btn:hover:not(:disabled) { background: #fff; }
+.option-field-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(109, 94, 248, .14);
+}
+.option-field-btn:disabled {
+  background: #f1f1f6;
   color: var(--muted);
+  cursor: not-allowed;
+  opacity: .85;
+}
+.option-field-value {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.option-field-value.placeholder { color: #9aa1b5; }
+.option-field-caret { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+
+.option-picker-card { max-width: 340px; padding: 18px; }
+.option-picker-card h2 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.option-picker-list {
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  margin-bottom: 14px;
+}
+.option-picker-item {
+  border: none;
+  background: none;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background .15s ease, color .15s ease;
+}
+.option-picker-item:hover { background: #f6f5ff; }
+.option-picker-item.selected {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #fff;
 }
 
 /* ---------------- Date field (custom in-app picker) ---------------- */
@@ -731,7 +876,6 @@ button:disabled {
 
   /* Prevent iOS Safari from zooming in when a field is focused. */
   .grid-form input, .grid-form select,
-  .time-select select,
   .set-row input {
     font-size: 16px;
   }

@@ -63,6 +63,29 @@
   </div>
 </div>
 
+<div id="time-picker-modal" class="modal-overlay" hidden>
+  <div class="modal-card time-picker-card">
+    <h2>Select Time</h2>
+    <div class="time-picker-columns">
+      <div class="time-picker-col" id="tp-hours"></div>
+      <div class="time-picker-col" id="tp-minutes"></div>
+      <div class="time-picker-col" id="tp-ampm"></div>
+    </div>
+    <div class="confirm-actions">
+      <button type="button" class="secondary" id="tp-cancel">Cancel</button>
+      <button type="button" class="primary" id="tp-done">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="option-picker-modal" class="modal-overlay" hidden>
+  <div class="modal-card option-picker-card">
+    <h2 id="op-title">Select</h2>
+    <div class="option-picker-list" id="op-list"></div>
+    <button type="button" class="secondary" id="op-cancel">Cancel</button>
+  </div>
+</div>
+
 <header class="topbar">
   <div class="user-menu" id="user-menu" hidden>
     <button type="button" class="topbar-greeting" id="user-greeting-btn">
@@ -86,7 +109,10 @@
   <!-- ================= LOG WORKOUT ================= -->
   <section id="tab-log" class="tab-panel active">
     <div class="card">
-      <h2>Log a Gym Visit</h2>
+      <div class="card-title-row">
+        <h2>Log a Gym Visit</h2>
+        <button type="button" class="edit-link-btn" id="workout-edit-btn" hidden>Edit</button>
+      </div>
       <form id="form-workout" class="grid-form">
         <label>Date
           <div class="date-field" data-date-field data-max="today">
@@ -98,26 +124,20 @@
           </div>
         </label>
         <label>Start Time
-          <div class="time-select" data-time-group>
-            <select class="time-hour" aria-label="Hour"></select>
-            <span class="time-sep">:</span>
-            <select class="time-minute" aria-label="Minute"></select>
-            <select class="time-ampm" aria-label="AM or PM">
-              <option value="AM">AM</option>
-              <option value="PM">PM</option>
-            </select>
+          <div class="time-field" data-time-field>
+            <button type="button" class="time-field-btn">
+              <span class="time-field-value placeholder">--:-- --</span>
+              <span class="time-field-icon" aria-hidden="true">🕐</span>
+            </button>
             <input type="hidden" name="start_time">
           </div>
         </label>
         <label>End Time
-          <div class="time-select" data-time-group>
-            <select class="time-hour" aria-label="Hour"></select>
-            <span class="time-sep">:</span>
-            <select class="time-minute" aria-label="Minute"></select>
-            <select class="time-ampm" aria-label="AM or PM">
-              <option value="AM">AM</option>
-              <option value="PM">PM</option>
-            </select>
+          <div class="time-field" data-time-field>
+            <button type="button" class="time-field-btn">
+              <span class="time-field-value placeholder">--:-- --</span>
+              <span class="time-field-icon" aria-hidden="true">🕐</span>
+            </button>
             <input type="hidden" name="end_time">
           </div>
         </label>

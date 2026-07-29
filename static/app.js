@@ -275,72 +275,197 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 // ---------------- Muscle options (exercise log) ----------------
 let availableMuscles = [];
 
-function populateMuscleSelect(sel) {
-  const current = sel.value;
-  sel.innerHTML = `<option value="">Select...</option>` +
-    availableMuscles.map(m => `<option value="${m}">${m}</option>`).join("");
-  if (availableMuscles.includes(current)) sel.value = current;
+function populateMuscleSelect(field) {
+  setOptionFieldOptions(field, availableMuscles);
 }
 
 async function loadMuscleOptions() {
   availableMuscles = await api.get("/api/muscles");
-  exercisesContainer.querySelectorAll(".ex-muscle").forEach(populateMuscleSelect);
+  exercisesContainer.querySelectorAll(".ex-muscle-field").forEach(populateMuscleSelect);
 }
 
-// ---------------- Time selects (12hr UI -> 24hr storage) ----------------
-function setTimeSelectValue(group, value) {
-  if (!value) return;
-  const hourSel = group.querySelector(".time-hour");
-  const minuteSel = group.querySelector(".time-minute");
-  const ampmSel = group.querySelector(".time-ampm");
-  const hidden = group.querySelector("input[type=hidden]");
-  const [h24, m] = value.split(":");
+// ---------------- Custom time picker (12hr UI -> 24hr storage) ----------------
+const tpModal = document.getElementById("time-picker-modal");
+const tpHoursCol = document.getElementById("tp-hours");
+const tpMinutesCol = document.getElementById("tp-minutes");
+const tpAmpmCol = document.getElementById("tp-ampm");
+let tpActiveContainer = null;
+let tpSelected = { hour: null, minute: null, ampm: "AM" };
+
+tpHoursCol.innerHTML = Array.from({ length: 12 }, (_, i) => i + 1)
+  .map(h => `<button type="button" class="time-picker-option" data-value="${h}">${h}</button>`).join("");
+tpMinutesCol.innerHTML = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"))
+  .map(m => `<button type="button" class="time-picker-option" data-value="${m}">${m}</button>`).join("");
+tpAmpmCol.innerHTML = ["AM", "PM"]
+  .map(a => `<button type="button" class="time-picker-option" data-value="${a}">${a}</button>`).join("");
+
+function to12Hour(h24, m) {
   const h24n = parseInt(h24, 10);
   let h12 = h24n % 12;
   if (h12 === 0) h12 = 12;
-  hourSel.value = String(h12);
-  minuteSel.value = m;
-  ampmSel.value = h24n >= 12 ? "PM" : "AM";
-  hidden.value = value;
+  return { h12: String(h12), m, ampm: h24n >= 12 ? "PM" : "AM" };
 }
 
-function initTimeSelect(group, initialValue) {
-  const hourSel = group.querySelector(".time-hour");
-  const minuteSel = group.querySelector(".time-minute");
-  const ampmSel = group.querySelector(".time-ampm");
-  const hidden = group.querySelector("input[type=hidden]");
-
-  hourSel.innerHTML = `<option value="">--</option>` +
-    Array.from({ length: 12 }, (_, i) => i + 1)
-      .map(h => `<option value="${h}">${h}</option>`).join("");
-  minuteSel.innerHTML = `<option value="">--</option>` +
-    Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"))
-      .map(m => `<option value="${m}">${m}</option>`).join("");
-
-  function sync() {
-    const h = hourSel.value;
-    const m = minuteSel.value;
-    if (!h || !m) {
-      hidden.value = "";
-      return;
-    }
-    let hour24 = parseInt(h, 10) % 12;
-    if (ampmSel.value === "PM") hour24 += 12;
-    hidden.value = `${String(hour24).padStart(2, "0")}:${m}`;
+function setTimeFieldValue(container, value) {
+  const hidden = container.querySelector("input[type=hidden]");
+  const valueEl = container.querySelector(".time-field-value");
+  hidden.value = value || "";
+  if (value) {
+    const { h12, m, ampm } = to12Hour(...value.split(":"));
+    valueEl.textContent = `${h12}:${m} ${ampm}`;
+    valueEl.classList.remove("placeholder");
+  } else {
+    valueEl.textContent = "--:-- --";
+    valueEl.classList.add("placeholder");
   }
-
-  if (initialValue) setTimeSelectValue(group, initialValue);
-
-  [hourSel, minuteSel, ampmSel].forEach(sel => sel.addEventListener("change", sync));
-  const form = group.closest("form");
-  if (form) form.addEventListener("reset", () => setTimeout(sync));
+  hidden.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-document.querySelectorAll("[data-time-group]").forEach(group => initTimeSelect(group));
+function highlightTimePickerSelection() {
+  tpHoursCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === String(tpSelected.hour)));
+  tpMinutesCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === String(tpSelected.minute)));
+  tpAmpmCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === tpSelected.ampm));
+}
+
+function scrollTimePickerColumn(col, value) {
+  const btn = value != null ? [...col.querySelectorAll(".time-picker-option")].find(b => b.dataset.value === String(value)) : null;
+  (btn || col.firstElementChild).scrollIntoView({ block: "center" });
+}
+
+[tpHoursCol, tpMinutesCol, tpAmpmCol].forEach(col => {
+  col.addEventListener("click", (e) => {
+    const btn = e.target.closest(".time-picker-option");
+    if (!btn) return;
+    if (col === tpHoursCol) tpSelected.hour = btn.dataset.value;
+    else if (col === tpMinutesCol) tpSelected.minute = btn.dataset.value;
+    else tpSelected.ampm = btn.dataset.value;
+    highlightTimePickerSelection();
+  });
+});
+
+function openTimePicker(container) {
+  tpActiveContainer = container;
+  const hidden = container.querySelector("input[type=hidden]");
+  if (hidden.value) {
+    const { h12, m, ampm } = to12Hour(...hidden.value.split(":"));
+    tpSelected = { hour: h12, minute: m, ampm };
+  } else {
+    tpSelected = { hour: null, minute: null, ampm: "AM" };
+  }
+  highlightTimePickerSelection();
+  tpModal.hidden = false;
+  requestAnimationFrame(() => {
+    scrollTimePickerColumn(tpHoursCol, tpSelected.hour);
+    scrollTimePickerColumn(tpMinutesCol, tpSelected.minute);
+    scrollTimePickerColumn(tpAmpmCol, tpSelected.ampm);
+  });
+}
+
+function closeTimePicker() {
+  tpModal.hidden = true;
+  tpActiveContainer = null;
+}
+
+document.getElementById("tp-cancel").addEventListener("click", closeTimePicker);
+tpModal.addEventListener("click", (e) => { if (e.target === tpModal) closeTimePicker(); });
+document.getElementById("tp-done").addEventListener("click", () => {
+  if (!tpActiveContainer) return;
+  const { hour, minute, ampm } = tpSelected;
+  if (hour && minute) {
+    let h24 = parseInt(hour, 10) % 12;
+    if (ampm === "PM") h24 += 12;
+    setTimeFieldValue(tpActiveContainer, `${String(h24).padStart(2, "0")}:${minute}`);
+  } else {
+    setTimeFieldValue(tpActiveContainer, "");
+  }
+  closeTimePicker();
+});
+
+function initTimeField(container) {
+  const btn = container.querySelector(".time-field-btn");
+  const hidden = container.querySelector("input[type=hidden]");
+  if (hidden.value) setTimeFieldValue(container, hidden.value);
+  btn.addEventListener("click", () => openTimePicker(container));
+}
+
+document.querySelectorAll("[data-time-field]").forEach(initTimeField);
+
+// ---------------- Custom option picker (muscle group / exercise dropdowns) ----------------
+const opModal = document.getElementById("option-picker-modal");
+const opTitle = document.getElementById("op-title");
+const opList = document.getElementById("op-list");
+let opActiveContainer = null;
+
+function setOptionFieldValue(container, value) {
+  const hidden = container.querySelector("input[type=hidden]");
+  const valueEl = container.querySelector(".option-field-value");
+  const placeholder = container.dataset.placeholder || "Select...";
+  hidden.value = value || "";
+  valueEl.textContent = value || placeholder;
+  valueEl.classList.toggle("placeholder", !value);
+  hidden.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function setOptionFieldOptions(container, options, { emptyText } = {}) {
+  container.__options = options;
+  const btn = container.querySelector(".option-field-btn");
+  const hidden = container.querySelector("input[type=hidden]");
+  const valueEl = container.querySelector(".option-field-value");
+  if (!options.length) {
+    btn.disabled = true;
+    hidden.value = "";
+    valueEl.textContent = emptyText || "No options available";
+    valueEl.classList.add("placeholder");
+    return;
+  }
+  btn.disabled = false;
+  if (!options.includes(hidden.value)) {
+    hidden.value = "";
+    valueEl.textContent = container.dataset.placeholder || "Select...";
+    valueEl.classList.add("placeholder");
+  }
+}
+
+function openOptionPicker(container) {
+  const options = container.__options || [];
+  if (!options.length) return;
+  opActiveContainer = container;
+  opTitle.textContent = container.dataset.title || "Select";
+  const current = container.querySelector("input[type=hidden]").value;
+  opList.innerHTML = options
+    .map(o => `<button type="button" class="option-picker-item${o === current ? " selected" : ""}" data-value="${o}">${o}</button>`)
+    .join("");
+  opModal.hidden = false;
+}
+
+function closeOptionPicker() {
+  opModal.hidden = true;
+  opActiveContainer = null;
+}
+
+opList.addEventListener("click", (e) => {
+  const btn = e.target.closest(".option-picker-item");
+  if (!btn || !opActiveContainer) return;
+  setOptionFieldValue(opActiveContainer, btn.dataset.value);
+  closeOptionPicker();
+});
+document.getElementById("op-cancel").addEventListener("click", closeOptionPicker);
+opModal.addEventListener("click", (e) => { if (e.target === opModal) closeOptionPicker(); });
+
+function initOptionField(container) {
+  container.querySelector(".option-field-btn").addEventListener("click", () => openOptionPicker(container));
+}
 
 // ---------------- Workout Log ----------------
+let savedWorkoutId = null;
+
 document.getElementById("workout-date").addEventListener("change", (e) => {
   setDateFieldValue(document.getElementById("exlog-date").closest(".date-field"), e.target.value);
+});
+
+document.getElementById("workout-edit-btn").addEventListener("click", () => {
+  document.getElementById("form-workout").querySelectorAll("input, select, button").forEach(el => el.disabled = false);
+  document.getElementById("workout-edit-btn").hidden = true;
 });
 
 document.getElementById("form-workout").addEventListener("submit", async (e) => {
@@ -352,11 +477,18 @@ document.getElementById("form-workout").addEventListener("submit", async (e) => 
     return;
   }
   try {
-    await api.post("/api/workout-log", body);
-    toast("Workout logged");
+    if (savedWorkoutId) {
+      await api.put(`/api/workout-log/${savedWorkoutId}`, body);
+      toast("Workout updated");
+    } else {
+      const res = await api.post("/api/workout-log", body);
+      savedWorkoutId = res.id;
+      toast("Workout logged");
+    }
     e.target.querySelectorAll("input, select, button").forEach(el => el.disabled = true);
     document.getElementById("card-exlog").hidden = false;
-    writeDraft({ workout: body, workoutSubmitted: true, exlogDate: body.date, exercises: collectExerciseBlocksDraft() });
+    document.getElementById("workout-edit-btn").hidden = false;
+    writeDraft({ workout: body, workoutSubmitted: true, workoutId: savedWorkoutId, exlogDate: body.date, exercises: collectExerciseBlocksDraft() });
   } catch (err) {
     toast(err.message);
   }
@@ -399,15 +531,13 @@ function addSetRow(block) {
 
 async function onBlockMuscleChange(block) {
   const muscle = block.querySelector(".ex-muscle").value;
-  const exSelect = block.querySelector(".ex-exercise");
+  const exField = block.querySelector(".ex-exercise-field");
   if (!muscle) {
-    exSelect.innerHTML = `<option value="">Pick a muscle group first</option>`;
+    setOptionFieldOptions(exField, [], { emptyText: "Pick a muscle group first" });
     return;
   }
   const exercises = await api.get(`/api/exercises-by-muscle/${encodeURIComponent(muscle)}`);
-  exSelect.innerHTML = exercises.length
-    ? exercises.map(ex => `<option value="${ex.exercise}">${ex.exercise}</option>`).join("")
-    : `<option value="">No exercises for this muscle yet</option>`;
+  setOptionFieldOptions(exField, exercises.map(ex => ex.exercise), { emptyText: "No exercises for this muscle yet" });
 }
 
 function addExerciseBlock() {
@@ -419,12 +549,22 @@ function addExerciseBlock() {
       <button type="button" class="exercise-remove">✕ Remove</button>
     </div>
     <label>Muscle Group
-      <select class="ex-muscle" required></select>
+      <div class="option-field ex-muscle-field" data-option-field data-title="Muscle Group">
+        <button type="button" class="option-field-btn">
+          <span class="option-field-value placeholder">Select...</span>
+          <span class="option-field-caret" aria-hidden="true">&#9662;</span>
+        </button>
+        <input type="hidden" class="ex-muscle" required>
+      </div>
     </label>
     <label>Exercise
-      <select class="ex-exercise" required>
-        <option value="">Pick a muscle group first</option>
-      </select>
+      <div class="option-field ex-exercise-field" data-option-field data-title="Exercise">
+        <button type="button" class="option-field-btn" disabled>
+          <span class="option-field-value placeholder">Pick a muscle group first</span>
+          <span class="option-field-caret" aria-hidden="true">&#9662;</span>
+        </button>
+        <input type="hidden" class="ex-exercise" required>
+      </div>
     </label>
     <div class="full">
       <label>Sets</label>
@@ -432,8 +572,12 @@ function addExerciseBlock() {
       <button type="button" class="add-set secondary">+ Add Set</button>
     </div>`;
 
-  populateMuscleSelect(block.querySelector(".ex-muscle"));
-  block.querySelector(".ex-muscle").addEventListener("change", () => onBlockMuscleChange(block));
+  block.querySelectorAll("[data-option-field]").forEach(initOptionField);
+  populateMuscleSelect(block.querySelector(".ex-muscle-field"));
+  block.querySelector(".ex-muscle").addEventListener("change", () => {
+    if (restoringDraft) return; // restoreDraft() awaits its own explicit call instead
+    onBlockMuscleChange(block);
+  });
   block.querySelector(".add-set").addEventListener("click", () => addSetRow(block));
   block.querySelector(".exercise-remove").addEventListener("click", () => {
     block.remove();
@@ -476,8 +620,11 @@ document.getElementById("form-exercise-log").addEventListener("submit", async (e
     workoutForm.reset();
     workoutForm.querySelectorAll("input, select, button").forEach(el => el.disabled = false);
     document.getElementById("card-exlog").hidden = true;
+    document.getElementById("workout-edit-btn").hidden = true;
+    savedWorkoutId = null;
     setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), "");
     setDateFieldValue(document.getElementById("exlog-date").closest(".date-field"), "");
+    workoutForm.querySelectorAll(".time-field").forEach(f => setTimeFieldValue(f, ""));
     clearDraft();
   } catch (err) {
     toast(err.message);
@@ -529,16 +676,18 @@ function formatDuration(hours) {
   return parts.join(" ");
 }
 
-function timeSelectHtml(cls, value) {
+function timeFieldHtml(cls, value) {
+  let display = "--:-- --";
+  if (value) {
+    const { h12, m, ampm } = to12Hour(...value.split(":"));
+    display = `${h12}:${m} ${ampm}`;
+  }
   return `
-    <div class="time-select" data-time-group>
-      <select class="time-hour" aria-label="Hour"></select>
-      <span class="time-sep">:</span>
-      <select class="time-minute" aria-label="Minute"></select>
-      <select class="time-ampm" aria-label="AM or PM">
-        <option value="AM">AM</option>
-        <option value="PM">PM</option>
-      </select>
+    <div class="time-field">
+      <button type="button" class="time-field-btn">
+        <span class="time-field-value${value ? "" : " placeholder"}">${display}</span>
+        <span class="time-field-icon" aria-hidden="true">🕐</span>
+      </button>
       <input type="hidden" class="${cls}" value="${value || ""}">
     </div>`;
 }
@@ -566,8 +715,8 @@ function workoutRowEdit(w) {
           <input type="hidden" class="edit-date" value="${w.date}">
         </div>
       </td>
-      <td data-label="Start">${timeSelectHtml("edit-start", w.start_time)}</td>
-      <td data-label="End">${timeSelectHtml("edit-end", w.end_time)}</td>
+      <td data-label="Start">${timeFieldHtml("edit-start", w.start_time)}</td>
+      <td data-label="End">${timeFieldHtml("edit-end", w.end_time)}</td>
       <td data-label="Duration">${formatDuration(w.duration_hours)}</td>
       <td data-label="Energy Level"><input type="number" class="edit-energy" min="1" max="10" value="${w.energy_level ?? ""}"></td>
       <td data-label="Notes"><input type="text" class="edit-notes" value="${w.notes || ""}"></td>
@@ -602,9 +751,7 @@ function bindWorkoutRowEvents() {
 function bindWorkoutEditRowEvents(id) {
   const row = document.querySelector(`#table-workout-log tbody tr[data-id="${id}"]`);
   initDateField(row.querySelector(".date-field"));
-  row.querySelectorAll("[data-time-group]").forEach(group => {
-    initTimeSelect(group, group.querySelector("input[type=hidden]").value);
-  });
+  row.querySelectorAll(".time-field").forEach(initTimeField);
   row.querySelector(".save-btn").addEventListener("click", async (e) => {
     e.stopPropagation();
     const body = {
@@ -747,9 +894,11 @@ function collectExerciseBlocksDraft() {
 
 function saveWorkoutDraft() {
   if (restoringDraft) return;
+  // Deliberately doesn't touch workoutSubmitted/workoutId: those only change
+  // on an actual save (see the submit handler), so editing an already-saved
+  // visit keeps updating the same row instead of drafting a duplicate.
   const form = document.getElementById("form-workout");
-  if (form.querySelector('[name="date"]').disabled) return; // already submitted; nothing left to draft here
-  writeDraft({ workout: Object.fromEntries(new FormData(form).entries()), workoutSubmitted: false });
+  writeDraft({ workout: Object.fromEntries(new FormData(form).entries()) });
 }
 
 function saveExerciseDraft() {
@@ -778,15 +927,17 @@ async function restoreDraft() {
       if (w.energy_level) form.querySelector('[name="energy_level"]').value = w.energy_level;
       if (w.notes) form.querySelector('[name="notes"]').value = w.notes;
       if (w.date) setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), w.date);
-      const startGroup = form.querySelector('input[name="start_time"]')?.closest(".time-select");
-      const endGroup = form.querySelector('input[name="end_time"]')?.closest(".time-select");
-      if (startGroup) setTimeSelectValue(startGroup, w.start_time);
-      if (endGroup) setTimeSelectValue(endGroup, w.end_time);
+      const startGroup = form.querySelector('input[name="start_time"]')?.closest(".time-field");
+      const endGroup = form.querySelector('input[name="end_time"]')?.closest(".time-field");
+      if (startGroup && w.start_time) setTimeFieldValue(startGroup, w.start_time);
+      if (endGroup && w.end_time) setTimeFieldValue(endGroup, w.end_time);
     }
 
     if (draft.workoutSubmitted) {
+      savedWorkoutId = draft.workoutId || null;
       document.getElementById("form-workout").querySelectorAll("input, select, button").forEach(el => el.disabled = true);
       document.getElementById("card-exlog").hidden = false;
+      document.getElementById("workout-edit-btn").hidden = false;
 
       if (draft.exlogDate) {
         setDateFieldValue(document.getElementById("exlog-date").closest(".date-field"), draft.exlogDate);
@@ -796,10 +947,10 @@ async function restoreDraft() {
         exercisesContainer.innerHTML = "";
         for (const ex of draft.exercises) {
           const block = addExerciseBlock();
-          block.querySelector(".ex-muscle").value = ex.muscle_group || "";
           if (ex.muscle_group) {
+            setOptionFieldValue(block.querySelector(".ex-muscle-field"), ex.muscle_group);
             await onBlockMuscleChange(block);
-            block.querySelector(".ex-exercise").value = ex.exercise || "";
+            setOptionFieldValue(block.querySelector(".ex-exercise-field"), ex.exercise || "");
           }
           block.querySelector(".ex-sets").innerHTML = "";
           const sets = ex.sets && ex.sets.length ? ex.sets : [{}];
