@@ -3,8 +3,10 @@ import sqlite3
 
 from flask import g
 
+import config
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "gym_tracker_dev.db")
+DB_PATH = os.path.join(BASE_DIR, config.get("DB_NAME"))
 
 SEED_EXERCISES = [
     ("Chest", "Bench Press"),
