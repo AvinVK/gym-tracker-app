@@ -42,9 +42,18 @@ body {
   color: #fff;
   padding: 28px 20px 22px;
   position: relative;
-  overflow: hidden;
 }
-.topbar::after {
+/* Clipping lives on this dedicated overlay instead of .topbar itself, so
+   the decorative glow stays contained without also clipping the profile
+   dropdown, which needs to extend past the header's own bottom edge. */
+.topbar-glow {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+.topbar-glow::after {
   content: "";
   position: absolute;
   inset: -60% -20% auto auto;
