@@ -319,6 +319,7 @@ function renderProfileAvatar() {
 function showProfile() {
   document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
   document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".main-tab-panel").forEach(p => p.classList.remove("active"));
   document.getElementById("tab-profile").classList.add("active");
 
   document.getElementById("profile-name").value = currentUser.name || "";
@@ -336,6 +337,10 @@ document.getElementById("profile-back").addEventListener("click", () => {
   document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
   document.getElementById("tab-log").classList.add("active");
   document.querySelector('.tab-btn[data-tab="log"]').classList.add("active");
+  document.querySelectorAll(".main-tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelector('.main-tab-btn[data-maintab="workout"]').classList.add("active");
+  document.querySelectorAll(".main-tab-panel").forEach(p => p.classList.remove("active"));
+  document.getElementById("maintab-workout").classList.add("active");
 });
 
 document.getElementById("form-profile").addEventListener("submit", async (e) => {
@@ -370,6 +375,22 @@ document.getElementById("profile-avatar-input").addEventListener("change", async
 });
 
 // ---------------- Tabs ----------------
+document.querySelectorAll(".main-tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".main-tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".main-tab-panel").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("maintab-" + btn.dataset.maintab).classList.add("active");
+    if (btn.dataset.maintab === "workout") {
+      const activeSubTab = document.querySelector('.tabs .tab-btn.active') || document.querySelector('.tabs .tab-btn[data-tab="log"]');
+      activeSubTab.classList.add("active");
+      document.getElementById("tab-" + activeSubTab.dataset.tab).classList.add("active");
+      if (activeSubTab.dataset.tab === "history") loadHistory();
+    }
+  });
+});
+
 document.querySelectorAll(".tab-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));

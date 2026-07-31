@@ -174,12 +174,20 @@
   <p class="topbar-sub">Log it. Track it. Crush it.</p>
 </header>
 
-<nav class="tabs">
-  <button class="tab-btn active" data-tab="log">Log Workout</button>
-  <button class="tab-btn" data-tab="history">History</button>
+<nav class="main-tabs">
+  <button class="main-tab-btn active" data-maintab="workout">Workout</button>
+  <button class="main-tab-btn" data-maintab="diet">Diet</button>
+  <button class="main-tab-btn" data-maintab="cycle">Your Cycle</button>
 </nav>
 
 <main>
+  <!-- ================= WORKOUT ================= -->
+  <section id="maintab-workout" class="main-tab-panel active">
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="log">Log Workout</button>
+    <button class="tab-btn" data-tab="history">History</button>
+  </nav>
+
   <!-- ================= LOG WORKOUT ================= -->
   <section id="tab-log" class="tab-panel active">
     <div class="card">
@@ -277,6 +285,23 @@
           <tbody></tbody>
         </table>
       </div>
+    </div>
+  </section>
+  </section>
+
+  <!-- ================= DIET ================= -->
+  <section id="maintab-diet" class="main-tab-panel">
+    <div class="card placeholder-card">
+      <h2>Diet</h2>
+      <p class="placeholder-text">Diet tracking is coming soon.</p>
+    </div>
+  </section>
+
+  <!-- ================= YOUR CYCLE ================= -->
+  <section id="maintab-cycle" class="main-tab-panel">
+    <div class="card placeholder-card">
+      <h2>Your Cycle</h2>
+      <p class="placeholder-text">Cycle tracking is coming soon.</p>
     </div>
   </section>
 
