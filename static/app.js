@@ -172,7 +172,7 @@ function showAuthStep(id) {
   document.getElementById(id).hidden = false;
 }
 
-async function onLoggedIn(user) {
+async function onLoggedIn(user, { isNewSignup = false } = {}) {
   // Block autosave while we tear down whatever was on screen before (e.g. a
   // previous session on a shared device): it's a reset, not something that
   // should overwrite the incoming user's own draft.
@@ -181,6 +181,16 @@ async function onLoggedIn(user) {
 
   currentUser = user;
   currentUserId = user.id;
+
+  if (isNewSignup) {
+    // Drafts are keyed by numeric user id (see draftKey() below), and ids
+    // get reused once an old test/deleted account's id is assigned to a
+    // brand-new signup. A genuinely new account can never have a legitimate
+    // draft of its own yet, so anything under this id is stale leftovers
+    // from whoever had this id before — never something to restore.
+    clearDraft();
+  }
+
   hideAllAuthModals();
   document.getElementById("user-menu-dropdown").hidden = true;
   showGreeting(user.name);
@@ -235,7 +245,7 @@ document.getElementById("form-auth-signup").addEventListener("submit", async (e)
   try {
     await api.post("/api/signup", body);
     const user = await api.get("/api/me");
-    await onLoggedIn(user);
+    await onLoggedIn(user, { isNewSignup: true });
     toast(`Welcome, ${user.name}!`);
   } catch (err) {
     toast(err.message);
