@@ -12,28 +12,37 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="auth-modal" class="modal-overlay" hidden>
+<div id="auth-name-modal" class="modal-overlay" hidden>
   <div class="modal-card">
-    <h2 id="auth-title">Welcome back 👋</h2>
-    <p class="modal-sub" id="auth-sub">Log in to continue.</p>
-
-    <form id="form-login" class="grid-form">
-      <label class="full">What's your name?
+    <h2>What should we call you? 👋</h2>
+    <form id="form-auth-name" class="grid-form">
+      <label class="full">Name
         <input type="text" name="name" placeholder="Your name" required autocomplete="name">
       </label>
-      <label class="full">PIN
-        <input type="password" name="pin" placeholder="4-digit PIN" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="current-password">
-      </label>
-      <button type="submit" class="primary">Log In</button>
+      <button type="submit" class="primary">Continue</button>
     </form>
+  </div>
+</div>
 
-    <form id="form-signup" class="grid-form" hidden>
-      <label class="full">What's your name?
-        <input type="text" name="name" placeholder="Your name" required autocomplete="name">
+<div id="auth-email-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>How can we reach you?</h2>
+    <p class="modal-sub">Your email is how we'll find your account next time.</p>
+    <form id="form-auth-email" class="grid-form">
+      <label class="full">Email
+        <input type="email" name="email" placeholder="you@example.com" required autocomplete="email">
       </label>
-      <label class="full">PIN
-        <input type="password" name="pin" placeholder="4-digit PIN" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password">
-      </label>
+      <button type="submit" class="primary">Continue</button>
+      <button type="button" class="secondary" id="auth-email-back">&larr; Back</button>
+    </form>
+  </div>
+</div>
+
+<div id="auth-signup-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>Oh, you're new here! 🎉</h2>
+    <p class="modal-sub">Let's get a little more info, then set a PIN to finish up.</p>
+    <form id="form-auth-signup" class="grid-form">
       <label>Age <span class="field-optional">(optional)</span>
         <input type="number" name="age" min="1" max="120" placeholder="Age">
       </label>
@@ -46,28 +55,25 @@
           <input type="hidden" name="last_period_date">
         </div>
       </label>
+      <label class="full">Set a PIN
+        <input type="password" name="pin" placeholder="4-digit PIN" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password">
+      </label>
       <button type="submit" class="primary">Create Account</button>
+      <button type="button" class="secondary" id="auth-signup-back">&larr; Back</button>
     </form>
-
-    <button type="button" class="link-toggle" id="auth-toggle">New here? Create an account</button>
-
-    <div id="claimable-section" hidden>
-      <p class="modal-sub">Or claim an existing profile:</p>
-      <div class="profile-picker-list" id="claimable-list"></div>
-    </div>
   </div>
 </div>
 
-<div id="claim-modal" class="modal-overlay" hidden>
+<div id="auth-login-modal" class="modal-overlay" hidden>
   <div class="modal-card">
-    <h2>Claim <span id="claim-name"></span>'s profile</h2>
-    <p class="modal-sub">Set a PIN to finish setting this profile up.</p>
-    <form id="form-claim" class="grid-form">
+    <h2>Welcome back, <span id="auth-login-name"></span> 👋</h2>
+    <p class="modal-sub">Enter your PIN to continue.</p>
+    <form id="form-auth-login" class="grid-form">
       <label class="full">PIN
-        <input type="password" name="pin" placeholder="4-digit PIN" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password">
+        <input type="password" name="pin" placeholder="4-digit PIN" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="current-password">
       </label>
-      <button type="submit" class="primary">Claim Profile</button>
-      <button type="button" class="secondary" id="claim-cancel">Cancel</button>
+      <button type="submit" class="primary">Log In</button>
+      <button type="button" class="secondary" id="auth-login-back">&larr; Not you?</button>
     </form>
   </div>
 </div>

@@ -78,11 +78,14 @@ def _valid_pin(pin):
     return isinstance(pin, str) and len(pin) == PIN_LENGTH and pin.isdigit()
 
 
-def _login_key(name):
-    """Name doubles as the login identifier (no separate username field in
-    the UI) — normalized for case/whitespace-insensitive lookup and stored
-    in the existing `username` column."""
-    return (name or "").strip().lower()
+def _normalize_email(email):
+    return (email or "").strip().lower()
+
+
+def _valid_email(email):
+    # Deliberately loose — this isn't verified by a real email round-trip,
+    # just enough to catch obvious typos before it becomes the login key.
+    return bool(email) and "@" in email and "." in email.split("@")[-1]
 
 
 def _user_public_dict(row):
@@ -105,26 +108,44 @@ def get_me():
     return jsonify(_user_public_dict(row))
 
 
+@app.route("/api/check-email", methods=["POST"])
+def check_email():
+    """Step 2 of the login wizard: does this email already have an account?
+    Drives whether the frontend shows the new-user setup step or the
+    returning-user PIN step next."""
+    data = request.get_json(force=True)
+    email = _normalize_email(data.get("email"))
+    if not _valid_email(email):
+        return jsonify({"error": "enter a valid email"}), 400
+    db = get_db()
+    row = db.execute("SELECT id, name FROM users WHERE email = ?", (email,)).fetchone()
+    if row:
+        return jsonify({"exists": True, "name": row["name"]})
+    return jsonify({"exists": False})
+
+
 @app.route("/api/signup", methods=["POST"])
 def signup():
     data = request.get_json(force=True)
     name = (data.get("name") or "").strip()
+    email = _normalize_email(data.get("email"))
     pin = data.get("pin") or ""
-    login_key = _login_key(name)
     if not name:
         return jsonify({"error": "name is required"}), 400
+    if not _valid_email(email):
+        return jsonify({"error": "enter a valid email"}), 400
     if not _valid_pin(pin):
         return jsonify({"error": f"PIN must be exactly {PIN_LENGTH} digits"}), 400
     if data.get("last_period_date") and is_future_date(data["last_period_date"]):
         return jsonify({"error": "last_period_date cannot be in the future"}), 400
 
     db = get_db()
-    if db.execute("SELECT 1 FROM users WHERE username = ?", (login_key,)).fetchone():
-        return jsonify({"error": "that name is already in use"}), 409
+    if db.execute("SELECT 1 FROM users WHERE email = ?", (email,)).fetchone():
+        return jsonify({"error": "that email is already registered"}), 409
 
     cur = db.execute(
-        "INSERT INTO users (name, username, password_hash, age, last_period_date) VALUES (?, ?, ?, ?, ?)",
-        (name, login_key, generate_password_hash(pin), data.get("age"), data.get("last_period_date") or None),
+        "INSERT INTO users (name, email, password_hash, age, last_period_date) VALUES (?, ?, ?, ?, ?)",
+        (name, email, generate_password_hash(pin), data.get("age"), data.get("last_period_date") or None),
     )
     db.commit()
     session.clear()
@@ -136,12 +157,12 @@ def signup():
 @app.route("/api/login", methods=["POST"])
 def login():
     data = request.get_json(force=True)
-    login_key = _login_key(data.get("name"))
+    email = _normalize_email(data.get("email"))
     pin = data.get("pin") or ""
     db = get_db()
-    row = db.execute("SELECT * FROM users WHERE username = ?", (login_key,)).fetchone()
+    row = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
     if not row or not row["password_hash"] or not check_password_hash(row["password_hash"], pin):
-        return jsonify({"error": "incorrect name or PIN"}), 401
+        return jsonify({"error": "incorrect email or PIN"}), 401
     session.clear()
     session.permanent = True
     session["user_id"] = row["id"]
@@ -152,47 +173,6 @@ def login():
 def logout():
     session.clear()
     return jsonify({"ok": True})
-
-
-@app.route("/api/claimable", methods=["GET"])
-def list_claimable():
-    """Profiles created before login existed (no PIN set yet). Once someone
-    claims theirs it drops off this list, so it self-empties over time —
-    it's a one-time migration aid, not a general user directory."""
-    db = get_db()
-    rows = db.execute(
-        "SELECT id, name, avatar FROM users WHERE password_hash IS NULL ORDER BY id"
-    ).fetchall()
-    return jsonify([dict(r) for r in rows])
-
-
-@app.route("/api/claim/<int:user_id>", methods=["POST"])
-def claim_profile(user_id):
-    data = request.get_json(force=True)
-    pin = data.get("pin") or ""
-    if not _valid_pin(pin):
-        return jsonify({"error": f"PIN must be exactly {PIN_LENGTH} digits"}), 400
-
-    db = get_db()
-    row = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
-    if not row:
-        return jsonify({"error": "not found"}), 404
-    if row["password_hash"]:
-        return jsonify({"error": "this profile has already been claimed"}), 409
-
-    login_key = _login_key(row["name"])
-    if db.execute("SELECT 1 FROM users WHERE username = ? AND id != ?", (login_key, user_id)).fetchone():
-        return jsonify({"error": "another account already uses this name"}), 409
-
-    db.execute(
-        "UPDATE users SET username = ?, password_hash = ? WHERE id = ?",
-        (login_key, generate_password_hash(pin), user_id),
-    )
-    db.commit()
-    session.clear()
-    session.permanent = True
-    session["user_id"] = user_id
-    return jsonify({"id": user_id})
 
 
 @app.route("/api/user/<int:user_id>", methods=["PUT"])

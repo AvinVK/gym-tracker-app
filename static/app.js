@@ -151,12 +151,25 @@ function initDateField(container) {
 
 document.querySelectorAll("[data-date-field]").forEach(initDateField);
 
-// ---------------- Auth (login / signup / claim) ----------------
+// ---------------- Auth (name -> email -> new-user setup or PIN login) ----------------
 let currentUser = null;
+let authDraft = { name: "", email: "" };
 
 function showGreeting(name) {
   document.getElementById("user-greeting-text").textContent = `Hi, ${name}`;
   document.getElementById("user-menu").hidden = false;
+}
+
+function hideAllAuthModals() {
+  document.getElementById("auth-name-modal").hidden = true;
+  document.getElementById("auth-email-modal").hidden = true;
+  document.getElementById("auth-signup-modal").hidden = true;
+  document.getElementById("auth-login-modal").hidden = true;
+}
+
+function showAuthStep(id) {
+  hideAllAuthModals();
+  document.getElementById(id).hidden = false;
 }
 
 async function onLoggedIn(user) {
@@ -168,8 +181,7 @@ async function onLoggedIn(user) {
 
   currentUser = user;
   currentUserId = user.id;
-  document.getElementById("auth-modal").hidden = true;
-  document.getElementById("claim-modal").hidden = true;
+  hideAllAuthModals();
   document.getElementById("user-menu-dropdown").hidden = true;
   showGreeting(user.name);
 
@@ -181,90 +193,45 @@ async function onLoggedIn(user) {
   }
 }
 
-function setAuthMode(isSignup) {
-  document.getElementById("form-login").hidden = isSignup;
-  document.getElementById("form-signup").hidden = !isSignup;
-  document.getElementById("auth-title").textContent = isSignup ? "Create your account" : "Welcome back 👋";
-  document.getElementById("auth-sub").textContent = isSignup ? "Set up your profile to get started." : "Log in to continue.";
-  document.getElementById("auth-toggle").textContent = isSignup ? "Already have an account? Log in" : "New here? Create an account";
-}
-
-document.getElementById("auth-toggle").addEventListener("click", () => {
-  setAuthMode(document.getElementById("form-signup").hidden);
-});
-
-async function showClaimableProfiles() {
-  const claimable = await api.get("/api/claimable");
-  const section = document.getElementById("claimable-section");
-  if (!claimable.length) {
-    section.hidden = true;
-    return;
-  }
-  const list = document.getElementById("claimable-list");
-  list.innerHTML = claimable.map(u => `
-    <button type="button" class="profile-picker-item" data-id="${u.id}" data-name="${u.name}">
-      ${u.avatar
-        ? `<img src="${u.avatar}" class="profile-picker-avatar" alt="">`
-        : `<span class="profile-picker-avatar-placeholder">${u.name[0].toUpperCase()}</span>`}
-      <span>${u.name}</span>
-    </button>`).join("");
-  list.querySelectorAll(".profile-picker-item").forEach(btn => {
-    btn.addEventListener("click", () => openClaimModal(btn.dataset.id, btn.dataset.name));
-  });
-  section.hidden = false;
-}
-
-function openClaimModal(id, name) {
-  const form = document.getElementById("form-claim");
-  form.reset();
-  form.dataset.userId = id;
-  document.getElementById("claim-name").textContent = name;
-  document.getElementById("auth-modal").hidden = true;
-  document.getElementById("claim-modal").hidden = false;
-}
-
-document.getElementById("claim-cancel").addEventListener("click", () => {
-  document.getElementById("claim-modal").hidden = true;
-  document.getElementById("auth-modal").hidden = false;
-});
-
-document.getElementById("form-claim").addEventListener("submit", async (e) => {
+document.getElementById("form-auth-name").addEventListener("submit", (e) => {
   e.preventDefault();
-  const id = e.target.dataset.userId;
-  const fd = new FormData(e.target);
-  const body = Object.fromEntries(fd.entries());
+  authDraft.name = new FormData(e.target).get("name").trim();
+  showAuthStep("auth-email-modal");
+});
+
+document.getElementById("auth-email-back").addEventListener("click", () => {
+  showAuthStep("auth-name-modal");
+});
+
+document.getElementById("form-auth-email").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = new FormData(e.target).get("email").trim();
   try {
-    await api.post(`/api/claim/${id}`, body);
-    await onLoggedIn(await api.get("/api/me"));
-    toast("Profile claimed!");
+    const res = await api.post("/api/check-email", { email });
+    authDraft.email = email;
+    if (res.exists) {
+      document.getElementById("form-auth-login").reset();
+      document.getElementById("auth-login-name").textContent = res.name;
+      showAuthStep("auth-login-modal");
+    } else {
+      const signupForm = document.getElementById("form-auth-signup");
+      signupForm.reset();
+      setDateFieldValue(signupForm.querySelector('[name="last_period_date"]').closest(".date-field"), "");
+      showAuthStep("auth-signup-modal");
+    }
   } catch (err) {
     toast(err.message);
   }
 });
 
-async function showAuthScreen() {
-  setAuthMode(false);
-  document.getElementById("claim-modal").hidden = true;
-  document.getElementById("auth-modal").hidden = false;
-  showClaimableProfiles();
-}
-
-document.getElementById("form-login").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const body = Object.fromEntries(fd.entries());
-  try {
-    await api.post("/api/login", body);
-    await onLoggedIn(await api.get("/api/me"));
-  } catch (err) {
-    toast(err.message);
-  }
+document.getElementById("auth-signup-back").addEventListener("click", () => {
+  showAuthStep("auth-email-modal");
 });
 
-document.getElementById("form-signup").addEventListener("submit", async (e) => {
+document.getElementById("form-auth-signup").addEventListener("submit", async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
-  const body = Object.fromEntries(fd.entries());
+  const body = { ...Object.fromEntries(fd.entries()), name: authDraft.name, email: authDraft.email };
   try {
     await api.post("/api/signup", body);
     const user = await api.get("/api/me");
@@ -275,15 +242,32 @@ document.getElementById("form-signup").addEventListener("submit", async (e) => {
   }
 });
 
+document.getElementById("auth-login-back").addEventListener("click", () => {
+  showAuthStep("auth-email-modal");
+});
+
+document.getElementById("form-auth-login").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const pin = new FormData(e.target).get("pin");
+  try {
+    await api.post("/api/login", { email: authDraft.email, pin });
+    await onLoggedIn(await api.get("/api/me"));
+  } catch (err) {
+    toast(err.message);
+  }
+});
+
 document.getElementById("logout-btn").addEventListener("click", async () => {
   document.getElementById("user-menu-dropdown").hidden = true;
   await api.post("/api/logout", {});
   currentUser = null;
   currentUserId = null;
+  authDraft = { name: "", email: "" };
   restoringDraft = true;
   resetWorkoutFlowUI();
   document.getElementById("user-menu").hidden = true;
-  await showAuthScreen();
+  document.getElementById("form-auth-name").reset();
+  showAuthStep("auth-name-modal");
 });
 
 async function checkAuth() {
@@ -291,7 +275,7 @@ async function checkAuth() {
   if (user) {
     await onLoggedIn(user);
   } else {
-    await showAuthScreen();
+    showAuthStep("auth-name-modal");
   }
 }
 

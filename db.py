@@ -116,6 +116,7 @@ CREATE TABLE IF NOT EXISTS exercise_log (
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    email TEXT,
     username TEXT,
     password_hash TEXT,
     age INTEGER,
@@ -156,12 +157,12 @@ def init_db():
     # an already-deployed DB have no owner yet. Backfill those separately.
     _ensure_column(conn, "workout_log", "user_id", "INTEGER REFERENCES users(id)")
     _ensure_column(conn, "exercise_log", "user_id", "INTEGER REFERENCES users(id)")
-    # Pre-auth profiles (created before login existed) have no username/password
-    # yet; NULL is allowed here and multiple NULLs don't violate the unique
-    # index below (SQLite treats NULLs as distinct). They get claimed later.
+    # username retained only for rows created before this column existed;
+    # no longer written to by the app (email is the login identifier now).
     _ensure_column(conn, "users", "username", "TEXT")
     _ensure_column(conn, "users", "password_hash", "TEXT")
-    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username)")
+    _ensure_column(conn, "users", "email", "TEXT")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email)")
     if first_run:
         conn.executemany(
             "INSERT INTO exercise_plan (target_muscle, exercise) VALUES (?, ?)",

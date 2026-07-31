@@ -225,66 +225,6 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   letter-spacing: 0;
 }
 
-.link-toggle {
-  display: block;
-  width: 100%;
-  background: none;
-  border: none;
-  color: var(--accent-dark);
-  font-size: 13px;
-  font-weight: 700;
-  text-align: center;
-  cursor: pointer;
-  padding: 10px 0 2px;
-  font-family: inherit;
-}
-.link-toggle:hover { text-decoration: underline; }
-
-#claimable-section { margin-top: 16px; }
-
-/* ---------------- Profile picker ---------------- */
-.profile-picker-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 14px;
-  max-height: 320px;
-  overflow-y: auto;
-}
-.profile-picker-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: #fbfbfe;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 14.5px;
-  font-weight: 700;
-  color: var(--ink);
-  text-align: left;
-  transition: background .15s ease, border-color .15s ease;
-}
-.profile-picker-item:hover { background: #fff; border-color: var(--accent); }
-.profile-picker-avatar, .profile-picker-avatar-placeholder {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.profile-picker-avatar { object-fit: cover; }
-.profile-picker-avatar-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  color: #fff;
-  font-size: 15px;
-  font-weight: 800;
-}
-
 /* ---------------- Cards ---------------- */
 .card {
   background: var(--card);
