@@ -937,6 +937,102 @@ function addSetRow(block, { copyLast = false } = {}) {
   return row;
 }
 
+// Pulls reps/weight out of a spoken phrase like "20 reps with 30 kgs".
+// Deliberately tolerant of word order and missing units ("20 reps 30",
+// "30 kg 20 reps", "bodyweight 15 reps", or just "20 reps" alone) since
+// speech transcripts are inconsistent about how people phrase this.
+function parseSpokenSet(text) {
+  const t = (text || "").toLowerCase();
+  let weight = null;
+  if (/\bbody\s?weight\b|\bno weight\b|\bbodyweight\b/.test(t)) {
+    weight = 0;
+  } else {
+    const weightMatch = t.match(/(\d+(?:\.\d+)?)\s*(?:kgs?|kilos?|kilograms?)/)
+      || t.match(/weight\D{0,10}?(\d+(?:\.\d+)?)/); // "weight 30" said without a unit
+    if (weightMatch) weight = parseFloat(weightMatch[1]);
+  }
+  const repsMatch = t.match(/(\d+(?:\.\d+)?)\s*reps?/);
+  let reps = repsMatch ? Math.round(parseFloat(repsMatch[1])) : null;
+  if (reps == null) {
+    // No explicit "reps" keyword — fall back to the first number in the
+    // phrase that wasn't already claimed as the weight.
+    const nums = [...t.matchAll(/\d+(?:\.\d+)?/g)].map(m => parseFloat(m[0]));
+    const candidate = nums.find(n => n !== weight);
+    if (candidate != null) reps = Math.round(candidate);
+  }
+  return { reps, weight };
+}
+
+const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+function initVoiceSetButton(block) {
+  const btn = block.querySelector(".add-set-voice");
+  if (!SpeechRecognitionCtor) {
+    btn.disabled = true;
+    btn.title = "Voice input isn't supported in this browser";
+    return;
+  }
+  btn.addEventListener("click", () => {
+    const rows = block.querySelectorAll(".set-row");
+    const targetRow = rows[rows.length - 1];
+    if (!targetRow) return;
+
+    const recognition = new SpeechRecognitionCtor();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    btn.classList.add("listening");
+    btn.disabled = true;
+
+    // Belt-and-suspenders: if the browser never fires a terminal event at
+    // all (seen on some platforms when the mic/permission flow stalls
+    // instead of erroring out), force a stop so the button doesn't get
+    // stuck in "listening" forever.
+    const safetyTimer = setTimeout(() => {
+      try { recognition.stop(); } catch (err) { /* already stopped */ }
+    }, 8000);
+
+    recognition.addEventListener("result", (e) => {
+      const transcript = e.results[0][0].transcript;
+      const { reps, weight } = parseSpokenSet(transcript);
+      if (reps == null && weight == null) {
+        toast(`Didn't catch that: "${transcript}"`);
+        return;
+      }
+      if (reps != null) {
+        const input = targetRow.querySelector(".set-reps");
+        input.value = reps;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+      if (weight != null) {
+        const input = targetRow.querySelector(".set-weight");
+        input.value = weight;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+      const parts = [reps != null ? `${reps} reps` : null, weight != null ? `${weight} kg` : null].filter(Boolean);
+      toast(`Set to ${parts.join(", ")}`);
+    });
+    recognition.addEventListener("error", (e) => {
+      toast(e.error === "not-allowed" ? "Microphone access denied" : "Didn't catch that — try again");
+    });
+    recognition.addEventListener("end", () => {
+      clearTimeout(safetyTimer);
+      btn.classList.remove("listening");
+      btn.disabled = false;
+    });
+
+    try {
+      recognition.start();
+    } catch (err) {
+      clearTimeout(safetyTimer);
+      btn.classList.remove("listening");
+      btn.disabled = false;
+      toast("Couldn't start voice input");
+    }
+  });
+}
+
 async function onBlockMuscleChange(block) {
   const muscle = block.querySelector(".ex-muscle").value;
   const exField = block.querySelector(".ex-exercise-field");
@@ -985,6 +1081,7 @@ function addExerciseBlock() {
       <div class="set-actions">
         <button type="button" class="add-set secondary">+ Add Set</button>
         <button type="button" class="add-set-same secondary">Same as Above</button>
+        <button type="button" class="add-set-voice secondary" aria-label="Fill last set by voice" title="Say something like &quot;20 reps with 30 kgs&quot;">🎤</button>
       </div>
     </div>`;
 
@@ -996,6 +1093,7 @@ function addExerciseBlock() {
   });
   block.querySelector(".add-set").addEventListener("click", () => addSetRow(block));
   block.querySelector(".add-set-same").addEventListener("click", () => addSetRow(block, { copyLast: true }));
+  initVoiceSetButton(block);
   block.querySelector(".exercise-remove").addEventListener("click", () => {
     block.remove();
     renumberExerciseBlocks();
