@@ -232,6 +232,16 @@
             <input type="hidden" name="energy_level">
           </div>
         </label>
+        <label>What did you eat before the gym?
+          <input type="text" name="pre_workout_meal" placeholder="e.g. banana, protein shake">
+        </label>
+        <label>Time Since Eating (hrs)
+          <div class="stepper" id="hours-since-meal-field" data-step="0.5" data-min="0">
+            <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease hours">&minus;</button>
+            <input type="number" step="0.5" name="hours_since_meal" class="stepper-input" placeholder="0" aria-label="Hours since last meal">
+            <button type="button" class="stepper-btn stepper-plus" aria-label="Increase hours">+</button>
+          </div>
+        </label>
         <label class="full">Notes
           <input type="text" name="notes" placeholder="optional">
         </label>

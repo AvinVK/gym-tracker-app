@@ -939,7 +939,7 @@ button:disabled {
   border-color: var(--accent);
   box-shadow: 0 0 0 4px rgba(109, 94, 248, .14);
 }
-.stepper-btn {
+.stepper .stepper-btn {
   flex: 0 0 30px;
   border: none;
   background: #f1effe;
@@ -951,9 +951,12 @@ button:disabled {
   font-family: inherit;
   transition: background .15s ease;
 }
-.stepper-btn:hover { background: #e7e1fd; }
-.stepper-btn:active { transform: scale(.93); }
-.stepper-input {
+.stepper .stepper-btn:hover { background: #e7e1fd; }
+.stepper .stepper-btn:active { transform: scale(.93); }
+/* Two classes' worth of specificity is deliberate — this needs to beat
+   ".grid-form input" (which sets its own border/padding/background) since
+   steppers live inside .grid-form both here and in the exercise blocks. */
+.stepper .stepper-input {
   flex: 1 1 auto;
   width: 100%;
   min-width: 0;
@@ -966,7 +969,13 @@ button:disabled {
   font-family: inherit;
   color: var(--ink);
 }
-.stepper-input:focus { outline: none; }
+.stepper .stepper-input:focus {
+  outline: none;
+  border: none;
+  background: none;
+  box-shadow: none;
+}
+.stepper-input::placeholder { color: #9aa1b5; }
 /* Hide the native up/down arrows — the stepper's own +/- buttons replace them. */
 .stepper-input::-webkit-outer-spin-button,
 .stepper-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }

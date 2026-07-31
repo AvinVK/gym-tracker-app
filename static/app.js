@@ -765,6 +765,7 @@ function initEnergyField(container) {
 }
 
 document.querySelectorAll("[data-energy-field]").forEach(initEnergyField);
+initStepper(document.getElementById("hours-since-meal-field"));
 
 // ---------------- Custom option picker (muscle group / exercise dropdowns) ----------------
 const opModal = document.getElementById("option-picker-modal");
@@ -1478,6 +1479,8 @@ async function restoreDraft() {
       const w = draft.workout;
       const form = document.getElementById("form-workout");
       if (w.energy_level) setEnergyFieldValue(form.querySelector('[name="energy_level"]').closest(".energy-field"), w.energy_level);
+      if (w.pre_workout_meal) form.querySelector('[name="pre_workout_meal"]').value = w.pre_workout_meal;
+      if (w.hours_since_meal) form.querySelector('[name="hours_since_meal"]').value = w.hours_since_meal;
       if (w.notes) form.querySelector('[name="notes"]').value = w.notes;
       if (w.date) setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), w.date);
       const startGroup = form.querySelector('input[name="start_time"]')?.closest(".time-field");

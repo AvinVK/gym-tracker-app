@@ -304,9 +304,12 @@ def add_workout_log():
     duration = compute_duration(start_time, end_time)
     db = get_db()
     cur = db.execute(
-        "INSERT INTO workout_log (user_id, date, start_time, end_time, duration_hours, energy_level, notes) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (user_id, date, start_time, end_time, duration, data.get("energy_level"), data.get("notes", "")),
+        "INSERT INTO workout_log (user_id, date, start_time, end_time, duration_hours, energy_level, "
+        "pre_workout_meal, hours_since_meal, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            user_id, date, start_time, end_time, duration, data.get("energy_level"),
+            data.get("pre_workout_meal", ""), data.get("hours_since_meal") or None, data.get("notes", ""),
+        ),
     )
     db.commit()
     return jsonify({"id": cur.lastrowid, "duration_hours": duration}), 201
@@ -329,8 +332,12 @@ def update_workout_log(row_id):
     db = get_db()
     db.execute(
         "UPDATE workout_log SET date = ?, start_time = ?, end_time = ?, duration_hours = ?, "
-        "energy_level = ?, notes = ? WHERE id = ? AND user_id = ?",
-        (date, start_time, end_time, duration, data.get("energy_level"), data.get("notes", ""), row_id, user_id),
+        "energy_level = ?, pre_workout_meal = ?, hours_since_meal = ?, notes = ? WHERE id = ? AND user_id = ?",
+        (
+            date, start_time, end_time, duration, data.get("energy_level"),
+            data.get("pre_workout_meal", ""), data.get("hours_since_meal") or None, data.get("notes", ""),
+            row_id, user_id,
+        ),
     )
     db.commit()
     return jsonify({"id": row_id, "duration_hours": duration})

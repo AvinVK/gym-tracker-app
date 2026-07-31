@@ -98,6 +98,8 @@ CREATE TABLE IF NOT EXISTS workout_log (
     end_time TEXT,
     duration_hours REAL,
     energy_level INTEGER,
+    pre_workout_meal TEXT,
+    hours_since_meal REAL,
     notes TEXT
 );
 
@@ -157,6 +159,8 @@ def init_db():
     # an already-deployed DB have no owner yet. Backfill those separately.
     _ensure_column(conn, "workout_log", "user_id", "INTEGER REFERENCES users(id)")
     _ensure_column(conn, "exercise_log", "user_id", "INTEGER REFERENCES users(id)")
+    _ensure_column(conn, "workout_log", "pre_workout_meal", "TEXT")
+    _ensure_column(conn, "workout_log", "hours_since_meal", "REAL")
     # username retained only for rows created before this column existed;
     # no longer written to by the app (email is the login identifier now).
     _ensure_column(conn, "users", "username", "TEXT")
