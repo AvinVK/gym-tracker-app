@@ -880,7 +880,10 @@ button:disabled {
   pointer-events: none;
   transition: all .25s ease;
   box-shadow: var(--shadow-lg);
-  z-index: 50;
+  /* Must beat .modal-overlay (z-index: 1000) — toasts (e.g. login errors)
+     fire while a modal is open, and otherwise render behind it, getting
+     caught in its backdrop-filter blur along with everything else. */
+  z-index: 1001;
 }
 .toast.show {
   opacity: 1;

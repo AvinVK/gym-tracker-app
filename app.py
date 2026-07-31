@@ -82,6 +82,14 @@ def _normalize_email(email):
     return (email or "").strip().lower()
 
 
+def _capitalize_name(name):
+    """Only the first character — deliberately not .title(), which would
+    also force-capitalize every subsequent word (breaks names like
+    "van Dyke" or hyphenated/multi-word names)."""
+    name = (name or "").strip()
+    return name[:1].upper() + name[1:] if name else name
+
+
 def _valid_email(email):
     # Deliberately loose — this isn't verified by a real email round-trip,
     # just enough to catch obvious typos before it becomes the login key.
@@ -127,7 +135,7 @@ def check_email():
 @app.route("/api/signup", methods=["POST"])
 def signup():
     data = request.get_json(force=True)
-    name = (data.get("name") or "").strip()
+    name = _capitalize_name(data.get("name"))
     email = _normalize_email(data.get("email"))
     pin = data.get("pin") or ""
     if not name:
@@ -183,7 +191,7 @@ def update_user(user_id):
     if current_id != user_id:
         return jsonify({"error": "forbidden"}), 403
     data = request.get_json(force=True)
-    name = (data.get("name") or "").strip()
+    name = _capitalize_name(data.get("name"))
     if not name:
         return jsonify({"error": "name is required"}), 400
     if data.get("last_period_date") and is_future_date(data["last_period_date"]):
