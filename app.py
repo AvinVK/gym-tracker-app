@@ -71,12 +71,24 @@ def index():
 # ---------------------------------------------------------------
 # Auth API
 # ---------------------------------------------------------------
-MIN_PASSWORD_LENGTH = 8
+PIN_LENGTH = 4
+
+
+def _valid_pin(pin):
+    return isinstance(pin, str) and len(pin) == PIN_LENGTH and pin.isdigit()
+
+
+def _login_key(name):
+    """Name doubles as the login identifier (no separate username field in
+    the UI) — normalized for case/whitespace-insensitive lookup and stored
+    in the existing `username` column."""
+    return (name or "").strip().lower()
 
 
 def _user_public_dict(row):
     d = dict(row)
     d.pop("password_hash", None)
+    d.pop("username", None)
     return d
 
 
@@ -97,22 +109,22 @@ def get_me():
 def signup():
     data = request.get_json(force=True)
     name = (data.get("name") or "").strip()
-    username = (data.get("username") or "").strip().lower()
-    password = data.get("password") or ""
-    if not name or not username:
-        return jsonify({"error": "name and username are required"}), 400
-    if len(password) < MIN_PASSWORD_LENGTH:
-        return jsonify({"error": f"password must be at least {MIN_PASSWORD_LENGTH} characters"}), 400
+    pin = data.get("pin") or ""
+    login_key = _login_key(name)
+    if not name:
+        return jsonify({"error": "name is required"}), 400
+    if not _valid_pin(pin):
+        return jsonify({"error": f"PIN must be exactly {PIN_LENGTH} digits"}), 400
     if data.get("last_period_date") and is_future_date(data["last_period_date"]):
         return jsonify({"error": "last_period_date cannot be in the future"}), 400
 
     db = get_db()
-    if db.execute("SELECT 1 FROM users WHERE username = ?", (username,)).fetchone():
-        return jsonify({"error": "that username is already taken"}), 409
+    if db.execute("SELECT 1 FROM users WHERE username = ?", (login_key,)).fetchone():
+        return jsonify({"error": "that name is already in use"}), 409
 
     cur = db.execute(
         "INSERT INTO users (name, username, password_hash, age, last_period_date) VALUES (?, ?, ?, ?, ?)",
-        (name, username, generate_password_hash(password), data.get("age"), data.get("last_period_date") or None),
+        (name, login_key, generate_password_hash(pin), data.get("age"), data.get("last_period_date") or None),
     )
     db.commit()
     session.clear()
@@ -124,12 +136,12 @@ def signup():
 @app.route("/api/login", methods=["POST"])
 def login():
     data = request.get_json(force=True)
-    username = (data.get("username") or "").strip().lower()
-    password = data.get("password") or ""
+    login_key = _login_key(data.get("name"))
+    pin = data.get("pin") or ""
     db = get_db()
-    row = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
-    if not row or not row["password_hash"] or not check_password_hash(row["password_hash"], password):
-        return jsonify({"error": "incorrect username or password"}), 401
+    row = db.execute("SELECT * FROM users WHERE username = ?", (login_key,)).fetchone()
+    if not row or not row["password_hash"] or not check_password_hash(row["password_hash"], pin):
+        return jsonify({"error": "incorrect name or PIN"}), 401
     session.clear()
     session.permanent = True
     session["user_id"] = row["id"]
@@ -144,9 +156,9 @@ def logout():
 
 @app.route("/api/claimable", methods=["GET"])
 def list_claimable():
-    """Profiles created before login existed (no password set yet). Once
-    someone claims theirs it drops off this list, so it self-empties over
-    time — it's a one-time migration aid, not a general user directory."""
+    """Profiles created before login existed (no PIN set yet). Once someone
+    claims theirs it drops off this list, so it self-empties over time —
+    it's a one-time migration aid, not a general user directory."""
     db = get_db()
     rows = db.execute(
         "SELECT id, name, avatar FROM users WHERE password_hash IS NULL ORDER BY id"
@@ -157,12 +169,9 @@ def list_claimable():
 @app.route("/api/claim/<int:user_id>", methods=["POST"])
 def claim_profile(user_id):
     data = request.get_json(force=True)
-    username = (data.get("username") or "").strip().lower()
-    password = data.get("password") or ""
-    if not username:
-        return jsonify({"error": "username is required"}), 400
-    if len(password) < MIN_PASSWORD_LENGTH:
-        return jsonify({"error": f"password must be at least {MIN_PASSWORD_LENGTH} characters"}), 400
+    pin = data.get("pin") or ""
+    if not _valid_pin(pin):
+        return jsonify({"error": f"PIN must be exactly {PIN_LENGTH} digits"}), 400
 
     db = get_db()
     row = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
@@ -170,12 +179,14 @@ def claim_profile(user_id):
         return jsonify({"error": "not found"}), 404
     if row["password_hash"]:
         return jsonify({"error": "this profile has already been claimed"}), 409
-    if db.execute("SELECT 1 FROM users WHERE username = ?", (username,)).fetchone():
-        return jsonify({"error": "that username is already taken"}), 409
+
+    login_key = _login_key(row["name"])
+    if db.execute("SELECT 1 FROM users WHERE username = ? AND id != ?", (login_key, user_id)).fetchone():
+        return jsonify({"error": "another account already uses this name"}), 409
 
     db.execute(
         "UPDATE users SET username = ?, password_hash = ? WHERE id = ?",
-        (username, generate_password_hash(password), user_id),
+        (login_key, generate_password_hash(pin), user_id),
     )
     db.commit()
     session.clear()
