@@ -973,10 +973,6 @@ function initVoiceSetButton(block) {
     return;
   }
   btn.addEventListener("click", () => {
-    const rows = block.querySelectorAll(".set-row");
-    const targetRow = rows[rows.length - 1];
-    if (!targetRow) return;
-
     const recognition = new SpeechRecognitionCtor();
     recognition.lang = "en-US";
     recognition.interimResults = false;
@@ -1000,6 +996,7 @@ function initVoiceSetButton(block) {
         toast(`Didn't catch that: "${transcript}"`);
         return;
       }
+      const targetRow = addSetRow(block);
       if (reps != null) {
         const input = targetRow.querySelector(".set-reps");
         input.value = reps;
@@ -1011,7 +1008,7 @@ function initVoiceSetButton(block) {
         input.dispatchEvent(new Event("input", { bubbles: true }));
       }
       const parts = [reps != null ? `${reps} reps` : null, weight != null ? `${weight} kg` : null].filter(Boolean);
-      toast(`Set to ${parts.join(", ")}`);
+      toast(`Added set: ${parts.join(", ")}`);
     });
     recognition.addEventListener("error", (e) => {
       toast(e.error === "not-allowed" ? "Microphone access denied" : "Didn't catch that — try again");
@@ -1081,7 +1078,7 @@ function addExerciseBlock() {
       <div class="set-actions">
         <button type="button" class="add-set secondary">+ Add Set</button>
         <button type="button" class="add-set-same secondary">Same as Above</button>
-        <button type="button" class="add-set-voice secondary" aria-label="Fill last set by voice" title="Say something like &quot;20 reps with 30 kgs&quot;">🎤</button>
+        <button type="button" class="add-set-voice secondary" aria-label="Add a set by voice" title="Say something like &quot;20 reps with 30 kgs&quot;">🎤</button>
       </div>
     </div>`;
 
