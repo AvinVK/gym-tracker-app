@@ -885,16 +885,41 @@ function renumberSets(block) {
   });
 }
 
+function initStepper(container) {
+  const input = container.querySelector(".stepper-input");
+  const step = parseFloat(container.dataset.step) || 1;
+  const min = container.dataset.min !== undefined ? parseFloat(container.dataset.min) : null;
+  function adjust(delta) {
+    let val = parseFloat(input.value);
+    if (isNaN(val)) val = 0;
+    val = Math.round((val + delta) * 100) / 100;
+    if (min != null && val < min) val = min;
+    input.value = val;
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  container.querySelector(".stepper-minus").addEventListener("click", () => adjust(-step));
+  container.querySelector(".stepper-plus").addEventListener("click", () => adjust(step));
+}
+
 function addSetRow(block) {
   const setsDiv = block.querySelector(".ex-sets");
   const row = document.createElement("div");
   row.className = "set-row";
   row.innerHTML = `
     <span class="set-number"></span>
-    <input type="number" class="set-reps" min="1" placeholder="Reps" required>
-    <input type="number" step="0.5" class="set-weight" placeholder="Weight (kg)">
+    <div class="stepper stepper-reps" data-step="1" data-min="1">
+      <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease reps">&minus;</button>
+      <input type="number" class="set-reps stepper-input" min="1" placeholder="0" aria-label="Reps" required>
+      <button type="button" class="stepper-btn stepper-plus" aria-label="Increase reps">+</button>
+    </div>
+    <div class="stepper stepper-weight" data-step="2.5" data-min="0">
+      <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease weight">&minus;</button>
+      <input type="number" step="0.5" class="set-weight stepper-input" placeholder="kg" aria-label="Weight in kg">
+      <button type="button" class="stepper-btn stepper-plus" aria-label="Increase weight">+</button>
+    </div>
     <input type="text" class="set-notes" placeholder="Note for this set (optional)">
     <button type="button" class="set-remove">✕</button>`;
+  row.querySelectorAll(".stepper").forEach(initStepper);
   row.querySelector(".set-remove").addEventListener("click", () => {
     row.remove();
     renumberSets(block);
@@ -944,6 +969,11 @@ function addExerciseBlock() {
     </label>
     <div class="full">
       <label>Sets</label>
+      <div class="set-columns-label" aria-hidden="true">
+        <span class="set-columns-label-spacer"></span>
+        <span class="set-columns-label-col">Reps</span>
+        <span class="set-columns-label-col">Weight (kg)</span>
+      </div>
       <div class="ex-sets"></div>
       <button type="button" class="add-set secondary">+ Add Set</button>
     </div>`;

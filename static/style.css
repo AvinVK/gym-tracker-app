@@ -840,6 +840,19 @@ button:disabled {
 }
 .exercise-block .exercise-remove:hover { background: #fdeaee; }
 
+.set-columns-label {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  color: var(--muted);
+}
+.set-columns-label-spacer { flex: 0 0 48px; }
+.set-columns-label-col { flex: 1; text-align: center; }
+
 .set-row {
   display: grid;
   grid-template-columns: 48px 1fr 1fr 1.4fr 30px;
@@ -883,6 +896,52 @@ button:disabled {
   transition: background .15s ease;
 }
 .set-row .set-remove:hover { background: #fbd8df; }
+
+.stepper {
+  display: flex;
+  align-items: stretch;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fbfbfe;
+  overflow: hidden;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.stepper:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(109, 94, 248, .14);
+}
+.stepper-btn {
+  flex: 0 0 30px;
+  border: none;
+  background: #f1effe;
+  color: var(--accent-dark);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s ease;
+}
+.stepper-btn:hover { background: #e7e1fd; }
+.stepper-btn:active { transform: scale(.93); }
+.stepper-input {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  border: none;
+  background: none;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 2px;
+  font-family: inherit;
+  color: var(--ink);
+}
+.stepper-input:focus { outline: none; }
+/* Hide the native up/down arrows — the stepper's own +/- buttons replace them. */
+.stepper-input::-webkit-outer-spin-button,
+.stepper-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.stepper-input[type=number] { -moz-appearance: textfield; }
 
 /* ---------------- History table ---------------- */
 /* A plain <table> ignores overflow on itself in most engines, so the
@@ -1051,6 +1110,12 @@ button:disabled {
     font-size: 16px;
   }
 
+  /* Built for the desktop 5-column .set-row grid (spacer + reps + weight +
+     notes + remove) — on the mobile 4-column layout below, "remove" moves
+     up next to weight, throwing off the alignment, so just drop the labels
+     rather than ship a header that visibly doesn't line up with its rows. */
+  .set-columns-label { display: none; }
+
   .set-row {
     grid-template-columns: 40px 1fr 1fr 32px;
     grid-template-areas:
@@ -1059,8 +1124,8 @@ button:disabled {
     row-gap: 6px;
   }
   .set-row .set-number { grid-area: num; }
-  .set-row .set-reps { grid-area: reps; }
-  .set-row .set-weight { grid-area: weight; }
+  .set-row .stepper-reps { grid-area: reps; }
+  .set-row .stepper-weight { grid-area: weight; }
   .set-row .set-remove { grid-area: remove; }
   .set-row .set-notes { grid-area: notes; }
 }
