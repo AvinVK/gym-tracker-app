@@ -42,9 +42,18 @@ body {
   color: #fff;
   padding: 28px 20px 22px;
   position: relative;
-  overflow: hidden;
 }
-.topbar::after {
+/* Clipping lives on this dedicated overlay instead of .topbar itself, so
+   the decorative glow stays contained without also clipping the profile
+   dropdown, which needs to extend past the header's own bottom edge. */
+.topbar-glow {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+.topbar-glow::after {
   content: "";
   position: absolute;
   inset: -60% -20% auto auto;
@@ -67,7 +76,10 @@ body {
   position: absolute;
   top: 18px;
   right: 20px;
-  z-index: 2;
+  /* Must beat .tabs (z-index: 2): .tabs comes later in the DOM, so at an
+     equal z-index it would paint on top and cover the bottom of the
+     dropdown (View Profile / Log Out) wherever the two overlap. */
+  z-index: 3;
 }
 .user-menu[hidden] { display: none; }
 .topbar-greeting {
@@ -122,18 +134,20 @@ body {
 }
 
 /* ---------------- Tabs ---------------- */
-.tabs {
+.main-tabs, .tabs {
   display: flex;
   gap: 6px;
   background: #1b1440;
   padding: 6px;
-  margin: -14px 14px 0;
   border-radius: 14px;
   position: relative;
   z-index: 2;
   box-shadow: var(--shadow-lg);
 }
-.tab-btn {
+.main-tabs { margin: -14px 14px 0; }
+.tabs { margin: 0 0 18px; }
+
+.main-tab-btn, .tab-btn {
   flex: 1;
   padding: 11px 8px;
   background: none;
@@ -146,8 +160,8 @@ body {
   transition: color .2s ease, background .2s ease, transform .15s ease;
   font-family: inherit;
 }
-.tab-btn:active { transform: scale(.97); }
-.tab-btn.active {
+.main-tab-btn:active, .tab-btn:active { transform: scale(.97); }
+.main-tab-btn.active, .tab-btn.active {
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   color: #fff;
   box-shadow: 0 6px 16px -4px rgba(109, 94, 248, .6);
@@ -155,8 +169,11 @@ body {
 
 main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 
-.tab-panel { display: none; animation: fadeUp .35s ease; }
-.tab-panel.active { display: block; }
+.main-tab-panel, .tab-panel { display: none; animation: fadeUp .35s ease; }
+.main-tab-panel.active, .tab-panel.active { display: block; }
+
+.placeholder-card { text-align: center; padding: 36px 18px; }
+.placeholder-text { margin: 0; color: var(--muted); font-size: 14px; }
 
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
@@ -211,66 +228,6 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   font-weight: 500;
   color: #b3b8c9;
   letter-spacing: 0;
-}
-
-.link-toggle {
-  display: block;
-  width: 100%;
-  background: none;
-  border: none;
-  color: var(--accent-dark);
-  font-size: 13px;
-  font-weight: 700;
-  text-align: center;
-  cursor: pointer;
-  padding: 10px 0 2px;
-  font-family: inherit;
-}
-.link-toggle:hover { text-decoration: underline; }
-
-#claimable-section { margin-top: 16px; }
-
-/* ---------------- Profile picker ---------------- */
-.profile-picker-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 14px;
-  max-height: 320px;
-  overflow-y: auto;
-}
-.profile-picker-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: #fbfbfe;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 14.5px;
-  font-weight: 700;
-  color: var(--ink);
-  text-align: left;
-  transition: background .15s ease, border-color .15s ease;
-}
-.profile-picker-item:hover { background: #fff; border-color: var(--accent); }
-.profile-picker-avatar, .profile-picker-avatar-placeholder {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.profile-picker-avatar { object-fit: cover; }
-.profile-picker-avatar-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  color: #fff;
-  font-size: 15px;
-  font-weight: 800;
 }
 
 /* ---------------- Cards ---------------- */
@@ -454,6 +411,66 @@ button:disabled {
 .time-field-value.placeholder { color: #9aa1b5; }
 .time-field-icon { font-size: 13px; flex-shrink: 0; }
 
+/* ---------------- Energy field (custom in-app picker) ---------------- */
+.energy-field-btn {
+  width: 100%;
+  min-width: 118px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14.5px;
+  font-weight: 500;
+  font-family: inherit;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fbfbfe;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.energy-field-btn:hover { background: #fff; }
+.energy-field-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(109, 94, 248, .14);
+}
+.energy-field-btn:disabled {
+  background: #f1f1f6;
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: .85;
+}
+.energy-field-value {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.energy-field-value.placeholder { color: #9aa1b5; }
+.energy-field-icon { font-size: 13px; flex-shrink: 0; }
+
+.energy-picker-wheel .time-picker-col { width: 100px; }
+.energy-picker-caption {
+  text-align: center;
+  margin-top: 12px;
+}
+.energy-picker-emoji {
+  display: block;
+  font-size: 34px;
+  line-height: 1.2;
+}
+.energy-picker-label {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
 .time-picker-card { max-width: 320px; padding: 18px; }
 .time-picker-card h2 {
   margin: 0 0 12px;
@@ -461,40 +478,101 @@ button:disabled {
   font-weight: 700;
   color: var(--ink);
 }
+/* Row height (44px) and the wheel's fixed height (220px = 5 rows) drive
+   the centering math in JS (jumpToOption) and the column's top/bottom
+   padding below — keep those three in sync if this changes. */
+.time-picker-wheel {
+  position: relative;
+  height: 220px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 30%, #000 70%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 30%, #000 70%, transparent 100%);
+}
+.time-picker-highlight {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 44px;
+  transform: translateY(-50%);
+  background: #f1effe;
+  border-radius: 10px;
+  pointer-events: none;
+  z-index: 0;
+}
 .time-picker-columns {
   display: flex;
-  gap: 8px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
+  align-items: stretch;
+  justify-content: center;
+  height: 100%;
+  position: relative;
+  z-index: 1;
 }
 .time-picker-col {
-  flex: 1 1 0;
-  max-height: 200px;
+  width: 64px;
+  height: 100%;
   overflow-y: auto;
-  scroll-snap-type: y proximity;
-  padding: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  padding: 88px 0; /* (wheel height - row height) / 2, so the first/last row can reach center */
+  scrollbar-width: none;
 }
-.time-picker-col + .time-picker-col { border-left: 1px solid var(--border); }
+.time-picker-col::-webkit-scrollbar { display: none; }
+.time-picker-sep {
+  align-self: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  padding-bottom: 2px;
+}
 .time-picker-option {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   scroll-snap-align: center;
   border: none;
   background: none;
-  padding: 8px 4px;
-  font-size: 14px;
+  width: 100%;
+  font-size: 18px;
   font-weight: 600;
-  color: var(--ink);
-  border-radius: 8px;
+  color: #c7c9d6;
   cursor: pointer;
   font-family: inherit;
-  transition: background .15s ease, color .15s ease;
+  transition: color .15s ease;
 }
-.time-picker-option:hover { background: #f6f5ff; }
 .time-picker-option.selected {
+  color: var(--ink);
+  font-weight: 700;
+}
+.time-picker-presets-label {
+  margin: 14px 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+}
+.time-picker-presets {
+  display: flex;
+  gap: 8px;
+}
+.time-picker-preset {
+  flex: 1;
+  padding: 9px 4px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fbfbfe;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.time-picker-preset:hover { background: #f6f5ff; }
+.time-picker-preset.selected {
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  border-color: transparent;
   color: #fff;
 }
 .time-picker-card .confirm-actions { margin-top: 14px; }
@@ -928,7 +1006,10 @@ button:disabled {
   pointer-events: none;
   transition: all .25s ease;
   box-shadow: var(--shadow-lg);
-  z-index: 50;
+  /* Must beat .modal-overlay (z-index: 1000) — toasts (e.g. login errors)
+     fire while a modal is open, and otherwise render behind it, getting
+     caught in its backdrop-filter blur along with everything else. */
+  z-index: 1001;
 }
 .toast.show {
   opacity: 1;

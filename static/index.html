@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0f172a">
-<title>Gym Tracker</title>
+<title>Clock It</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏋️</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,31 +12,37 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="auth-modal" class="modal-overlay" hidden>
+<div id="auth-name-modal" class="modal-overlay" hidden>
   <div class="modal-card">
-    <h2 id="auth-title">Welcome back 👋</h2>
-    <p class="modal-sub" id="auth-sub">Log in to continue.</p>
-
-    <form id="form-login" class="grid-form">
-      <label class="full">Username
-        <input type="text" name="username" placeholder="Username" required autocomplete="username">
+    <h2>What should we call you? 👋</h2>
+    <form id="form-auth-name" class="grid-form">
+      <label class="full">Name
+        <input type="text" name="name" placeholder="Your name" required autocomplete="name">
       </label>
-      <label class="full">Password
-        <input type="password" name="password" placeholder="Password" required autocomplete="current-password">
-      </label>
-      <button type="submit" class="primary">Log In</button>
+      <button type="submit" class="primary">Continue</button>
     </form>
+  </div>
+</div>
 
-    <form id="form-signup" class="grid-form" hidden>
-      <label class="full">Your Name
-        <input type="text" name="name" placeholder="Your name" required>
+<div id="auth-email-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>How can we reach you?</h2>
+    <p class="modal-sub">Your email is how we'll find your account next time.</p>
+    <form id="form-auth-email" class="grid-form">
+      <label class="full">Email
+        <input type="email" name="email" placeholder="you@example.com" required autocomplete="email">
       </label>
-      <label class="full">Username
-        <input type="text" name="username" placeholder="Choose a username" required autocomplete="username">
-      </label>
-      <label class="full">Password
-        <input type="password" name="password" placeholder="At least 8 characters" required minlength="8" autocomplete="new-password">
-      </label>
+      <button type="submit" class="primary">Continue</button>
+      <button type="button" class="secondary" id="auth-email-back">&larr; Back</button>
+    </form>
+  </div>
+</div>
+
+<div id="auth-signup-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>Oh, you're new here! 🎉</h2>
+    <p class="modal-sub">Let's get a little more info, then set a PIN to finish up.</p>
+    <form id="form-auth-signup" class="grid-form">
       <label>Age <span class="field-optional">(optional)</span>
         <input type="number" name="age" min="1" max="120" placeholder="Age">
       </label>
@@ -49,31 +55,25 @@
           <input type="hidden" name="last_period_date">
         </div>
       </label>
+      <label class="full">Set a PIN
+        <input type="password" name="pin" placeholder="4-digit PIN" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password">
+      </label>
       <button type="submit" class="primary">Create Account</button>
+      <button type="button" class="secondary" id="auth-signup-back">&larr; Back</button>
     </form>
-
-    <button type="button" class="link-toggle" id="auth-toggle">New here? Create an account</button>
-
-    <div id="claimable-section" hidden>
-      <p class="modal-sub">Or claim an existing profile:</p>
-      <div class="profile-picker-list" id="claimable-list"></div>
-    </div>
   </div>
 </div>
 
-<div id="claim-modal" class="modal-overlay" hidden>
+<div id="auth-login-modal" class="modal-overlay" hidden>
   <div class="modal-card">
-    <h2>Claim <span id="claim-name"></span>'s profile</h2>
-    <p class="modal-sub">Set a username and password to finish setting this profile up.</p>
-    <form id="form-claim" class="grid-form">
-      <label class="full">Username
-        <input type="text" name="username" placeholder="Choose a username" required autocomplete="username">
+    <h2>Welcome back, <span id="auth-login-name"></span> 👋</h2>
+    <p class="modal-sub">Enter your PIN to continue.</p>
+    <form id="form-auth-login" class="grid-form">
+      <label class="full">PIN
+        <input type="password" name="pin" placeholder="4-digit PIN" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="current-password">
       </label>
-      <label class="full">Password
-        <input type="password" name="password" placeholder="At least 8 characters" required minlength="8" autocomplete="new-password">
-      </label>
-      <button type="submit" class="primary">Claim Profile</button>
-      <button type="button" class="secondary" id="claim-cancel">Cancel</button>
+      <button type="submit" class="primary">Log In</button>
+      <button type="button" class="secondary" id="auth-login-back">&larr; Not you?</button>
     </form>
   </div>
 </div>
@@ -107,14 +107,45 @@
 <div id="time-picker-modal" class="modal-overlay" hidden>
   <div class="modal-card time-picker-card">
     <h2>Select Time</h2>
-    <div class="time-picker-columns">
-      <div class="time-picker-col" id="tp-hours"></div>
-      <div class="time-picker-col" id="tp-minutes"></div>
-      <div class="time-picker-col" id="tp-ampm"></div>
+    <div class="time-picker-wheel">
+      <div class="time-picker-highlight" aria-hidden="true"></div>
+      <div class="time-picker-columns">
+        <div class="time-picker-col" id="tp-hours"></div>
+        <div class="time-picker-sep">:</div>
+        <div class="time-picker-col" id="tp-minutes"></div>
+        <div class="time-picker-col" id="tp-ampm"></div>
+      </div>
+    </div>
+    <p class="time-picker-presets-label">Presets</p>
+    <div class="time-picker-presets" id="tp-presets">
+      <button type="button" class="time-picker-preset" data-hour="9" data-minute="00" data-ampm="AM">9 AM</button>
+      <button type="button" class="time-picker-preset" data-hour="12" data-minute="00" data-ampm="PM">12 PM</button>
+      <button type="button" class="time-picker-preset" data-hour="4" data-minute="00" data-ampm="PM">4 PM</button>
+      <button type="button" class="time-picker-preset" data-hour="6" data-minute="00" data-ampm="PM">6 PM</button>
     </div>
     <div class="confirm-actions">
       <button type="button" class="secondary" id="tp-cancel">Cancel</button>
       <button type="button" class="primary" id="tp-done">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="energy-picker-modal" class="modal-overlay" hidden>
+  <div class="modal-card time-picker-card">
+    <h2>How do you feel?</h2>
+    <div class="time-picker-wheel energy-picker-wheel">
+      <div class="time-picker-highlight" aria-hidden="true"></div>
+      <div class="time-picker-columns">
+        <div class="time-picker-col" id="ep-levels"></div>
+      </div>
+    </div>
+    <div class="energy-picker-caption">
+      <span class="energy-picker-emoji" id="ep-emoji"></span>
+      <span class="energy-picker-label" id="ep-label"></span>
+    </div>
+    <div class="confirm-actions">
+      <button type="button" class="secondary" id="ep-cancel">Cancel</button>
+      <button type="button" class="primary" id="ep-done">Done</button>
     </div>
   </div>
 </div>
@@ -128,6 +159,7 @@
 </div>
 
 <header class="topbar">
+  <div class="topbar-glow" aria-hidden="true"></div>
   <div class="user-menu" id="user-menu" hidden>
     <button type="button" class="topbar-greeting" id="user-greeting-btn">
       <span id="user-greeting-text"></span>
@@ -138,16 +170,24 @@
       <button type="button" id="logout-btn">Log Out</button>
     </div>
   </div>
-  <h1><span class="topbar-icon">🏋️</span>Gym Tracker</h1>
+  <h1><span class="topbar-icon">🏋️</span>Clock It</h1>
   <p class="topbar-sub">Log it. Track it. Crush it.</p>
 </header>
 
-<nav class="tabs">
-  <button class="tab-btn active" data-tab="log">Log Workout</button>
-  <button class="tab-btn" data-tab="history">History</button>
+<nav class="main-tabs">
+  <button class="main-tab-btn active" data-maintab="workout">Workout</button>
+  <button class="main-tab-btn" data-maintab="diet">Diet</button>
+  <button class="main-tab-btn" data-maintab="cycle">Your Cycle</button>
 </nav>
 
 <main>
+  <!-- ================= WORKOUT ================= -->
+  <section id="maintab-workout" class="main-tab-panel active">
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="log">Log Workout</button>
+    <button class="tab-btn" data-tab="history">History</button>
+  </nav>
+
   <!-- ================= LOG WORKOUT ================= -->
   <section id="tab-log" class="tab-panel active">
     <div class="card">
@@ -184,7 +224,13 @@
           </div>
         </label>
         <label>Energy Level
-          <input type="number" name="energy_level" min="1" max="10" placeholder="1-10">
+          <div class="energy-field" data-energy-field>
+            <button type="button" class="energy-field-btn">
+              <span class="energy-field-value placeholder">How do you feel?</span>
+              <span class="energy-field-icon" aria-hidden="true">⚡</span>
+            </button>
+            <input type="hidden" name="energy_level">
+          </div>
         </label>
         <label class="full">Notes
           <input type="text" name="notes" placeholder="optional">
@@ -239,6 +285,23 @@
           <tbody></tbody>
         </table>
       </div>
+    </div>
+  </section>
+  </section>
+
+  <!-- ================= DIET ================= -->
+  <section id="maintab-diet" class="main-tab-panel">
+    <div class="card placeholder-card">
+      <h2>Diet</h2>
+      <p class="placeholder-text">Diet tracking is coming soon.</p>
+    </div>
+  </section>
+
+  <!-- ================= YOUR CYCLE ================= -->
+  <section id="maintab-cycle" class="main-tab-panel">
+    <div class="card placeholder-card">
+      <h2>Your Cycle</h2>
+      <p class="placeholder-text">Cycle tracking is coming soon.</p>
     </div>
   </section>
 

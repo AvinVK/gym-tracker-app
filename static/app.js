@@ -151,15 +151,28 @@ function initDateField(container) {
 
 document.querySelectorAll("[data-date-field]").forEach(initDateField);
 
-// ---------------- Auth (login / signup / claim) ----------------
+// ---------------- Auth (name -> email -> new-user setup or PIN login) ----------------
 let currentUser = null;
+let authDraft = { name: "", email: "" };
 
 function showGreeting(name) {
   document.getElementById("user-greeting-text").textContent = `Hi, ${name}`;
   document.getElementById("user-menu").hidden = false;
 }
 
-async function onLoggedIn(user) {
+function hideAllAuthModals() {
+  document.getElementById("auth-name-modal").hidden = true;
+  document.getElementById("auth-email-modal").hidden = true;
+  document.getElementById("auth-signup-modal").hidden = true;
+  document.getElementById("auth-login-modal").hidden = true;
+}
+
+function showAuthStep(id) {
+  hideAllAuthModals();
+  document.getElementById(id).hidden = false;
+}
+
+async function onLoggedIn(user, { isNewSignup = false } = {}) {
   // Block autosave while we tear down whatever was on screen before (e.g. a
   // previous session on a shared device): it's a reset, not something that
   // should overwrite the incoming user's own draft.
@@ -168,8 +181,17 @@ async function onLoggedIn(user) {
 
   currentUser = user;
   currentUserId = user.id;
-  document.getElementById("auth-modal").hidden = true;
-  document.getElementById("claim-modal").hidden = true;
+
+  if (isNewSignup) {
+    // Drafts are keyed by numeric user id (see draftKey() below), and ids
+    // get reused once an old test/deleted account's id is assigned to a
+    // brand-new signup. A genuinely new account can never have a legitimate
+    // draft of its own yet, so anything under this id is stale leftovers
+    // from whoever had this id before — never something to restore.
+    clearDraft();
+  }
+
+  hideAllAuthModals();
   document.getElementById("user-menu-dropdown").hidden = true;
   showGreeting(user.name);
 
@@ -181,95 +203,65 @@ async function onLoggedIn(user) {
   }
 }
 
-function setAuthMode(isSignup) {
-  document.getElementById("form-login").hidden = isSignup;
-  document.getElementById("form-signup").hidden = !isSignup;
-  document.getElementById("auth-title").textContent = isSignup ? "Create your account" : "Welcome back 👋";
-  document.getElementById("auth-sub").textContent = isSignup ? "Set up your profile to get started." : "Log in to continue.";
-  document.getElementById("auth-toggle").textContent = isSignup ? "Already have an account? Log in" : "New here? Create an account";
-}
-
-document.getElementById("auth-toggle").addEventListener("click", () => {
-  setAuthMode(document.getElementById("form-signup").hidden);
-});
-
-async function showClaimableProfiles() {
-  const claimable = await api.get("/api/claimable");
-  const section = document.getElementById("claimable-section");
-  if (!claimable.length) {
-    section.hidden = true;
-    return;
-  }
-  const list = document.getElementById("claimable-list");
-  list.innerHTML = claimable.map(u => `
-    <button type="button" class="profile-picker-item" data-id="${u.id}" data-name="${u.name}">
-      ${u.avatar
-        ? `<img src="${u.avatar}" class="profile-picker-avatar" alt="">`
-        : `<span class="profile-picker-avatar-placeholder">${u.name[0].toUpperCase()}</span>`}
-      <span>${u.name}</span>
-    </button>`).join("");
-  list.querySelectorAll(".profile-picker-item").forEach(btn => {
-    btn.addEventListener("click", () => openClaimModal(btn.dataset.id, btn.dataset.name));
-  });
-  section.hidden = false;
-}
-
-function openClaimModal(id, name) {
-  const form = document.getElementById("form-claim");
-  form.reset();
-  form.dataset.userId = id;
-  document.getElementById("claim-name").textContent = name;
-  document.getElementById("auth-modal").hidden = true;
-  document.getElementById("claim-modal").hidden = false;
-}
-
-document.getElementById("claim-cancel").addEventListener("click", () => {
-  document.getElementById("claim-modal").hidden = true;
-  document.getElementById("auth-modal").hidden = false;
-});
-
-document.getElementById("form-claim").addEventListener("submit", async (e) => {
+document.getElementById("form-auth-name").addEventListener("submit", (e) => {
   e.preventDefault();
-  const id = e.target.dataset.userId;
-  const fd = new FormData(e.target);
-  const body = Object.fromEntries(fd.entries());
+  authDraft.name = new FormData(e.target).get("name").trim();
+  showAuthStep("auth-email-modal");
+});
+
+document.getElementById("auth-email-back").addEventListener("click", () => {
+  showAuthStep("auth-name-modal");
+});
+
+document.getElementById("form-auth-email").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = new FormData(e.target).get("email").trim();
   try {
-    await api.post(`/api/claim/${id}`, body);
-    await onLoggedIn(await api.get("/api/me"));
-    toast("Profile claimed!");
+    const res = await api.post("/api/check-email", { email });
+    authDraft.email = email;
+    if (res.exists) {
+      document.getElementById("form-auth-login").reset();
+      document.getElementById("auth-login-name").textContent = res.name;
+      showAuthStep("auth-login-modal");
+    } else {
+      const signupForm = document.getElementById("form-auth-signup");
+      signupForm.reset();
+      setDateFieldValue(signupForm.querySelector('[name="last_period_date"]').closest(".date-field"), "");
+      showAuthStep("auth-signup-modal");
+    }
   } catch (err) {
     toast(err.message);
   }
 });
 
-async function showAuthScreen() {
-  setAuthMode(false);
-  document.getElementById("claim-modal").hidden = true;
-  document.getElementById("auth-modal").hidden = false;
-  showClaimableProfiles();
-}
-
-document.getElementById("form-login").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const body = Object.fromEntries(fd.entries());
-  try {
-    await api.post("/api/login", body);
-    await onLoggedIn(await api.get("/api/me"));
-  } catch (err) {
-    toast(err.message);
-  }
+document.getElementById("auth-signup-back").addEventListener("click", () => {
+  showAuthStep("auth-email-modal");
 });
 
-document.getElementById("form-signup").addEventListener("submit", async (e) => {
+document.getElementById("form-auth-signup").addEventListener("submit", async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
-  const body = Object.fromEntries(fd.entries());
+  const body = { ...Object.fromEntries(fd.entries()), name: authDraft.name, email: authDraft.email };
   try {
     await api.post("/api/signup", body);
     const user = await api.get("/api/me");
-    await onLoggedIn(user);
+    await onLoggedIn(user, { isNewSignup: true });
     toast(`Welcome, ${user.name}!`);
+  } catch (err) {
+    toast(err.message);
+  }
+});
+
+document.getElementById("auth-login-back").addEventListener("click", () => {
+  showAuthStep("auth-email-modal");
+});
+
+document.getElementById("form-auth-login").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const pin = new FormData(e.target).get("pin");
+  try {
+    await api.post("/api/login", { email: authDraft.email, pin });
+    await onLoggedIn(await api.get("/api/me"));
   } catch (err) {
     toast(err.message);
   }
@@ -280,10 +272,12 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
   await api.post("/api/logout", {});
   currentUser = null;
   currentUserId = null;
+  authDraft = { name: "", email: "" };
   restoringDraft = true;
   resetWorkoutFlowUI();
   document.getElementById("user-menu").hidden = true;
-  await showAuthScreen();
+  document.getElementById("form-auth-name").reset();
+  showAuthStep("auth-name-modal");
 });
 
 async function checkAuth() {
@@ -291,7 +285,7 @@ async function checkAuth() {
   if (user) {
     await onLoggedIn(user);
   } else {
-    await showAuthScreen();
+    showAuthStep("auth-name-modal");
   }
 }
 
@@ -325,6 +319,7 @@ function renderProfileAvatar() {
 function showProfile() {
   document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
   document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".main-tab-panel").forEach(p => p.classList.remove("active"));
   document.getElementById("tab-profile").classList.add("active");
 
   document.getElementById("profile-name").value = currentUser.name || "";
@@ -342,6 +337,10 @@ document.getElementById("profile-back").addEventListener("click", () => {
   document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
   document.getElementById("tab-log").classList.add("active");
   document.querySelector('.tab-btn[data-tab="log"]').classList.add("active");
+  document.querySelectorAll(".main-tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelector('.main-tab-btn[data-maintab="workout"]').classList.add("active");
+  document.querySelectorAll(".main-tab-panel").forEach(p => p.classList.remove("active"));
+  document.getElementById("maintab-workout").classList.add("active");
 });
 
 document.getElementById("form-profile").addEventListener("submit", async (e) => {
@@ -376,6 +375,22 @@ document.getElementById("profile-avatar-input").addEventListener("change", async
 });
 
 // ---------------- Tabs ----------------
+document.querySelectorAll(".main-tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".main-tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".main-tab-panel").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("maintab-" + btn.dataset.maintab).classList.add("active");
+    if (btn.dataset.maintab === "workout") {
+      const activeSubTab = document.querySelector('.tabs .tab-btn.active') || document.querySelector('.tabs .tab-btn[data-tab="log"]');
+      activeSubTab.classList.add("active");
+      document.getElementById("tab-" + activeSubTab.dataset.tab).classList.add("active");
+      if (activeSubTab.dataset.tab === "history") loadHistory();
+    }
+  });
+});
+
 document.querySelectorAll(".tab-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
@@ -403,6 +418,7 @@ const tpModal = document.getElementById("time-picker-modal");
 const tpHoursCol = document.getElementById("tp-hours");
 const tpMinutesCol = document.getElementById("tp-minutes");
 const tpAmpmCol = document.getElementById("tp-ampm");
+const tpPresets = document.getElementById("tp-presets");
 let tpActiveContainer = null;
 let tpSelected = { hour: null, minute: null, ampm: "AM" };
 
@@ -439,22 +455,68 @@ function highlightTimePickerSelection() {
   tpHoursCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === String(tpSelected.hour)));
   tpMinutesCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === String(tpSelected.minute)));
   tpAmpmCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === tpSelected.ampm));
+  tpPresets.querySelectorAll(".time-picker-preset").forEach(b => b.classList.toggle("selected",
+    b.dataset.hour === String(tpSelected.hour) && b.dataset.minute === String(tpSelected.minute) && b.dataset.ampm === tpSelected.ampm));
 }
 
-function scrollTimePickerColumn(col, value) {
-  const btn = value != null ? [...col.querySelectorAll(".time-picker-option")].find(b => b.dataset.value === String(value)) : null;
-  (btn || col.firstElementChild).scrollIntoView({ block: "center" });
+// Instantly (no animation) scrolls `col` so the option matching `value`
+// sits centered in the wheel — used for every *programmatic* positioning
+// (opening the picker, tapping a row, tapping a preset). Free-hand scroll
+// gestures are handled separately by the scroll listener below, since
+// those move the column directly without going through this at all.
+function jumpToOption(col, value) {
+  const target = (value != null && [...col.querySelectorAll(".time-picker-option")].find(b => b.dataset.value === String(value))) || col.firstElementChild;
+  if (!target) return;
+  col.scrollTop = target.offsetTop - (col.clientHeight - target.offsetHeight) / 2;
 }
 
-[tpHoursCol, tpMinutesCol, tpAmpmCol].forEach(col => {
+// Whichever row's center lands nearest the column's vertical center is
+// "selected" purely by scroll position, matching a native wheel picker.
+function centeredOption(col) {
+  const mid = col.clientHeight / 2;
+  let closest = null;
+  let closestDist = Infinity;
+  col.querySelectorAll(".time-picker-option").forEach(opt => {
+    const dist = Math.abs((opt.offsetTop + opt.offsetHeight / 2) - (col.scrollTop + mid));
+    if (dist < closestDist) { closestDist = dist; closest = opt; }
+  });
+  return closest;
+}
+
+const tpScrollTimers = new Map();
+function onWheelScroll(col, key) {
+  clearTimeout(tpScrollTimers.get(col));
+  tpScrollTimers.set(col, setTimeout(() => {
+    const opt = centeredOption(col);
+    if (!opt) return;
+    tpSelected[key] = opt.dataset.value;
+    highlightTimePickerSelection();
+  }, 100));
+}
+
+tpHoursCol.addEventListener("scroll", () => onWheelScroll(tpHoursCol, "hour"));
+tpMinutesCol.addEventListener("scroll", () => onWheelScroll(tpMinutesCol, "minute"));
+tpAmpmCol.addEventListener("scroll", () => onWheelScroll(tpAmpmCol, "ampm"));
+
+[tpHoursCol, tpMinutesCol, tpAmpmCol].forEach((col, i) => {
+  const key = ["hour", "minute", "ampm"][i];
   col.addEventListener("click", (e) => {
     const btn = e.target.closest(".time-picker-option");
     if (!btn) return;
-    if (col === tpHoursCol) tpSelected.hour = btn.dataset.value;
-    else if (col === tpMinutesCol) tpSelected.minute = btn.dataset.value;
-    else tpSelected.ampm = btn.dataset.value;
+    tpSelected[key] = btn.dataset.value;
+    jumpToOption(col, btn.dataset.value);
     highlightTimePickerSelection();
   });
+});
+
+tpPresets.addEventListener("click", (e) => {
+  const btn = e.target.closest(".time-picker-preset");
+  if (!btn) return;
+  tpSelected = { hour: btn.dataset.hour, minute: btn.dataset.minute, ampm: btn.dataset.ampm };
+  jumpToOption(tpHoursCol, tpSelected.hour);
+  jumpToOption(tpMinutesCol, tpSelected.minute);
+  jumpToOption(tpAmpmCol, tpSelected.ampm);
+  highlightTimePickerSelection();
 });
 
 function openTimePicker(container) {
@@ -464,14 +526,18 @@ function openTimePicker(container) {
     const { h12, m, ampm } = to12Hour(...hidden.value.split(":"));
     tpSelected = { hour: h12, minute: m, ampm };
   } else {
-    tpSelected = { hour: null, minute: null, ampm: "AM" };
+    // The wheel always has *something* centered once it's open (unlike the
+    // old tap-to-select buttons, a scroll position can't be "empty") —
+    // default to the top row of each column, same as a fresh unscrolled
+    // wheel would naturally show.
+    tpSelected = { hour: "1", minute: "00", ampm: "AM" };
   }
   highlightTimePickerSelection();
   tpModal.hidden = false;
   requestAnimationFrame(() => {
-    scrollTimePickerColumn(tpHoursCol, tpSelected.hour);
-    scrollTimePickerColumn(tpMinutesCol, tpSelected.minute);
-    scrollTimePickerColumn(tpAmpmCol, tpSelected.ampm);
+    jumpToOption(tpHoursCol, tpSelected.hour);
+    jumpToOption(tpMinutesCol, tpSelected.minute);
+    jumpToOption(tpAmpmCol, tpSelected.ampm);
   });
 }
 
@@ -503,6 +569,125 @@ function initTimeField(container) {
 }
 
 document.querySelectorAll("[data-time-field]").forEach(initTimeField);
+
+// ---------------- Custom energy-level picker ----------------
+const ENERGY_LEVELS = [
+  { emoji: "😩", label: "Running on empty" },
+  { emoji: "😔", label: "Really low energy" },
+  { emoji: "😕", label: "Below average" },
+  { emoji: "😐", label: "A little sluggish" },
+  { emoji: "🙂", label: "Feeling okay" },
+  { emoji: "🙃", label: "Decent energy" },
+  { emoji: "😊", label: "Feeling good" },
+  { emoji: "💪", label: "Strong and ready" },
+  { emoji: "🔥", label: "Highly energized" },
+  { emoji: "🚀", label: "Absolutely unstoppable" },
+];
+
+const epModal = document.getElementById("energy-picker-modal");
+const epLevelsCol = document.getElementById("ep-levels");
+const epEmoji = document.getElementById("ep-emoji");
+const epLabel = document.getElementById("ep-label");
+let epActiveContainer = null;
+let epSelected = null;
+
+epLevelsCol.innerHTML = ENERGY_LEVELS
+  .map((lvl, i) => `<button type="button" class="time-picker-option" data-value="${i + 1}">${lvl.emoji} ${i + 1}</button>`)
+  .join("");
+
+function energyLevelInfo(value) {
+  return ENERGY_LEVELS[parseInt(value, 10) - 1] || null;
+}
+
+function formatEnergyDisplay(value) {
+  const info = energyLevelInfo(value);
+  return info ? `${info.emoji} ${value}/10 — ${info.label}` : "How do you feel?";
+}
+
+function setEnergyFieldValue(container, value) {
+  const hidden = container.querySelector("input[type=hidden]");
+  const valueEl = container.querySelector(".energy-field-value");
+  hidden.value = value || "";
+  valueEl.textContent = formatEnergyDisplay(value);
+  valueEl.classList.toggle("placeholder", !energyLevelInfo(value));
+  hidden.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function highlightEnergyPickerSelection() {
+  epLevelsCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === String(epSelected)));
+  const info = energyLevelInfo(epSelected);
+  if (info) {
+    epEmoji.textContent = info.emoji;
+    epLabel.textContent = info.label;
+  }
+}
+
+function jumpToEnergyOption(value) {
+  const target = (value != null && [...epLevelsCol.querySelectorAll(".time-picker-option")].find(b => b.dataset.value === String(value))) || epLevelsCol.firstElementChild;
+  if (!target) return;
+  epLevelsCol.scrollTop = target.offsetTop - (epLevelsCol.clientHeight - target.offsetHeight) / 2;
+}
+
+function centeredEnergyOption() {
+  const mid = epLevelsCol.clientHeight / 2;
+  let closest = null;
+  let closestDist = Infinity;
+  epLevelsCol.querySelectorAll(".time-picker-option").forEach(opt => {
+    const dist = Math.abs((opt.offsetTop + opt.offsetHeight / 2) - (epLevelsCol.scrollTop + mid));
+    if (dist < closestDist) { closestDist = dist; closest = opt; }
+  });
+  return closest;
+}
+
+let epScrollTimer = null;
+epLevelsCol.addEventListener("scroll", () => {
+  clearTimeout(epScrollTimer);
+  epScrollTimer = setTimeout(() => {
+    const opt = centeredEnergyOption();
+    if (!opt) return;
+    epSelected = opt.dataset.value;
+    highlightEnergyPickerSelection();
+  }, 100);
+});
+
+epLevelsCol.addEventListener("click", (e) => {
+  const btn = e.target.closest(".time-picker-option");
+  if (!btn) return;
+  epSelected = btn.dataset.value;
+  jumpToEnergyOption(epSelected);
+  highlightEnergyPickerSelection();
+});
+
+function openEnergyPicker(container) {
+  epActiveContainer = container;
+  const hidden = container.querySelector("input[type=hidden]");
+  epSelected = hidden.value || "5"; // wheel always centers on something; default to the middle
+  highlightEnergyPickerSelection();
+  epModal.hidden = false;
+  requestAnimationFrame(() => jumpToEnergyOption(epSelected));
+}
+
+function closeEnergyPicker() {
+  epModal.hidden = true;
+  epActiveContainer = null;
+}
+
+document.getElementById("ep-cancel").addEventListener("click", closeEnergyPicker);
+epModal.addEventListener("click", (e) => { if (e.target === epModal) closeEnergyPicker(); });
+document.getElementById("ep-done").addEventListener("click", () => {
+  if (!epActiveContainer) return;
+  setEnergyFieldValue(epActiveContainer, epSelected);
+  closeEnergyPicker();
+});
+
+function initEnergyField(container) {
+  const btn = container.querySelector(".energy-field-btn");
+  const hidden = container.querySelector("input[type=hidden]");
+  if (hidden.value) setEnergyFieldValue(container, hidden.value);
+  btn.addEventListener("click", () => openEnergyPicker(container));
+}
+
+document.querySelectorAll("[data-energy-field]").forEach(initEnergyField);
 
 // ---------------- Custom option picker (muscle group / exercise dropdowns) ----------------
 const opModal = document.getElementById("option-picker-modal");
@@ -751,6 +936,7 @@ function resetWorkoutFlowUI() {
   setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), "");
   setDateFieldValue(document.getElementById("exlog-date").closest(".date-field"), "");
   workoutForm.querySelectorAll(".time-field").forEach(f => setTimeFieldValue(f, ""));
+  workoutForm.querySelectorAll(".energy-field").forEach(f => setEnergyFieldValue(f, ""));
 }
 
 // ---------------- History ----------------
@@ -814,6 +1000,18 @@ function timeFieldHtml(cls, value) {
     </div>`;
 }
 
+function energyFieldHtml(cls, value) {
+  const info = energyLevelInfo(value);
+  return `
+    <div class="energy-field">
+      <button type="button" class="energy-field-btn">
+        <span class="energy-field-value${info ? "" : " placeholder"}">${formatEnergyDisplay(value)}</span>
+        <span class="energy-field-icon" aria-hidden="true">⚡</span>
+      </button>
+      <input type="hidden" class="${cls}" value="${value || ""}">
+    </div>`;
+}
+
 function workoutRowView(w) {
   return `
     <tr class="clickable-row" data-date="${w.date}" data-id="${w.id}">
@@ -840,7 +1038,7 @@ function workoutRowEdit(w) {
       <td data-label="Start">${timeFieldHtml("edit-start", w.start_time)}</td>
       <td data-label="End">${timeFieldHtml("edit-end", w.end_time)}</td>
       <td data-label="Duration">${formatDuration(w.duration_hours)}</td>
-      <td data-label="Energy Level"><input type="number" class="edit-energy" min="1" max="10" value="${w.energy_level ?? ""}"></td>
+      <td data-label="Energy Level">${energyFieldHtml("edit-energy", w.energy_level)}</td>
       <td data-label="Notes"><input type="text" class="edit-notes" value="${w.notes || ""}"></td>
       <td class="row-actions">
         <button class="save-btn" data-id="${w.id}">Save</button>
@@ -874,6 +1072,7 @@ function bindWorkoutEditRowEvents(id) {
   const row = document.querySelector(`#table-workout-log tbody tr[data-id="${id}"]`);
   initDateField(row.querySelector(".date-field"));
   row.querySelectorAll(".time-field").forEach(initTimeField);
+  initEnergyField(row.querySelector(".energy-field"));
   row.querySelector(".save-btn").addEventListener("click", async (e) => {
     e.stopPropagation();
     const body = {
@@ -1050,7 +1249,7 @@ async function restoreDraft() {
     if (draft.workout) {
       const w = draft.workout;
       const form = document.getElementById("form-workout");
-      if (w.energy_level) form.querySelector('[name="energy_level"]').value = w.energy_level;
+      if (w.energy_level) setEnergyFieldValue(form.querySelector('[name="energy_level"]').closest(".energy-field"), w.energy_level);
       if (w.notes) form.querySelector('[name="notes"]').value = w.notes;
       if (w.date) setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), w.date);
       const startGroup = form.querySelector('input[name="start_time"]')?.closest(".time-field");
