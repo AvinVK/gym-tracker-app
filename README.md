@@ -1,4 +1,4 @@
-# Gym Tracker (local app)
+# Clock It (local app)
 
 A small local web app: Flask backend + SQLite database + a plain HTML/JS frontend.
 Replaces the spreadsheet version with a real cascading dropdown (pick a muscle group,
