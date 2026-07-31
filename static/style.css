@@ -406,6 +406,66 @@ button:disabled {
 .time-field-value.placeholder { color: #9aa1b5; }
 .time-field-icon { font-size: 13px; flex-shrink: 0; }
 
+/* ---------------- Energy field (custom in-app picker) ---------------- */
+.energy-field-btn {
+  width: 100%;
+  min-width: 118px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14.5px;
+  font-weight: 500;
+  font-family: inherit;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fbfbfe;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.energy-field-btn:hover { background: #fff; }
+.energy-field-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(109, 94, 248, .14);
+}
+.energy-field-btn:disabled {
+  background: #f1f1f6;
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: .85;
+}
+.energy-field-value {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.energy-field-value.placeholder { color: #9aa1b5; }
+.energy-field-icon { font-size: 13px; flex-shrink: 0; }
+
+.energy-picker-wheel .time-picker-col { width: 100px; }
+.energy-picker-caption {
+  text-align: center;
+  margin-top: 12px;
+}
+.energy-picker-emoji {
+  display: block;
+  font-size: 34px;
+  line-height: 1.2;
+}
+.energy-picker-label {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
 .time-picker-card { max-width: 320px; padding: 18px; }
 .time-picker-card h2 {
   margin: 0 0 12px;

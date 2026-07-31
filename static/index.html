@@ -130,6 +130,26 @@
   </div>
 </div>
 
+<div id="energy-picker-modal" class="modal-overlay" hidden>
+  <div class="modal-card time-picker-card">
+    <h2>How do you feel?</h2>
+    <div class="time-picker-wheel energy-picker-wheel">
+      <div class="time-picker-highlight" aria-hidden="true"></div>
+      <div class="time-picker-columns">
+        <div class="time-picker-col" id="ep-levels"></div>
+      </div>
+    </div>
+    <div class="energy-picker-caption">
+      <span class="energy-picker-emoji" id="ep-emoji"></span>
+      <span class="energy-picker-label" id="ep-label"></span>
+    </div>
+    <div class="confirm-actions">
+      <button type="button" class="secondary" id="ep-cancel">Cancel</button>
+      <button type="button" class="primary" id="ep-done">Done</button>
+    </div>
+  </div>
+</div>
+
 <div id="option-picker-modal" class="modal-overlay" hidden>
   <div class="modal-card option-picker-card">
     <h2 id="op-title">Select</h2>
@@ -196,7 +216,13 @@
           </div>
         </label>
         <label>Energy Level
-          <input type="number" name="energy_level" min="1" max="10" placeholder="1-10">
+          <div class="energy-field" data-energy-field>
+            <button type="button" class="energy-field-btn">
+              <span class="energy-field-value placeholder">How do you feel?</span>
+              <span class="energy-field-icon" aria-hidden="true">⚡</span>
+            </button>
+            <input type="hidden" name="energy_level">
+          </div>
         </label>
         <label class="full">Notes
           <input type="text" name="notes" placeholder="optional">

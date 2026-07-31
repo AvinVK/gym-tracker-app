@@ -549,6 +549,125 @@ function initTimeField(container) {
 
 document.querySelectorAll("[data-time-field]").forEach(initTimeField);
 
+// ---------------- Custom energy-level picker ----------------
+const ENERGY_LEVELS = [
+  { emoji: "😩", label: "Running on empty" },
+  { emoji: "😔", label: "Really low energy" },
+  { emoji: "😕", label: "Below average" },
+  { emoji: "😐", label: "A little sluggish" },
+  { emoji: "🙂", label: "Feeling okay" },
+  { emoji: "🙃", label: "Decent energy" },
+  { emoji: "😊", label: "Feeling good" },
+  { emoji: "💪", label: "Strong and ready" },
+  { emoji: "🔥", label: "Highly energized" },
+  { emoji: "🚀", label: "Absolutely unstoppable" },
+];
+
+const epModal = document.getElementById("energy-picker-modal");
+const epLevelsCol = document.getElementById("ep-levels");
+const epEmoji = document.getElementById("ep-emoji");
+const epLabel = document.getElementById("ep-label");
+let epActiveContainer = null;
+let epSelected = null;
+
+epLevelsCol.innerHTML = ENERGY_LEVELS
+  .map((lvl, i) => `<button type="button" class="time-picker-option" data-value="${i + 1}">${lvl.emoji} ${i + 1}</button>`)
+  .join("");
+
+function energyLevelInfo(value) {
+  return ENERGY_LEVELS[parseInt(value, 10) - 1] || null;
+}
+
+function formatEnergyDisplay(value) {
+  const info = energyLevelInfo(value);
+  return info ? `${info.emoji} ${value}/10 — ${info.label}` : "How do you feel?";
+}
+
+function setEnergyFieldValue(container, value) {
+  const hidden = container.querySelector("input[type=hidden]");
+  const valueEl = container.querySelector(".energy-field-value");
+  hidden.value = value || "";
+  valueEl.textContent = formatEnergyDisplay(value);
+  valueEl.classList.toggle("placeholder", !energyLevelInfo(value));
+  hidden.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function highlightEnergyPickerSelection() {
+  epLevelsCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === String(epSelected)));
+  const info = energyLevelInfo(epSelected);
+  if (info) {
+    epEmoji.textContent = info.emoji;
+    epLabel.textContent = info.label;
+  }
+}
+
+function jumpToEnergyOption(value) {
+  const target = (value != null && [...epLevelsCol.querySelectorAll(".time-picker-option")].find(b => b.dataset.value === String(value))) || epLevelsCol.firstElementChild;
+  if (!target) return;
+  epLevelsCol.scrollTop = target.offsetTop - (epLevelsCol.clientHeight - target.offsetHeight) / 2;
+}
+
+function centeredEnergyOption() {
+  const mid = epLevelsCol.clientHeight / 2;
+  let closest = null;
+  let closestDist = Infinity;
+  epLevelsCol.querySelectorAll(".time-picker-option").forEach(opt => {
+    const dist = Math.abs((opt.offsetTop + opt.offsetHeight / 2) - (epLevelsCol.scrollTop + mid));
+    if (dist < closestDist) { closestDist = dist; closest = opt; }
+  });
+  return closest;
+}
+
+let epScrollTimer = null;
+epLevelsCol.addEventListener("scroll", () => {
+  clearTimeout(epScrollTimer);
+  epScrollTimer = setTimeout(() => {
+    const opt = centeredEnergyOption();
+    if (!opt) return;
+    epSelected = opt.dataset.value;
+    highlightEnergyPickerSelection();
+  }, 100);
+});
+
+epLevelsCol.addEventListener("click", (e) => {
+  const btn = e.target.closest(".time-picker-option");
+  if (!btn) return;
+  epSelected = btn.dataset.value;
+  jumpToEnergyOption(epSelected);
+  highlightEnergyPickerSelection();
+});
+
+function openEnergyPicker(container) {
+  epActiveContainer = container;
+  const hidden = container.querySelector("input[type=hidden]");
+  epSelected = hidden.value || "5"; // wheel always centers on something; default to the middle
+  highlightEnergyPickerSelection();
+  epModal.hidden = false;
+  requestAnimationFrame(() => jumpToEnergyOption(epSelected));
+}
+
+function closeEnergyPicker() {
+  epModal.hidden = true;
+  epActiveContainer = null;
+}
+
+document.getElementById("ep-cancel").addEventListener("click", closeEnergyPicker);
+epModal.addEventListener("click", (e) => { if (e.target === epModal) closeEnergyPicker(); });
+document.getElementById("ep-done").addEventListener("click", () => {
+  if (!epActiveContainer) return;
+  setEnergyFieldValue(epActiveContainer, epSelected);
+  closeEnergyPicker();
+});
+
+function initEnergyField(container) {
+  const btn = container.querySelector(".energy-field-btn");
+  const hidden = container.querySelector("input[type=hidden]");
+  if (hidden.value) setEnergyFieldValue(container, hidden.value);
+  btn.addEventListener("click", () => openEnergyPicker(container));
+}
+
+document.querySelectorAll("[data-energy-field]").forEach(initEnergyField);
+
 // ---------------- Custom option picker (muscle group / exercise dropdowns) ----------------
 const opModal = document.getElementById("option-picker-modal");
 const opTitle = document.getElementById("op-title");
@@ -796,6 +915,7 @@ function resetWorkoutFlowUI() {
   setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), "");
   setDateFieldValue(document.getElementById("exlog-date").closest(".date-field"), "");
   workoutForm.querySelectorAll(".time-field").forEach(f => setTimeFieldValue(f, ""));
+  workoutForm.querySelectorAll(".energy-field").forEach(f => setEnergyFieldValue(f, ""));
 }
 
 // ---------------- History ----------------
@@ -859,6 +979,18 @@ function timeFieldHtml(cls, value) {
     </div>`;
 }
 
+function energyFieldHtml(cls, value) {
+  const info = energyLevelInfo(value);
+  return `
+    <div class="energy-field">
+      <button type="button" class="energy-field-btn">
+        <span class="energy-field-value${info ? "" : " placeholder"}">${formatEnergyDisplay(value)}</span>
+        <span class="energy-field-icon" aria-hidden="true">⚡</span>
+      </button>
+      <input type="hidden" class="${cls}" value="${value || ""}">
+    </div>`;
+}
+
 function workoutRowView(w) {
   return `
     <tr class="clickable-row" data-date="${w.date}" data-id="${w.id}">
@@ -885,7 +1017,7 @@ function workoutRowEdit(w) {
       <td data-label="Start">${timeFieldHtml("edit-start", w.start_time)}</td>
       <td data-label="End">${timeFieldHtml("edit-end", w.end_time)}</td>
       <td data-label="Duration">${formatDuration(w.duration_hours)}</td>
-      <td data-label="Energy Level"><input type="number" class="edit-energy" min="1" max="10" value="${w.energy_level ?? ""}"></td>
+      <td data-label="Energy Level">${energyFieldHtml("edit-energy", w.energy_level)}</td>
       <td data-label="Notes"><input type="text" class="edit-notes" value="${w.notes || ""}"></td>
       <td class="row-actions">
         <button class="save-btn" data-id="${w.id}">Save</button>
@@ -919,6 +1051,7 @@ function bindWorkoutEditRowEvents(id) {
   const row = document.querySelector(`#table-workout-log tbody tr[data-id="${id}"]`);
   initDateField(row.querySelector(".date-field"));
   row.querySelectorAll(".time-field").forEach(initTimeField);
+  initEnergyField(row.querySelector(".energy-field"));
   row.querySelector(".save-btn").addEventListener("click", async (e) => {
     e.stopPropagation();
     const body = {
@@ -1095,7 +1228,7 @@ async function restoreDraft() {
     if (draft.workout) {
       const w = draft.workout;
       const form = document.getElementById("form-workout");
-      if (w.energy_level) form.querySelector('[name="energy_level"]').value = w.energy_level;
+      if (w.energy_level) setEnergyFieldValue(form.querySelector('[name="energy_level"]').closest(".energy-field"), w.energy_level);
       if (w.notes) form.querySelector('[name="notes"]').value = w.notes;
       if (w.date) setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), w.date);
       const startGroup = form.querySelector('input[name="start_time"]')?.closest(".time-field");
