@@ -76,7 +76,10 @@ body {
   position: absolute;
   top: 18px;
   right: 20px;
-  z-index: 2;
+  /* Must beat .tabs (z-index: 2): .tabs comes later in the DOM, so at an
+     equal z-index it would paint on top and cover the bottom of the
+     dropdown (View Profile / Log Out) wherever the two overlap. */
+  z-index: 3;
 }
 .user-menu[hidden] { display: none; }
 .topbar-greeting {
