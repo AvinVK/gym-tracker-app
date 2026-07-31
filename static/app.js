@@ -397,12 +397,13 @@ const tpModal = document.getElementById("time-picker-modal");
 const tpHoursCol = document.getElementById("tp-hours");
 const tpMinutesCol = document.getElementById("tp-minutes");
 const tpAmpmCol = document.getElementById("tp-ampm");
+const tpPresets = document.getElementById("tp-presets");
 let tpActiveContainer = null;
 let tpSelected = { hour: null, minute: null, ampm: "AM" };
 
 tpHoursCol.innerHTML = Array.from({ length: 12 }, (_, i) => i + 1)
   .map(h => `<button type="button" class="time-picker-option" data-value="${h}">${h}</button>`).join("");
-tpMinutesCol.innerHTML = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"))
+tpMinutesCol.innerHTML = ["00", "15", "30", "45"]
   .map(m => `<button type="button" class="time-picker-option" data-value="${m}">${m}</button>`).join("");
 tpAmpmCol.innerHTML = ["AM", "PM"]
   .map(a => `<button type="button" class="time-picker-option" data-value="${a}">${a}</button>`).join("");
@@ -433,6 +434,8 @@ function highlightTimePickerSelection() {
   tpHoursCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === String(tpSelected.hour)));
   tpMinutesCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === String(tpSelected.minute)));
   tpAmpmCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === tpSelected.ampm));
+  tpPresets.querySelectorAll(".time-picker-preset").forEach(b => b.classList.toggle("selected",
+    b.dataset.hour === String(tpSelected.hour) && b.dataset.minute === String(tpSelected.minute) && b.dataset.ampm === tpSelected.ampm));
 }
 
 function scrollTimePickerColumn(col, value) {
@@ -449,6 +452,16 @@ function scrollTimePickerColumn(col, value) {
     else tpSelected.ampm = btn.dataset.value;
     highlightTimePickerSelection();
   });
+});
+
+tpPresets.addEventListener("click", (e) => {
+  const btn = e.target.closest(".time-picker-preset");
+  if (!btn) return;
+  tpSelected = { hour: btn.dataset.hour, minute: btn.dataset.minute, ampm: btn.dataset.ampm };
+  highlightTimePickerSelection();
+  scrollTimePickerColumn(tpHoursCol, tpSelected.hour);
+  scrollTimePickerColumn(tpMinutesCol, tpSelected.minute);
+  scrollTimePickerColumn(tpAmpmCol, tpSelected.ampm);
 });
 
 function openTimePicker(container) {

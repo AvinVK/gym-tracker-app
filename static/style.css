@@ -449,6 +449,37 @@ button:disabled {
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   color: #fff;
 }
+.time-picker-presets-label {
+  margin: 14px 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+}
+.time-picker-presets {
+  display: flex;
+  gap: 8px;
+}
+.time-picker-preset {
+  flex: 1;
+  padding: 9px 4px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fbfbfe;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.time-picker-preset:hover { background: #f6f5ff; }
+.time-picker-preset.selected {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  border-color: transparent;
+  color: #fff;
+}
 .time-picker-card .confirm-actions { margin-top: 14px; }
 
 /* ---------------- Option field (custom in-app select, e.g. muscle group / exercise) ---------------- */
