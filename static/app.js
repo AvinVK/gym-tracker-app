@@ -901,13 +901,15 @@ function initStepper(container) {
   container.querySelector(".stepper-plus").addEventListener("click", () => adjust(step));
 }
 
-function addSetRow(block) {
+function addSetRow(block, { copyLast = false } = {}) {
   const setsDiv = block.querySelector(".ex-sets");
+  const existingRows = block.querySelectorAll(".set-row");
+  const lastRow = existingRows[existingRows.length - 1];
   const row = document.createElement("div");
   row.className = "set-row";
   row.innerHTML = `
     <span class="set-number"></span>
-    <div class="stepper stepper-reps" data-step="1" data-min="1">
+    <div class="stepper stepper-reps" data-step="2" data-min="1">
       <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease reps">&minus;</button>
       <input type="number" class="set-reps stepper-input" min="1" placeholder="0" aria-label="Reps" required>
       <button type="button" class="stepper-btn stepper-plus" aria-label="Increase reps">+</button>
@@ -919,6 +921,10 @@ function addSetRow(block) {
     </div>
     <input type="text" class="set-notes" placeholder="Note for this set (optional)">
     <button type="button" class="set-remove">✕</button>`;
+  if (copyLast && lastRow) {
+    row.querySelector(".set-reps").value = lastRow.querySelector(".set-reps").value;
+    row.querySelector(".set-weight").value = lastRow.querySelector(".set-weight").value;
+  }
   row.querySelectorAll(".stepper").forEach(initStepper);
   row.querySelector(".set-remove").addEventListener("click", () => {
     row.remove();
@@ -928,6 +934,7 @@ function addSetRow(block) {
   setsDiv.appendChild(row);
   renumberSets(block);
   saveExerciseDraft();
+  return row;
 }
 
 async function onBlockMuscleChange(block) {
@@ -975,7 +982,10 @@ function addExerciseBlock() {
         <span class="set-columns-label-col">Weight (kg)</span>
       </div>
       <div class="ex-sets"></div>
-      <button type="button" class="add-set secondary">+ Add Set</button>
+      <div class="set-actions">
+        <button type="button" class="add-set secondary">+ Add Set</button>
+        <button type="button" class="add-set-same secondary">Same as Above</button>
+      </div>
     </div>`;
 
   block.querySelectorAll("[data-option-field]").forEach(initOptionField);
@@ -985,6 +995,7 @@ function addExerciseBlock() {
     onBlockMuscleChange(block);
   });
   block.querySelector(".add-set").addEventListener("click", () => addSetRow(block));
+  block.querySelector(".add-set-same").addEventListener("click", () => addSetRow(block, { copyLast: true }));
   block.querySelector(".exercise-remove").addEventListener("click", () => {
     block.remove();
     renumberExerciseBlocks();

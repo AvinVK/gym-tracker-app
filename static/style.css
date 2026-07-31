@@ -800,6 +800,16 @@ button:disabled {
 .secondary:hover { background: #e7e1fd; }
 .secondary:active { transform: scale(.98); }
 
+.set-actions {
+  display: flex;
+  gap: 8px;
+}
+.set-actions .secondary {
+  grid-column: unset;
+  flex: 1;
+  min-width: 0;
+}
+
 /* ---------------- Exercise blocks ---------------- */
 .exercise-block {
   border: 1.5px solid var(--border);
