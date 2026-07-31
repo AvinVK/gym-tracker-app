@@ -544,6 +544,10 @@ button:disabled {
   color: var(--ink);
   font-weight: 700;
 }
+.time-picker-option:disabled {
+  color: #e7e8ef;
+  cursor: not-allowed;
+}
 .time-picker-presets-label {
   margin: 14px 0 6px;
   font-size: 11px;
@@ -575,6 +579,13 @@ button:disabled {
   border-color: transparent;
   color: #fff;
 }
+.time-picker-preset:disabled {
+  background: #f1f1f6;
+  color: #c7c9d6;
+  border-color: var(--border);
+  cursor: not-allowed;
+}
+.time-picker-preset:disabled:hover { background: #f1f1f6; }
 .time-picker-card .confirm-actions { margin-top: 14px; }
 
 /* ---------------- Option field (custom in-app select, e.g. muscle group / exercise) ---------------- */

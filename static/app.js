@@ -421,6 +421,10 @@ const tpAmpmCol = document.getElementById("tp-ampm");
 const tpPresets = document.getElementById("tp-presets");
 let tpActiveContainer = null;
 let tpSelected = { hour: null, minute: null, ampm: "AM" };
+// Minutes-since-midnight (24h) that the currently-open picker's selection
+// must be strictly after — set from a sibling "start time" field via
+// data-after-field, null when this picker has no such constraint.
+let tpMinMinutes = null;
 
 tpHoursCol.innerHTML = Array.from({ length: 12 }, (_, i) => i + 1)
   .map(h => `<button type="button" class="time-picker-option" data-value="${h}">${h}</button>`).join("");
@@ -434,6 +438,30 @@ function to12Hour(h24, m) {
   let h12 = h24n % 12;
   if (h12 === 0) h12 = 12;
   return { h12: String(h12), m, ampm: h24n >= 12 ? "PM" : "AM" };
+}
+
+function timeMinutes12(hour12, minute, ampm) {
+  let h24 = parseInt(hour12, 10) % 12;
+  if (ampm === "PM") h24 += 12;
+  return h24 * 60 + parseInt(minute, 10);
+}
+
+function timeMinutes24(hhmm) {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+}
+
+// Reads the value of the field this container is constrained to come after
+// (e.g. End Time reading Start Time's value), via data-after-field — which
+// holds either the sibling's `name` (main form) or its hidden-input `class`
+// (History edit row, which has no `name` attributes).
+function relatedTimeValue(container) {
+  const key = container.dataset.afterField;
+  if (!key) return null;
+  const scope = container.closest("form") || container.closest("tr");
+  if (!scope) return null;
+  const input = scope.querySelector(`[name="${key}"]`) || scope.querySelector(`.${key}`);
+  return input && input.value ? input.value : null;
 }
 
 function setTimeFieldValue(container, value) {
@@ -483,13 +511,51 @@ function centeredOption(col) {
   return closest;
 }
 
+// Nearest option to `fromOpt` (by DOM order) that isn't disabled — used to
+// bounce a free-hand scroll off an out-of-range row onto the closest valid
+// one, the same way it'd refuse to land there in the first place on click.
+function nearestEnabledOption(col, fromOpt) {
+  const opts = [...col.querySelectorAll(".time-picker-option")];
+  const idx = opts.indexOf(fromOpt);
+  for (let d = 0; d < opts.length; d++) {
+    if (opts[idx + d] && !opts[idx + d].disabled) return opts[idx + d];
+    if (opts[idx - d] && !opts[idx - d].disabled) return opts[idx - d];
+  }
+  return fromOpt;
+}
+
+// Greys out (and disables clicking/landing on) every option in all three
+// columns that, combined with the OTHER columns' current selections, would
+// land at or before tpMinMinutes. Re-run after every selection change since
+// which rows are valid shifts as hour/minute/am-pm change.
+function applyTimePickerConstraints() {
+  const constrained = tpMinMinutes != null;
+  tpHoursCol.querySelectorAll(".time-picker-option").forEach(b => {
+    b.disabled = constrained && timeMinutes12(b.dataset.value, tpSelected.minute || "00", tpSelected.ampm || "AM") <= tpMinMinutes;
+  });
+  tpMinutesCol.querySelectorAll(".time-picker-option").forEach(b => {
+    b.disabled = constrained && timeMinutes12(tpSelected.hour || "12", b.dataset.value, tpSelected.ampm || "AM") <= tpMinMinutes;
+  });
+  tpAmpmCol.querySelectorAll(".time-picker-option").forEach(b => {
+    b.disabled = constrained && timeMinutes12(tpSelected.hour || "12", tpSelected.minute || "00", b.dataset.value) <= tpMinMinutes;
+  });
+  tpPresets.querySelectorAll(".time-picker-preset").forEach(b => {
+    b.disabled = constrained && timeMinutes12(b.dataset.hour, b.dataset.minute, b.dataset.ampm) <= tpMinMinutes;
+  });
+}
+
 const tpScrollTimers = new Map();
 function onWheelScroll(col, key) {
   clearTimeout(tpScrollTimers.get(col));
   tpScrollTimers.set(col, setTimeout(() => {
-    const opt = centeredOption(col);
+    let opt = centeredOption(col);
     if (!opt) return;
+    if (opt.disabled) {
+      opt = nearestEnabledOption(col, opt);
+      jumpToOption(col, opt.dataset.value);
+    }
     tpSelected[key] = opt.dataset.value;
+    applyTimePickerConstraints();
     highlightTimePickerSelection();
   }, 100));
 }
@@ -502,28 +568,38 @@ tpAmpmCol.addEventListener("scroll", () => onWheelScroll(tpAmpmCol, "ampm"));
   const key = ["hour", "minute", "ampm"][i];
   col.addEventListener("click", (e) => {
     const btn = e.target.closest(".time-picker-option");
-    if (!btn) return;
+    if (!btn || btn.disabled) return;
     tpSelected[key] = btn.dataset.value;
     jumpToOption(col, btn.dataset.value);
+    applyTimePickerConstraints();
     highlightTimePickerSelection();
   });
 });
 
 tpPresets.addEventListener("click", (e) => {
   const btn = e.target.closest(".time-picker-preset");
-  if (!btn) return;
+  if (!btn || btn.disabled) return;
   tpSelected = { hour: btn.dataset.hour, minute: btn.dataset.minute, ampm: btn.dataset.ampm };
   jumpToOption(tpHoursCol, tpSelected.hour);
   jumpToOption(tpMinutesCol, tpSelected.minute);
   jumpToOption(tpAmpmCol, tpSelected.ampm);
+  applyTimePickerConstraints();
   highlightTimePickerSelection();
 });
 
 function openTimePicker(container) {
   tpActiveContainer = container;
+  const startVal = relatedTimeValue(container);
+  tpMinMinutes = startVal ? timeMinutes24(startVal) : null;
   const hidden = container.querySelector("input[type=hidden]");
   if (hidden.value) {
     const { h12, m, ampm } = to12Hour(...hidden.value.split(":"));
+    tpSelected = { hour: h12, minute: m, ampm };
+  } else if (tpMinMinutes != null) {
+    // Open already scrolled to just after the start time instead of
+    // midnight, so the wheel's default position is itself a valid choice.
+    const defaultMinutes = (tpMinMinutes + 30) % (24 * 60);
+    const { h12, m, ampm } = to12Hour(String(Math.floor(defaultMinutes / 60)), String(defaultMinutes % 60).padStart(2, "0"));
     tpSelected = { hour: h12, minute: m, ampm };
   } else {
     // The wheel always has *something* centered once it's open (unlike the
@@ -532,6 +608,7 @@ function openTimePicker(container) {
     // wheel would naturally show.
     tpSelected = { hour: "1", minute: "00", ampm: "AM" };
   }
+  applyTimePickerConstraints();
   highlightTimePickerSelection();
   tpModal.hidden = false;
   requestAnimationFrame(() => {
@@ -984,14 +1061,14 @@ function formatDuration(hours) {
   return parts.join(" ");
 }
 
-function timeFieldHtml(cls, value) {
+function timeFieldHtml(cls, value, afterCls) {
   let display = "--:-- --";
   if (value) {
     const { h12, m, ampm } = to12Hour(...value.split(":"));
     display = `${h12}:${m} ${ampm}`;
   }
   return `
-    <div class="time-field">
+    <div class="time-field"${afterCls ? ` data-after-field="${afterCls}"` : ""}>
       <button type="button" class="time-field-btn">
         <span class="time-field-value${value ? "" : " placeholder"}">${display}</span>
         <span class="time-field-icon" aria-hidden="true">🕐</span>
@@ -1036,7 +1113,7 @@ function workoutRowEdit(w) {
         </div>
       </td>
       <td data-label="Start">${timeFieldHtml("edit-start", w.start_time)}</td>
-      <td data-label="End">${timeFieldHtml("edit-end", w.end_time)}</td>
+      <td data-label="End">${timeFieldHtml("edit-end", w.end_time, "edit-start")}</td>
       <td data-label="Duration">${formatDuration(w.duration_hours)}</td>
       <td data-label="Energy Level">${energyFieldHtml("edit-energy", w.energy_level)}</td>
       <td data-label="Notes"><input type="text" class="edit-notes" value="${w.notes || ""}"></td>
