@@ -1100,6 +1100,21 @@ function addExerciseBlock() {
   exercisesContainer.appendChild(block);
   addSetRow(block);
   renumberExerciseBlocks();
+
+  // Most workouts train one muscle group across several exercises in a
+  // row, so default a freshly-added block to whatever the previous one
+  // has picked — setOptionFieldValue's change event also loads that
+  // muscle's exercises into the dropdown below. Left alone during draft
+  // restoration, which sets each block's own saved value explicitly.
+  if (!restoringDraft) {
+    const blocks = exercisesContainer.querySelectorAll(".exercise-block");
+    const prevBlock = blocks[blocks.length - 2];
+    const prevMuscle = prevBlock && prevBlock.querySelector(".ex-muscle").value;
+    if (prevMuscle) {
+      setOptionFieldValue(block.querySelector(".ex-muscle-field"), prevMuscle);
+    }
+  }
+
   return block;
 }
 
