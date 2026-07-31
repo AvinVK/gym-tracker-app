@@ -403,7 +403,7 @@ let tpSelected = { hour: null, minute: null, ampm: "AM" };
 
 tpHoursCol.innerHTML = Array.from({ length: 12 }, (_, i) => i + 1)
   .map(h => `<button type="button" class="time-picker-option" data-value="${h}">${h}</button>`).join("");
-tpMinutesCol.innerHTML = ["00", "15", "30", "45"]
+tpMinutesCol.innerHTML = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"))
   .map(m => `<button type="button" class="time-picker-option" data-value="${m}">${m}</button>`).join("");
 tpAmpmCol.innerHTML = ["AM", "PM"]
   .map(a => `<button type="button" class="time-picker-option" data-value="${a}">${a}</button>`).join("");
@@ -438,18 +438,52 @@ function highlightTimePickerSelection() {
     b.dataset.hour === String(tpSelected.hour) && b.dataset.minute === String(tpSelected.minute) && b.dataset.ampm === tpSelected.ampm));
 }
 
-function scrollTimePickerColumn(col, value) {
-  const btn = value != null ? [...col.querySelectorAll(".time-picker-option")].find(b => b.dataset.value === String(value)) : null;
-  (btn || col.firstElementChild).scrollIntoView({ block: "center" });
+// Instantly (no animation) scrolls `col` so the option matching `value`
+// sits centered in the wheel — used for every *programmatic* positioning
+// (opening the picker, tapping a row, tapping a preset). Free-hand scroll
+// gestures are handled separately by the scroll listener below, since
+// those move the column directly without going through this at all.
+function jumpToOption(col, value) {
+  const target = (value != null && [...col.querySelectorAll(".time-picker-option")].find(b => b.dataset.value === String(value))) || col.firstElementChild;
+  if (!target) return;
+  col.scrollTop = target.offsetTop - (col.clientHeight - target.offsetHeight) / 2;
 }
 
-[tpHoursCol, tpMinutesCol, tpAmpmCol].forEach(col => {
+// Whichever row's center lands nearest the column's vertical center is
+// "selected" purely by scroll position, matching a native wheel picker.
+function centeredOption(col) {
+  const mid = col.clientHeight / 2;
+  let closest = null;
+  let closestDist = Infinity;
+  col.querySelectorAll(".time-picker-option").forEach(opt => {
+    const dist = Math.abs((opt.offsetTop + opt.offsetHeight / 2) - (col.scrollTop + mid));
+    if (dist < closestDist) { closestDist = dist; closest = opt; }
+  });
+  return closest;
+}
+
+const tpScrollTimers = new Map();
+function onWheelScroll(col, key) {
+  clearTimeout(tpScrollTimers.get(col));
+  tpScrollTimers.set(col, setTimeout(() => {
+    const opt = centeredOption(col);
+    if (!opt) return;
+    tpSelected[key] = opt.dataset.value;
+    highlightTimePickerSelection();
+  }, 100));
+}
+
+tpHoursCol.addEventListener("scroll", () => onWheelScroll(tpHoursCol, "hour"));
+tpMinutesCol.addEventListener("scroll", () => onWheelScroll(tpMinutesCol, "minute"));
+tpAmpmCol.addEventListener("scroll", () => onWheelScroll(tpAmpmCol, "ampm"));
+
+[tpHoursCol, tpMinutesCol, tpAmpmCol].forEach((col, i) => {
+  const key = ["hour", "minute", "ampm"][i];
   col.addEventListener("click", (e) => {
     const btn = e.target.closest(".time-picker-option");
     if (!btn) return;
-    if (col === tpHoursCol) tpSelected.hour = btn.dataset.value;
-    else if (col === tpMinutesCol) tpSelected.minute = btn.dataset.value;
-    else tpSelected.ampm = btn.dataset.value;
+    tpSelected[key] = btn.dataset.value;
+    jumpToOption(col, btn.dataset.value);
     highlightTimePickerSelection();
   });
 });
@@ -458,10 +492,10 @@ tpPresets.addEventListener("click", (e) => {
   const btn = e.target.closest(".time-picker-preset");
   if (!btn) return;
   tpSelected = { hour: btn.dataset.hour, minute: btn.dataset.minute, ampm: btn.dataset.ampm };
+  jumpToOption(tpHoursCol, tpSelected.hour);
+  jumpToOption(tpMinutesCol, tpSelected.minute);
+  jumpToOption(tpAmpmCol, tpSelected.ampm);
   highlightTimePickerSelection();
-  scrollTimePickerColumn(tpHoursCol, tpSelected.hour);
-  scrollTimePickerColumn(tpMinutesCol, tpSelected.minute);
-  scrollTimePickerColumn(tpAmpmCol, tpSelected.ampm);
 });
 
 function openTimePicker(container) {
@@ -471,14 +505,18 @@ function openTimePicker(container) {
     const { h12, m, ampm } = to12Hour(...hidden.value.split(":"));
     tpSelected = { hour: h12, minute: m, ampm };
   } else {
-    tpSelected = { hour: null, minute: null, ampm: "AM" };
+    // The wheel always has *something* centered once it's open (unlike the
+    // old tap-to-select buttons, a scroll position can't be "empty") —
+    // default to the top row of each column, same as a fresh unscrolled
+    // wheel would naturally show.
+    tpSelected = { hour: "1", minute: "00", ampm: "AM" };
   }
   highlightTimePickerSelection();
   tpModal.hidden = false;
   requestAnimationFrame(() => {
-    scrollTimePickerColumn(tpHoursCol, tpSelected.hour);
-    scrollTimePickerColumn(tpMinutesCol, tpSelected.minute);
-    scrollTimePickerColumn(tpAmpmCol, tpSelected.ampm);
+    jumpToOption(tpHoursCol, tpSelected.hour);
+    jumpToOption(tpMinutesCol, tpSelected.minute);
+    jumpToOption(tpAmpmCol, tpSelected.ampm);
   });
 }
 

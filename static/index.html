@@ -107,10 +107,14 @@
 <div id="time-picker-modal" class="modal-overlay" hidden>
   <div class="modal-card time-picker-card">
     <h2>Select Time</h2>
-    <div class="time-picker-columns">
-      <div class="time-picker-col" id="tp-hours"></div>
-      <div class="time-picker-col" id="tp-minutes"></div>
-      <div class="time-picker-col" id="tp-ampm"></div>
+    <div class="time-picker-wheel">
+      <div class="time-picker-highlight" aria-hidden="true"></div>
+      <div class="time-picker-columns">
+        <div class="time-picker-col" id="tp-hours"></div>
+        <div class="time-picker-sep">:</div>
+        <div class="time-picker-col" id="tp-minutes"></div>
+        <div class="time-picker-col" id="tp-ampm"></div>
+      </div>
     </div>
     <p class="time-picker-presets-label">Presets</p>
     <div class="time-picker-presets" id="tp-presets">

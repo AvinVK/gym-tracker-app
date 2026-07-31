@@ -413,41 +413,71 @@ button:disabled {
   font-weight: 700;
   color: var(--ink);
 }
+/* Row height (44px) and the wheel's fixed height (220px = 5 rows) drive
+   the centering math in JS (jumpToOption) and the column's top/bottom
+   padding below — keep those three in sync if this changes. */
+.time-picker-wheel {
+  position: relative;
+  height: 220px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 30%, #000 70%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 30%, #000 70%, transparent 100%);
+}
+.time-picker-highlight {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 44px;
+  transform: translateY(-50%);
+  background: #f1effe;
+  border-radius: 10px;
+  pointer-events: none;
+  z-index: 0;
+}
 .time-picker-columns {
   display: flex;
-  gap: 8px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
+  align-items: stretch;
+  justify-content: center;
+  height: 100%;
+  position: relative;
+  z-index: 1;
 }
 .time-picker-col {
-  flex: 1 1 0;
-  max-height: 200px;
+  width: 64px;
+  height: 100%;
   overflow-y: auto;
-  scroll-snap-type: y proximity;
-  padding: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  padding: 88px 0; /* (wheel height - row height) / 2, so the first/last row can reach center */
+  scrollbar-width: none;
 }
-.time-picker-col + .time-picker-col { border-left: 1px solid var(--border); }
+.time-picker-col::-webkit-scrollbar { display: none; }
+.time-picker-sep {
+  align-self: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  padding-bottom: 2px;
+}
 .time-picker-option {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   scroll-snap-align: center;
   border: none;
   background: none;
-  padding: 8px 4px;
-  font-size: 14px;
+  width: 100%;
+  font-size: 18px;
   font-weight: 600;
-  color: var(--ink);
-  border-radius: 8px;
+  color: #c7c9d6;
   cursor: pointer;
   font-family: inherit;
-  transition: background .15s ease, color .15s ease;
+  transition: color .15s ease;
 }
-.time-picker-option:hover { background: #f6f5ff; }
 .time-picker-option.selected {
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  color: #fff;
+  color: var(--ink);
+  font-weight: 700;
 }
 .time-picker-presets-label {
   margin: 14px 0 6px;
