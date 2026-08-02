@@ -838,20 +838,6 @@ button:disabled {
   flex: 1 1 auto;
   min-width: 0;
 }
-.note-speak-btn {
-  flex: 0 0 44px !important;
-  padding: 10px 0 !important;
-  font-size: 16px !important;
-}
-.note-speak-btn:disabled {
-  opacity: .5;
-  cursor: not-allowed;
-}
-.note-speak-btn.speaking {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
 
 /* ---------------- Exercise blocks ---------------- */
 .exercise-block {
@@ -947,6 +933,10 @@ button:disabled {
   color: var(--muted);
 }
 .set-columns-label-col { text-align: center; }
+/* One extra field (e.g. Inclination) some exercises have alongside
+   Reps/Weight or Duration/Level - same grid-template-columns as
+   .set-row.has-extra below, for the same alignment reason as above. */
+.set-columns-label.has-extra { grid-template-columns: 48px 1fr 1fr 1fr 30px; }
 
 .set-row {
   display: grid;
@@ -955,6 +945,7 @@ button:disabled {
   align-items: center;
   margin-bottom: 7px;
 }
+.set-row.has-extra { grid-template-columns: 48px 1fr 1fr 1fr 30px; }
 .set-row .set-number {
   font-size: 11.5px;
   font-weight: 700;
@@ -1224,8 +1215,18 @@ button:disabled {
     grid-template-columns: 40px 1fr 1fr 32px;
     grid-template-areas: "num reps weight remove";
   }
+  /* Exercises with an extra field (e.g. Treadmill Walk's Inclination) don't
+     fit a 3rd number box into the same row on a narrow screen, so it drops
+     to its own full-width row underneath instead. */
+  .set-row.has-extra {
+    grid-template-areas:
+      "num reps weight remove"
+      "extra extra extra extra";
+    row-gap: 6px;
+  }
   .set-row .set-number { grid-area: num; }
   .set-row .stepper-reps, .set-row .stepper-duration { grid-area: reps; }
   .set-row .stepper-weight, .set-row .stepper-level { grid-area: weight; }
   .set-row .set-remove { grid-area: remove; }
+  .set-row .set-extra-field { grid-area: extra; }
 }

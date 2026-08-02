@@ -957,6 +957,43 @@ function updateSetColumnsLabel(block) {
   cols[1].textContent = isCardio ? "Level" : "Weight (kg)";
 }
 
+// Adds/removes the 3rd "extra field" label column (e.g. "Inclination (%)")
+// next to Reps/Weight or Duration/Level, keeping it in sync with whether
+// the currently-selected exercise has one (see EXERCISE_EXTRA_FIELDS).
+function updateSetColumnsExtraLabel(block) {
+  const extraField = EXERCISE_EXTRA_FIELDS[block.querySelector(".ex-exercise").value];
+  const label = block.querySelector(".set-columns-label");
+  let extraCol = label.querySelector(".set-columns-label-extra");
+  label.classList.toggle("has-extra", !!extraField);
+  if (extraField) {
+    if (!extraCol) {
+      extraCol = document.createElement("span");
+      extraCol.className = "set-columns-label-col set-columns-label-extra";
+      label.appendChild(extraCol);
+    }
+    extraCol.textContent = extraField.label;
+  } else if (extraCol) {
+    extraCol.remove();
+  }
+}
+
+// Rebuilds the sets list when the currently-selected exercise's extra field
+// (see EXERCISE_EXTRA_FIELDS) changes - e.g. switching from Step Machine (no
+// extra field) to Treadmill Walk (Inclination) or back. Only rebuilds when
+// that actually changes, same guard as applyExerciseType, so switching
+// between two exercises that both have (or both lack) an extra field never
+// throws away sets already entered.
+function applyExtraField(block) {
+  const extraField = EXERCISE_EXTRA_FIELDS[block.querySelector(".ex-exercise").value];
+  const prevKey = block.dataset.extraFieldKey || "";
+  const newKey = extraField ? extraField.key : "";
+  block.dataset.extraFieldKey = newKey;
+  updateSetColumnsExtraLabel(block);
+  if (newKey === prevKey) return;
+  block.querySelector(".ex-sets").innerHTML = "";
+  addSetRow(block);
+}
+
 function updateSetTypeToggle(block) {
   const type = block.dataset.exerciseType || "strength";
   block.querySelectorAll(".set-type-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.type === type));
@@ -986,8 +1023,15 @@ function addSetRow(block, { copyLast = false } = {}) {
   const existingRows = block.querySelectorAll(".set-row");
   const lastRow = existingRows[existingRows.length - 1];
   const isCardio = block.dataset.exerciseType === "cardio";
+  const extraField = EXERCISE_EXTRA_FIELDS[block.querySelector(".ex-exercise").value];
   const row = document.createElement("div");
-  row.className = "set-row";
+  row.className = "set-row" + (extraField ? " has-extra" : "");
+  const extraHtml = extraField ? `
+    <div class="stepper set-extra-field" data-step="${extraField.step}" data-min="${extraField.min}">
+      <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease ${extraField.label}">&minus;</button>
+      <input type="number" class="set-extra stepper-input" min="${extraField.min}" placeholder="${extraField.placeholder || ""}" aria-label="${extraField.label}">
+      <button type="button" class="stepper-btn stepper-plus" aria-label="Increase ${extraField.label}">+</button>
+    </div>` : "";
   row.innerHTML = isCardio ? `
     <span class="set-number"></span>
     <div class="stepper-duration set-duration-field">
@@ -1004,6 +1048,7 @@ function addSetRow(block, { copyLast = false } = {}) {
       </button>
       <input type="hidden" class="set-level">
     </div>
+    ${extraHtml}
     <button type="button" class="set-remove">✕</button>` : `
     <span class="set-number"></span>
     <div class="stepper stepper-reps" data-step="2" data-min="1">
@@ -1016,6 +1061,7 @@ function addSetRow(block, { copyLast = false } = {}) {
       <input type="number" step="0.5" class="set-weight stepper-input" placeholder="kg" aria-label="Weight in kg">
       <button type="button" class="stepper-btn stepper-plus" aria-label="Increase weight">+</button>
     </div>
+    ${extraHtml}
     <button type="button" class="set-remove">✕</button>`;
   if (isCardio) {
     initSetDurationField(row.querySelector(".set-duration-field"));
@@ -1028,6 +1074,9 @@ function addSetRow(block, { copyLast = false } = {}) {
     } else {
       row.querySelector(".set-reps").value = lastRow.querySelector(".set-reps")?.value || "";
       row.querySelector(".set-weight").value = lastRow.querySelector(".set-weight")?.value || "";
+    }
+    if (extraField) {
+      row.querySelector(".set-extra").value = lastRow.querySelector(".set-extra")?.value || "";
     }
   }
   row.querySelectorAll(".stepper").forEach(initStepper);
@@ -1216,55 +1265,15 @@ function initNoteMicButton(block) {
   });
 }
 
-// Read-the-note-aloud button, using the Web Speech API's synthesis half
-// (separate from SpeechRecognitionCtor, which is only the speech-to-text
-// half) instead of a mic.
-function initNoteSpeakButton(block) {
-  const btn = block.querySelector(".note-speak-btn");
-  const input = block.querySelector(".ex-notes");
-  if (!("speechSynthesis" in window)) {
-    btn.disabled = true;
-    btn.title = "Text-to-speech isn't supported in this browser";
-    return;
-  }
-  btn.addEventListener("click", () => {
-    if (!input.value.trim()) {
-      toast("Nothing to read yet");
-      return;
-    }
-    window.speechSynthesis.cancel(); // don't stack up overlapping reads
-    const utterance = new SpeechSynthesisUtterance(input.value);
-    utterance.addEventListener("start", () => btn.classList.add("speaking"));
-    utterance.addEventListener("end", () => btn.classList.remove("speaking"));
-    utterance.addEventListener("error", () => btn.classList.remove("speaking"));
-    window.speechSynthesis.speak(utterance);
-  });
-}
-
 // One-off fields that only apply to a single exercise (e.g. treadmill
 // incline) - stored in the same per-set `attributes` JSON as everything
-// else instead of a dedicated column (see docs/eav-example.md). There's no
-// per-set UI for it: like the exercise-level note below, the same value is
-// duplicated onto every set of the exercise when submitted. Add more
-// entries here as new one-off fields come up.
+// else instead of a dedicated column (see docs/eav-example.md). Rendered as
+// a 3rd per-set field alongside Reps/Weight or Duration/Level (see
+// addSetRow) so it varies per set just like those do. Add more entries
+// here as new one-off fields come up.
 const EXERCISE_EXTRA_FIELDS = {
-  "Treadmill Walk": { key: "inclination_percent", label: "Inclination (%)", placeholder: "e.g. 2" },
+  "Treadmill Walk": { key: "inclination_percent", label: "Inclination (%)", step: 1, min: 0, placeholder: "0" },
 };
-
-function updateExtraField(block) {
-  const exerciseName = block.querySelector(".ex-exercise").value;
-  const field = EXERCISE_EXTRA_FIELDS[exerciseName];
-  const wrapper = block.querySelector(".ex-extra-field");
-  const input = wrapper.querySelector(".ex-extra-value");
-  if (!field) {
-    wrapper.hidden = true;
-    input.value = "";
-    return;
-  }
-  wrapper.hidden = false;
-  wrapper.querySelector(".ex-extra-field-label").textContent = field.label;
-  input.placeholder = field.placeholder || "";
-}
 
 async function onBlockMuscleChange(block) {
   const muscle = block.querySelector(".ex-muscle").value;
@@ -1273,7 +1282,7 @@ async function onBlockMuscleChange(block) {
     block.__exerciseTypes = {};
     setOptionFieldOptions(exField, [], { emptyText: "Pick a muscle group first" });
     applyExerciseType(block, "strength");
-    updateExtraField(block);
+    applyExtraField(block);
     return;
   }
   const exercises = await api.get(`/api/exercises-by-muscle/${encodeURIComponent(muscle)}`);
@@ -1282,13 +1291,13 @@ async function onBlockMuscleChange(block) {
   // event) if it's not one of the new muscle's exercises - so the extra
   // field needs updating here too, not just from the exercise dropdown's
   // own change handler below, or switching away from Treadmill Walk would
-  // leave a stale Inclination field showing.
+  // leave a stale Inclination column showing.
   setOptionFieldOptions(exField, exercises.map(ex => ex.exercise), { emptyText: "No exercises for this muscle yet" });
   // Best guess before a specific exercise is picked (almost everything
   // under "Cardio" is duration+level) — the exercise dropdown's own change
   // handler below corrects this once a specific exercise is chosen.
   applyExerciseType(block, muscle === "Cardio" ? "cardio" : "strength");
-  updateExtraField(block);
+  applyExtraField(block);
 }
 
 function addExerciseBlock() {
@@ -1318,10 +1327,6 @@ function addExerciseBlock() {
         <input type="hidden" class="ex-exercise" required>
       </div>
     </label>
-    <label class="full ex-extra-field" hidden>
-      <span class="ex-extra-field-label"></span>
-      <input type="number" class="ex-extra-value">
-    </label>
     <div class="full">
       <div class="sets-header">
         <label>Sets</label>
@@ -1346,7 +1351,6 @@ function addExerciseBlock() {
       <div class="note-field">
         <input type="text" class="ex-notes" placeholder="optional">
         <button type="button" class="note-mic-btn secondary" aria-label="Dictate note" title="Speak your note">🎤</button>
-        <button type="button" class="note-speak-btn secondary" aria-label="Read note aloud" title="Read note aloud">🔊</button>
       </div>
     </label>`;
 
@@ -1360,7 +1364,7 @@ function addExerciseBlock() {
     if (restoringDraft) return; // restoreDraft() sets the block's type explicitly instead
     const exerciseName = block.querySelector(".ex-exercise").value;
     applyExerciseType(block, (block.__exerciseTypes && block.__exerciseTypes[exerciseName]) || "strength");
-    updateExtraField(block);
+    applyExtraField(block);
   });
   block.querySelector(".add-set").addEventListener("click", () => addSetRow(block));
   block.querySelector(".add-set-same").addEventListener("click", () => addSetRow(block, { copyLast: true }));
@@ -1370,7 +1374,6 @@ function addExerciseBlock() {
   updateSetTypeToggle(block);
   initVoiceSetButton(block);
   initNoteMicButton(block);
-  initNoteSpeakButton(block);
   block.querySelector(".exercise-remove").addEventListener("click", () => {
     block.remove();
     renumberExerciseBlocks();
@@ -1407,27 +1410,28 @@ document.getElementById("form-exercise-log").addEventListener("submit", async (e
   const exercises = [...exercisesContainer.querySelectorAll(".exercise-block")].map(block => {
     const isCardio = block.dataset.exerciseType === "cardio";
     const exerciseName = block.querySelector(".ex-exercise").value;
-    const notes = block.querySelector(".ex-notes").value;
-    // One note per exercise, not per set - the same value is duplicated onto
-    // every set sent to the backend (each exercise_log row still has its own
-    // `notes` column). Same for the extra field (e.g. treadmill incline):
-    // no per-set UI for it, so it's just merged onto every set's attributes.
     const extraField = EXERCISE_EXTRA_FIELDS[exerciseName];
-    const extraValue = extraField ? parseFloat(block.querySelector(".ex-extra-value").value) : NaN;
-    const extra = extraField && !isNaN(extraValue) ? { [extraField.key]: extraValue } : {};
+    const notes = block.querySelector(".ex-notes").value;
     return {
       muscle_group: block.querySelector(".ex-muscle").value,
       exercise: exerciseName,
-      sets: [...block.querySelectorAll(".set-row")].map(row => isCardio ? {
-        duration_minutes: parseFloat(row.querySelector(".set-duration").value) || null,
-        intensity_level: parseInt(row.querySelector(".set-level").value, 10) || null,
-        notes,
-        ...extra,
-      } : {
-        reps: parseInt(row.querySelector(".set-reps").value, 10) || null,
-        weight_kg: parseFloat(row.querySelector(".set-weight").value) || null,
-        notes,
-        ...extra,
+      sets: [...block.querySelectorAll(".set-row")].map((row, i) => {
+        const set = isCardio ? {
+          duration_minutes: parseFloat(row.querySelector(".set-duration").value) || null,
+          intensity_level: parseInt(row.querySelector(".set-level").value, 10) || null,
+        } : {
+          reps: parseInt(row.querySelector(".set-reps").value, 10) || null,
+          weight_kg: parseFloat(row.querySelector(".set-weight").value) || null,
+        };
+        if (extraField) {
+          const v = parseFloat(row.querySelector(".set-extra").value);
+          if (!isNaN(v)) set[extraField.key] = v;
+        }
+        // One note per exercise, not per set - only the first set carries
+        // it (each exercise_log row still has its own `notes` column, but
+        // the rest are just left blank rather than duplicating the text).
+        if (i === 0) set.notes = notes;
+        return set;
       }),
     };
   });
@@ -1709,13 +1713,17 @@ function collectExerciseBlocksDraft() {
       exercise: block.querySelector(".ex-exercise").value,
       type: block.dataset.exerciseType || "strength",
       notes: block.querySelector(".ex-notes").value,
-      extraValue: block.querySelector(".ex-extra-value").value,
-      sets: [...block.querySelectorAll(".set-row")].map(row => isCardio ? {
-        duration_minutes: row.querySelector(".set-duration").value,
-        intensity_level: row.querySelector(".set-level").value,
-      } : {
-        reps: row.querySelector(".set-reps").value,
-        weight_kg: row.querySelector(".set-weight").value,
+      sets: [...block.querySelectorAll(".set-row")].map(row => {
+        const s = isCardio ? {
+          duration_minutes: row.querySelector(".set-duration").value,
+          intensity_level: row.querySelector(".set-level").value,
+        } : {
+          reps: row.querySelector(".set-reps").value,
+          weight_kg: row.querySelector(".set-weight").value,
+        };
+        const extraInput = row.querySelector(".set-extra");
+        if (extraInput) s.extraValue = extraInput.value;
+        return s;
       }),
     };
   });
@@ -1782,9 +1790,9 @@ async function restoreDraft() {
           block.dataset.exerciseType = ex.type || "strength";
           updateSetColumnsLabel(block);
           updateSetTypeToggle(block);
-          updateExtraField(block);
+          block.dataset.extraFieldKey = (EXERCISE_EXTRA_FIELDS[ex.exercise] || {}).key || "";
+          updateSetColumnsExtraLabel(block);
           block.querySelector(".ex-notes").value = ex.notes || "";
-          block.querySelector(".ex-extra-value").value = ex.extraValue || "";
           const isCardio = block.dataset.exerciseType === "cardio";
           block.querySelector(".ex-sets").innerHTML = "";
           const sets = ex.sets && ex.sets.length ? ex.sets : [{}];
@@ -1798,6 +1806,8 @@ async function restoreDraft() {
               rows[i].querySelector(".set-reps").value = s.reps || "";
               rows[i].querySelector(".set-weight").value = s.weight_kg || "";
             }
+            const extraInput = rows[i].querySelector(".set-extra");
+            if (extraInput && s.extraValue != null) extraInput.value = s.extraValue;
           });
         }
       }
