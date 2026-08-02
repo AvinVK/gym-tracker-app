@@ -124,6 +124,22 @@
   </div>
 </div>
 
+<div id="meal-timing-picker-modal" class="modal-overlay" hidden>
+  <div class="modal-card time-picker-card">
+    <h2>How long ago did you eat?</h2>
+    <div class="time-picker-wheel meal-timing-picker-wheel">
+      <div class="time-picker-highlight" aria-hidden="true"></div>
+      <div class="time-picker-columns">
+        <div class="time-picker-col" id="mtp-hours"></div>
+      </div>
+    </div>
+    <div class="confirm-actions">
+      <button type="button" class="secondary" id="mtp-cancel">Cancel</button>
+      <button type="button" class="primary" id="mtp-done">Done</button>
+    </div>
+  </div>
+</div>
+
 <div id="option-picker-modal" class="modal-overlay" hidden>
   <div class="modal-card option-picker-card">
     <h2 id="op-title">Select</h2>
@@ -191,11 +207,13 @@
         <label>What did you eat before the gym?
           <input type="text" name="pre_workout_meal" placeholder="e.g. banana, protein shake">
         </label>
-        <label>Time Since Eating (hrs)
-          <div class="stepper" id="hours-since-meal-field" data-step="0.5" data-min="0">
-            <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease hours">&minus;</button>
-            <input type="number" step="0.5" name="hours_since_meal" class="stepper-input" placeholder="0" aria-label="Hours since last meal">
-            <button type="button" class="stepper-btn stepper-plus" aria-label="Increase hours">+</button>
+        <label>Time Since Eating
+          <div class="meal-timing-field" data-meal-timing-field>
+            <button type="button" class="meal-timing-field-btn">
+              <span class="meal-timing-field-value placeholder">How long ago?</span>
+              <span class="meal-timing-field-icon" aria-hidden="true">🍽️</span>
+            </button>
+            <input type="hidden" name="hours_since_meal">
           </div>
         </label>
         <label class="full">Notes
@@ -231,7 +249,7 @@
       <div class="table-scroll">
         <table class="data-table" id="table-workout-log">
           <thead>
-            <tr><th>Date</th><th>Energy Level</th><th>Notes</th><th></th></tr>
+            <tr><th>Date</th><th>Muscles Targeted</th><th>Energy Level</th><th>Notes</th><th></th></tr>
           </thead>
           <tbody></tbody>
         </table>

@@ -417,7 +417,50 @@ button:disabled {
 .energy-field-value.placeholder { color: #9aa1b5; }
 .energy-field-icon { font-size: 13px; flex-shrink: 0; }
 
+/* ---------------- Meal timing field (custom in-app picker) ---------------- */
+.meal-timing-field-btn {
+  width: 100%;
+  min-width: 118px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14.5px;
+  font-weight: 500;
+  font-family: inherit;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fbfbfe;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.meal-timing-field-btn:hover { background: #fff; }
+.meal-timing-field-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(109, 94, 248, .14);
+}
+.meal-timing-field-btn:disabled {
+  background: #f1f1f6;
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: .85;
+}
+.meal-timing-field-value {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.meal-timing-field-value.placeholder { color: #9aa1b5; }
+.meal-timing-field-icon { font-size: 13px; flex-shrink: 0; }
+
 .energy-picker-wheel .time-picker-col { width: 100px; }
+.meal-timing-picker-wheel .time-picker-col { width: 180px; }
 .energy-picker-caption {
   text-align: center;
   margin-top: 12px;

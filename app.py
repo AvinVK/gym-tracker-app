@@ -268,7 +268,12 @@ def list_workout_log():
         return jsonify({"error": "missing user"}), 401
     db = get_db()
     rows = db.execute(
-        "SELECT * FROM workout_log WHERE user_id = ? ORDER BY date DESC, id DESC", (user_id,)
+        "SELECT wl.*, ("
+        "  SELECT GROUP_CONCAT(DISTINCT el.muscle_group) FROM exercise_log el"
+        "  WHERE el.user_id = wl.user_id AND el.date = wl.date"
+        ") AS muscles "
+        "FROM workout_log wl WHERE wl.user_id = ? ORDER BY wl.date DESC, wl.id DESC",
+        (user_id,),
     ).fetchall()
     return jsonify([dict(r) for r in rows])
 

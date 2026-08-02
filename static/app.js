@@ -535,7 +535,104 @@ function initEnergyField(container) {
 }
 
 document.querySelectorAll("[data-energy-field]").forEach(initEnergyField);
-initStepper(document.getElementById("hours-since-meal-field"));
+
+// ---------------- Custom "time since eating" picker ----------------
+const MEAL_TIMING_HOURS = Array.from({ length: 13 }, (_, i) => i * 0.5); // 0 to 6 hrs, half-hour steps
+
+const mtpModal = document.getElementById("meal-timing-picker-modal");
+const mtpHoursCol = document.getElementById("mtp-hours");
+let mtpActiveContainer = null;
+let mtpSelected = null;
+
+function formatMealTimingLabel(value) {
+  const n = parseFloat(value);
+  return `${n} ${n === 1 ? "hr" : "hrs"} ago`;
+}
+
+mtpHoursCol.innerHTML = MEAL_TIMING_HOURS
+  .map(v => `<button type="button" class="time-picker-option" data-value="${v}">${formatMealTimingLabel(v)}</button>`)
+  .join("");
+
+function setMealTimingFieldValue(container, value) {
+  const hidden = container.querySelector("input[type=hidden]");
+  const valueEl = container.querySelector(".meal-timing-field-value");
+  const hasValue = value !== "" && value != null;
+  hidden.value = hasValue ? value : "";
+  valueEl.textContent = hasValue ? formatMealTimingLabel(value) : "How long ago?";
+  valueEl.classList.toggle("placeholder", !hasValue);
+  hidden.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function highlightMealTimingSelection() {
+  mtpHoursCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === String(mtpSelected)));
+}
+
+function jumpToMealTimingOption(value) {
+  const target = (value != null && [...mtpHoursCol.querySelectorAll(".time-picker-option")].find(b => b.dataset.value === String(value))) || mtpHoursCol.firstElementChild;
+  if (!target) return;
+  mtpHoursCol.scrollTop = target.offsetTop - (mtpHoursCol.clientHeight - target.offsetHeight) / 2;
+}
+
+function centeredMealTimingOption() {
+  const mid = mtpHoursCol.clientHeight / 2;
+  let closest = null;
+  let closestDist = Infinity;
+  mtpHoursCol.querySelectorAll(".time-picker-option").forEach(opt => {
+    const dist = Math.abs((opt.offsetTop + opt.offsetHeight / 2) - (mtpHoursCol.scrollTop + mid));
+    if (dist < closestDist) { closestDist = dist; closest = opt; }
+  });
+  return closest;
+}
+
+let mtpScrollTimer = null;
+mtpHoursCol.addEventListener("scroll", () => {
+  clearTimeout(mtpScrollTimer);
+  mtpScrollTimer = setTimeout(() => {
+    const opt = centeredMealTimingOption();
+    if (!opt) return;
+    mtpSelected = opt.dataset.value;
+    highlightMealTimingSelection();
+  }, 100);
+});
+
+mtpHoursCol.addEventListener("click", (e) => {
+  const btn = e.target.closest(".time-picker-option");
+  if (!btn) return;
+  mtpSelected = btn.dataset.value;
+  jumpToMealTimingOption(mtpSelected);
+  highlightMealTimingSelection();
+});
+
+function openMealTimingPicker(container) {
+  mtpActiveContainer = container;
+  const hidden = container.querySelector("input[type=hidden]");
+  mtpSelected = hidden.value !== "" ? hidden.value : "3"; // wheel always centers on something; default to the middle
+  highlightMealTimingSelection();
+  mtpModal.hidden = false;
+  requestAnimationFrame(() => jumpToMealTimingOption(mtpSelected));
+}
+
+function closeMealTimingPicker() {
+  mtpModal.hidden = true;
+  mtpActiveContainer = null;
+}
+
+document.getElementById("mtp-cancel").addEventListener("click", closeMealTimingPicker);
+mtpModal.addEventListener("click", (e) => { if (e.target === mtpModal) closeMealTimingPicker(); });
+document.getElementById("mtp-done").addEventListener("click", () => {
+  if (!mtpActiveContainer) return;
+  setMealTimingFieldValue(mtpActiveContainer, mtpSelected);
+  closeMealTimingPicker();
+});
+
+function initMealTimingField(container) {
+  const btn = container.querySelector(".meal-timing-field-btn");
+  const hidden = container.querySelector("input[type=hidden]");
+  if (hidden.value !== "") setMealTimingFieldValue(container, hidden.value);
+  btn.addEventListener("click", () => openMealTimingPicker(container));
+}
+
+document.querySelectorAll("[data-meal-timing-field]").forEach(initMealTimingField);
 
 // ---------------- Custom option picker (muscle group / exercise dropdowns) ----------------
 const opModal = document.getElementById("option-picker-modal");
@@ -939,6 +1036,7 @@ function resetWorkoutFlowUI() {
   setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), todayStr);
   setDateFieldValue(document.getElementById("exlog-date").closest(".date-field"), todayStr);
   workoutForm.querySelectorAll(".energy-field").forEach(f => setEnergyFieldValue(f, ""));
+  workoutForm.querySelectorAll(".meal-timing-field").forEach(f => setMealTimingFieldValue(f, ""));
 }
 
 // ---------------- History ----------------
@@ -976,10 +1074,14 @@ function energyFieldHtml(cls, value) {
     </div>`;
 }
 
+function formatMuscles(muscles) {
+  return muscles ? muscles.split(",").join(", ") : "";
+}
+
 function workoutRowView(w) {
   return `
     <tr class="clickable-row" data-date="${w.date}" data-id="${w.id}">
-      <td data-label="Date">${w.date}</td><td data-label="Energy Level">${w.energy_level ?? ""}</td><td data-label="Notes">${w.notes || ""}</td>
+      <td data-label="Date">${w.date}</td><td data-label="Muscles Targeted">${formatMuscles(w.muscles)}</td><td data-label="Energy Level">${w.energy_level ?? ""}</td><td data-label="Notes">${w.notes || ""}</td>
       <td class="row-actions">
         <button class="edit-btn" data-id="${w.id}">Edit</button>
       </td>
@@ -998,6 +1100,7 @@ function workoutRowEdit(w) {
           <input type="hidden" class="edit-date" value="${w.date}">
         </div>
       </td>
+      <td data-label="Muscles Targeted">${formatMuscles(w.muscles)}</td>
       <td data-label="Energy Level">${energyFieldHtml("edit-energy", w.energy_level)}</td>
       <td data-label="Notes"><input type="text" class="edit-notes" value="${w.notes || ""}"></td>
       <td class="row-actions">
@@ -1208,7 +1311,7 @@ async function restoreDraft() {
       const form = document.getElementById("form-workout");
       if (w.energy_level) setEnergyFieldValue(form.querySelector('[name="energy_level"]').closest(".energy-field"), w.energy_level);
       if (w.pre_workout_meal) form.querySelector('[name="pre_workout_meal"]').value = w.pre_workout_meal;
-      if (w.hours_since_meal) form.querySelector('[name="hours_since_meal"]').value = w.hours_since_meal;
+      if (w.hours_since_meal) setMealTimingFieldValue(form.querySelector('[name="hours_since_meal"]').closest(".meal-timing-field"), w.hours_since_meal);
       if (w.notes) form.querySelector('[name="notes"]').value = w.notes;
       if (w.date) setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), w.date);
     }
