@@ -1004,7 +1004,6 @@ function addSetRow(block, { copyLast = false } = {}) {
       </button>
       <input type="hidden" class="set-level">
     </div>
-    <input type="text" class="set-notes" placeholder="Note for this set (optional)">
     <button type="button" class="set-remove">✕</button>` : `
     <span class="set-number"></span>
     <div class="stepper stepper-reps" data-step="2" data-min="1">
@@ -1017,7 +1016,6 @@ function addSetRow(block, { copyLast = false } = {}) {
       <input type="number" step="0.5" class="set-weight stepper-input" placeholder="kg" aria-label="Weight in kg">
       <button type="button" class="stepper-btn stepper-plus" aria-label="Increase weight">+</button>
     </div>
-    <input type="text" class="set-notes" placeholder="Note for this set (optional)">
     <button type="button" class="set-remove">✕</button>`;
   if (isCardio) {
     initSetDurationField(row.querySelector(".set-duration-field"));
@@ -1169,6 +1167,105 @@ function initVoiceSetButton(block) {
   });
 }
 
+// Dictate-a-note button on the shared per-exercise note field. Mirrors
+// initVoiceSetButton's pattern (safety timer, listening/disabled state) but
+// just appends the transcript to the note text instead of parsing it.
+function initNoteMicButton(block) {
+  const btn = block.querySelector(".note-mic-btn");
+  const input = block.querySelector(".ex-notes");
+  if (!SpeechRecognitionCtor) {
+    btn.disabled = true;
+    btn.title = "Voice input isn't supported in this browser";
+    return;
+  }
+  btn.addEventListener("click", () => {
+    const recognition = new SpeechRecognitionCtor();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    btn.classList.add("listening");
+    btn.disabled = true;
+
+    const safetyTimer = setTimeout(() => {
+      try { recognition.stop(); } catch (err) { /* already stopped */ }
+    }, 8000);
+
+    recognition.addEventListener("result", (e) => {
+      const transcript = e.results[0][0].transcript;
+      input.value = input.value ? `${input.value} ${transcript}` : transcript;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    recognition.addEventListener("error", (e) => {
+      toast(e.error === "not-allowed" ? "Microphone access denied" : "Didn't catch that — try again");
+    });
+    recognition.addEventListener("end", () => {
+      clearTimeout(safetyTimer);
+      btn.classList.remove("listening");
+      btn.disabled = false;
+    });
+
+    try {
+      recognition.start();
+    } catch (err) {
+      clearTimeout(safetyTimer);
+      btn.classList.remove("listening");
+      btn.disabled = false;
+      toast("Couldn't start voice input");
+    }
+  });
+}
+
+// Read-the-note-aloud button, using the Web Speech API's synthesis half
+// (separate from SpeechRecognitionCtor, which is only the speech-to-text
+// half) instead of a mic.
+function initNoteSpeakButton(block) {
+  const btn = block.querySelector(".note-speak-btn");
+  const input = block.querySelector(".ex-notes");
+  if (!("speechSynthesis" in window)) {
+    btn.disabled = true;
+    btn.title = "Text-to-speech isn't supported in this browser";
+    return;
+  }
+  btn.addEventListener("click", () => {
+    if (!input.value.trim()) {
+      toast("Nothing to read yet");
+      return;
+    }
+    window.speechSynthesis.cancel(); // don't stack up overlapping reads
+    const utterance = new SpeechSynthesisUtterance(input.value);
+    utterance.addEventListener("start", () => btn.classList.add("speaking"));
+    utterance.addEventListener("end", () => btn.classList.remove("speaking"));
+    utterance.addEventListener("error", () => btn.classList.remove("speaking"));
+    window.speechSynthesis.speak(utterance);
+  });
+}
+
+// One-off fields that only apply to a single exercise (e.g. treadmill
+// incline) - stored in the same per-set `attributes` JSON as everything
+// else instead of a dedicated column (see docs/eav-example.md). There's no
+// per-set UI for it: like the exercise-level note below, the same value is
+// duplicated onto every set of the exercise when submitted. Add more
+// entries here as new one-off fields come up.
+const EXERCISE_EXTRA_FIELDS = {
+  "Treadmill Walk": { key: "inclination_percent", label: "Inclination (%)", placeholder: "e.g. 2" },
+};
+
+function updateExtraField(block) {
+  const exerciseName = block.querySelector(".ex-exercise").value;
+  const field = EXERCISE_EXTRA_FIELDS[exerciseName];
+  const wrapper = block.querySelector(".ex-extra-field");
+  const input = wrapper.querySelector(".ex-extra-value");
+  if (!field) {
+    wrapper.hidden = true;
+    input.value = "";
+    return;
+  }
+  wrapper.hidden = false;
+  wrapper.querySelector(".ex-extra-field-label").textContent = field.label;
+  input.placeholder = field.placeholder || "";
+}
+
 async function onBlockMuscleChange(block) {
   const muscle = block.querySelector(".ex-muscle").value;
   const exField = block.querySelector(".ex-exercise-field");
@@ -1176,15 +1273,22 @@ async function onBlockMuscleChange(block) {
     block.__exerciseTypes = {};
     setOptionFieldOptions(exField, [], { emptyText: "Pick a muscle group first" });
     applyExerciseType(block, "strength");
+    updateExtraField(block);
     return;
   }
   const exercises = await api.get(`/api/exercises-by-muscle/${encodeURIComponent(muscle)}`);
   block.__exerciseTypes = Object.fromEntries(exercises.map(ex => [ex.exercise, ex.type]));
+  // setOptionFieldOptions resets the exercise value (silently, no "change"
+  // event) if it's not one of the new muscle's exercises - so the extra
+  // field needs updating here too, not just from the exercise dropdown's
+  // own change handler below, or switching away from Treadmill Walk would
+  // leave a stale Inclination field showing.
   setOptionFieldOptions(exField, exercises.map(ex => ex.exercise), { emptyText: "No exercises for this muscle yet" });
   // Best guess before a specific exercise is picked (almost everything
   // under "Cardio" is duration+level) — the exercise dropdown's own change
   // handler below corrects this once a specific exercise is chosen.
   applyExerciseType(block, muscle === "Cardio" ? "cardio" : "strength");
+  updateExtraField(block);
 }
 
 function addExerciseBlock() {
@@ -1214,6 +1318,10 @@ function addExerciseBlock() {
         <input type="hidden" class="ex-exercise" required>
       </div>
     </label>
+    <label class="full ex-extra-field" hidden>
+      <span class="ex-extra-field-label"></span>
+      <input type="number" class="ex-extra-value">
+    </label>
     <div class="full">
       <div class="sets-header">
         <label>Sets</label>
@@ -1233,7 +1341,14 @@ function addExerciseBlock() {
         <button type="button" class="add-set-same secondary">Same as Above</button>
         <button type="button" class="add-set-voice secondary" aria-label="Add a set by voice" title="Say something like &quot;20 reps with 30 kgs&quot;">🎤</button>
       </div>
-    </div>`;
+    </div>
+    <label class="full">Notes for this exercise
+      <div class="note-field">
+        <input type="text" class="ex-notes" placeholder="optional">
+        <button type="button" class="note-mic-btn secondary" aria-label="Dictate note" title="Speak your note">🎤</button>
+        <button type="button" class="note-speak-btn secondary" aria-label="Read note aloud" title="Read note aloud">🔊</button>
+      </div>
+    </label>`;
 
   block.querySelectorAll("[data-option-field]").forEach(initOptionField);
   populateMuscleSelect(block.querySelector(".ex-muscle-field"));
@@ -1245,6 +1360,7 @@ function addExerciseBlock() {
     if (restoringDraft) return; // restoreDraft() sets the block's type explicitly instead
     const exerciseName = block.querySelector(".ex-exercise").value;
     applyExerciseType(block, (block.__exerciseTypes && block.__exerciseTypes[exerciseName]) || "strength");
+    updateExtraField(block);
   });
   block.querySelector(".add-set").addEventListener("click", () => addSetRow(block));
   block.querySelector(".add-set-same").addEventListener("click", () => addSetRow(block, { copyLast: true }));
@@ -1253,6 +1369,8 @@ function addExerciseBlock() {
   });
   updateSetTypeToggle(block);
   initVoiceSetButton(block);
+  initNoteMicButton(block);
+  initNoteSpeakButton(block);
   block.querySelector(".exercise-remove").addEventListener("click", () => {
     block.remove();
     renumberExerciseBlocks();
@@ -1288,17 +1406,28 @@ document.getElementById("form-exercise-log").addEventListener("submit", async (e
   const date = e.target.elements["date"].value;
   const exercises = [...exercisesContainer.querySelectorAll(".exercise-block")].map(block => {
     const isCardio = block.dataset.exerciseType === "cardio";
+    const exerciseName = block.querySelector(".ex-exercise").value;
+    const notes = block.querySelector(".ex-notes").value;
+    // One note per exercise, not per set - the same value is duplicated onto
+    // every set sent to the backend (each exercise_log row still has its own
+    // `notes` column). Same for the extra field (e.g. treadmill incline):
+    // no per-set UI for it, so it's just merged onto every set's attributes.
+    const extraField = EXERCISE_EXTRA_FIELDS[exerciseName];
+    const extraValue = extraField ? parseFloat(block.querySelector(".ex-extra-value").value) : NaN;
+    const extra = extraField && !isNaN(extraValue) ? { [extraField.key]: extraValue } : {};
     return {
       muscle_group: block.querySelector(".ex-muscle").value,
-      exercise: block.querySelector(".ex-exercise").value,
+      exercise: exerciseName,
       sets: [...block.querySelectorAll(".set-row")].map(row => isCardio ? {
         duration_minutes: parseFloat(row.querySelector(".set-duration").value) || null,
         intensity_level: parseInt(row.querySelector(".set-level").value, 10) || null,
-        notes: row.querySelector(".set-notes").value,
+        notes,
+        ...extra,
       } : {
         reps: parseInt(row.querySelector(".set-reps").value, 10) || null,
         weight_kg: parseFloat(row.querySelector(".set-weight").value) || null,
-        notes: row.querySelector(".set-notes").value,
+        notes,
+        ...extra,
       }),
     };
   });
@@ -1579,14 +1708,14 @@ function collectExerciseBlocksDraft() {
       muscle_group: block.querySelector(".ex-muscle").value,
       exercise: block.querySelector(".ex-exercise").value,
       type: block.dataset.exerciseType || "strength",
+      notes: block.querySelector(".ex-notes").value,
+      extraValue: block.querySelector(".ex-extra-value").value,
       sets: [...block.querySelectorAll(".set-row")].map(row => isCardio ? {
         duration_minutes: row.querySelector(".set-duration").value,
         intensity_level: row.querySelector(".set-level").value,
-        notes: row.querySelector(".set-notes").value,
       } : {
         reps: row.querySelector(".set-reps").value,
         weight_kg: row.querySelector(".set-weight").value,
-        notes: row.querySelector(".set-notes").value,
       }),
     };
   });
@@ -1653,6 +1782,9 @@ async function restoreDraft() {
           block.dataset.exerciseType = ex.type || "strength";
           updateSetColumnsLabel(block);
           updateSetTypeToggle(block);
+          updateExtraField(block);
+          block.querySelector(".ex-notes").value = ex.notes || "";
+          block.querySelector(".ex-extra-value").value = ex.extraValue || "";
           const isCardio = block.dataset.exerciseType === "cardio";
           block.querySelector(".ex-sets").innerHTML = "";
           const sets = ex.sets && ex.sets.length ? ex.sets : [{}];
@@ -1666,7 +1798,6 @@ async function restoreDraft() {
               rows[i].querySelector(".set-reps").value = s.reps || "";
               rows[i].querySelector(".set-weight").value = s.weight_kg || "";
             }
-            rows[i].querySelector(".set-notes").value = s.notes || "";
           });
         }
       }
