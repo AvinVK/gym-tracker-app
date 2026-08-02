@@ -87,7 +87,8 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS exercise_plan (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     target_muscle TEXT NOT NULL,
-    exercise TEXT NOT NULL
+    exercise TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'strength'
 );
 
 CREATE TABLE IF NOT EXISTS workout_log (
@@ -112,6 +113,8 @@ CREATE TABLE IF NOT EXISTS exercise_log (
     set_number INTEGER,
     reps INTEGER,
     weight_kg REAL,
+    duration_minutes REAL,
+    intensity_level INTEGER,
     notes TEXT
 );
 
@@ -161,6 +164,9 @@ def init_db():
     _ensure_column(conn, "exercise_log", "user_id", "INTEGER REFERENCES users(id)")
     _ensure_column(conn, "workout_log", "pre_workout_meal", "TEXT")
     _ensure_column(conn, "workout_log", "hours_since_meal", "REAL")
+    _ensure_column(conn, "exercise_plan", "type", "TEXT NOT NULL DEFAULT 'strength'")
+    _ensure_column(conn, "exercise_log", "duration_minutes", "REAL")
+    _ensure_column(conn, "exercise_log", "intensity_level", "INTEGER")
     # username retained only for rows created before this column existed;
     # no longer written to by the app (email is the login identifier now).
     _ensure_column(conn, "users", "username", "TEXT")
@@ -172,6 +178,14 @@ def init_db():
             "INSERT INTO exercise_plan (target_muscle, exercise) VALUES (?, ?)",
             SEED_EXERCISES,
         )
+    # Cheap default classification, not a one-time migration: exercises under
+    # the seeded "Cardio" muscle group are duration+level (treadmill, step
+    # machine, ...) rather than reps+weight. Runs every startup (after the
+    # seed insert above, so it actually applies to fresh installs too) rather
+    # than once since there's no UI yet to reclassify an individual exercise
+    # (e.g. rep-counted cardio like Burpees) away from this default — revisit
+    # if that's ever added, so it doesn't stomp a manual override.
+    conn.execute("UPDATE exercise_plan SET type = 'cardio' WHERE target_muscle = 'Cardio'")
     conn.commit()
     conn.close()
 

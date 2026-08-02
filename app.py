@@ -252,7 +252,7 @@ def list_muscles():
 def exercises_by_muscle(muscle):
     db = get_db()
     rows = db.execute(
-        "SELECT id, exercise FROM exercise_plan WHERE target_muscle = ? ORDER BY exercise",
+        "SELECT id, exercise, type FROM exercise_plan WHERE target_muscle = ? ORDER BY exercise",
         (muscle,),
     ).fetchall()
     return jsonify([dict(r) for r in rows])
@@ -376,11 +376,14 @@ def add_exercise_log():
         if not muscle_group or not exercise or not sets:
             return jsonify({"error": "each exercise needs a muscle_group, exercise and at least one set"}), 400
         for i, s in enumerate(sets):
-            rows.append((user_id, date, muscle_group, exercise, i + 1, s.get("reps"), s.get("weight_kg"), s.get("notes", "")))
+            rows.append((
+                user_id, date, muscle_group, exercise, i + 1, s.get("reps"), s.get("weight_kg"),
+                s.get("duration_minutes"), s.get("intensity_level"), s.get("notes", ""),
+            ))
 
     cur = db.executemany(
-        "INSERT INTO exercise_log (user_id, date, muscle_group, exercise, set_number, reps, weight_kg, notes) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO exercise_log (user_id, date, muscle_group, exercise, set_number, reps, weight_kg, "
+        "duration_minutes, intensity_level, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         rows,
     )
     db.commit()
@@ -400,9 +403,10 @@ def update_exercise_log(row_id):
     db = get_db()
     db.execute(
         "UPDATE exercise_log SET muscle_group = ?, exercise = ?, set_number = ?, reps = ?, "
-        "weight_kg = ?, notes = ? WHERE id = ? AND user_id = ?",
+        "weight_kg = ?, duration_minutes = ?, intensity_level = ?, notes = ? WHERE id = ? AND user_id = ?",
         (muscle_group, exercise, data.get("set_number"), data.get("reps"),
-         data.get("weight_kg"), data.get("notes", ""), row_id, user_id),
+         data.get("weight_kg"), data.get("duration_minutes"), data.get("intensity_level"),
+         data.get("notes", ""), row_id, user_id),
     )
     db.commit()
     return jsonify({"id": row_id})

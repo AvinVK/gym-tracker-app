@@ -769,13 +769,48 @@ function initStepper(container) {
   container.querySelector(".stepper-plus").addEventListener("click", () => adjust(step));
 }
 
+function updateSetColumnsLabel(block) {
+  const isCardio = block.dataset.exerciseType === "cardio";
+  const cols = block.querySelectorAll(".set-columns-label-col");
+  cols[0].textContent = isCardio ? "Duration (min)" : "Reps";
+  cols[1].textContent = isCardio ? "Level" : "Weight (kg)";
+}
+
+// Switches a block between "strength" (Reps + Weight) and "cardio"
+// (Duration + Level) — e.g. a treadmill has neither reps nor a weight, just
+// how long and at what level. Only rebuilds the sets list when the type
+// actually changes, so picking a different exercise of the *same* type
+// (Bench Press -> Incline Press) never throws away sets already entered.
+function applyExerciseType(block, type) {
+  const prevType = block.dataset.exerciseType || "strength";
+  block.dataset.exerciseType = type;
+  if (type === prevType) return;
+  updateSetColumnsLabel(block);
+  block.querySelector(".ex-sets").innerHTML = "";
+  addSetRow(block);
+}
+
 function addSetRow(block, { copyLast = false } = {}) {
   const setsDiv = block.querySelector(".ex-sets");
   const existingRows = block.querySelectorAll(".set-row");
   const lastRow = existingRows[existingRows.length - 1];
+  const isCardio = block.dataset.exerciseType === "cardio";
   const row = document.createElement("div");
   row.className = "set-row";
-  row.innerHTML = `
+  row.innerHTML = isCardio ? `
+    <span class="set-number"></span>
+    <div class="stepper stepper-duration" data-step="1" data-min="0">
+      <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease duration">&minus;</button>
+      <input type="number" class="set-duration stepper-input" min="0" placeholder="0" aria-label="Duration in minutes" required>
+      <button type="button" class="stepper-btn stepper-plus" aria-label="Increase duration">+</button>
+    </div>
+    <div class="stepper stepper-level" data-step="1" data-min="1">
+      <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease level">&minus;</button>
+      <input type="number" class="set-level stepper-input" min="1" placeholder="lvl" aria-label="Intensity level">
+      <button type="button" class="stepper-btn stepper-plus" aria-label="Increase level">+</button>
+    </div>
+    <input type="text" class="set-notes" placeholder="Note for this set (optional)">
+    <button type="button" class="set-remove">✕</button>` : `
     <span class="set-number"></span>
     <div class="stepper stepper-reps" data-step="2" data-min="1">
       <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease reps">&minus;</button>
@@ -790,8 +825,13 @@ function addSetRow(block, { copyLast = false } = {}) {
     <input type="text" class="set-notes" placeholder="Note for this set (optional)">
     <button type="button" class="set-remove">✕</button>`;
   if (copyLast && lastRow) {
-    row.querySelector(".set-reps").value = lastRow.querySelector(".set-reps").value;
-    row.querySelector(".set-weight").value = lastRow.querySelector(".set-weight").value;
+    if (isCardio) {
+      row.querySelector(".set-duration").value = lastRow.querySelector(".set-duration")?.value || "";
+      row.querySelector(".set-level").value = lastRow.querySelector(".set-level")?.value || "";
+    } else {
+      row.querySelector(".set-reps").value = lastRow.querySelector(".set-reps")?.value || "";
+      row.querySelector(".set-weight").value = lastRow.querySelector(".set-weight")?.value || "";
+    }
   }
   row.querySelectorAll(".stepper").forEach(initStepper);
   row.querySelector(".set-remove").addEventListener("click", () => {
@@ -831,6 +871,24 @@ function parseSpokenSet(text) {
   return { reps, weight };
 }
 
+// Same idea as parseSpokenSet, but for cardio: "15 minutes at level 6",
+// "level 6 for 15 mins", or just "15 minutes" alone.
+function parseSpokenCardioSet(text) {
+  const t = (text || "").toLowerCase();
+  const durationMatch = t.match(/(\d+(?:\.\d+)?)\s*(?:mins?|minutes?)/);
+  let duration = durationMatch ? parseFloat(durationMatch[1]) : null;
+  const levelMatch = t.match(/level\D{0,10}?(\d+(?:\.\d+)?)/) || t.match(/(\d+(?:\.\d+)?)\s*(?:level)/);
+  let level = levelMatch ? parseFloat(levelMatch[1]) : null;
+  if (duration == null) {
+    // No explicit "min(s)" keyword — fall back to the first number in the
+    // phrase that wasn't already claimed as the level.
+    const nums = [...t.matchAll(/\d+(?:\.\d+)?/g)].map(m => parseFloat(m[0]));
+    const candidate = nums.find(n => n !== level);
+    if (candidate != null) duration = candidate;
+  }
+  return { duration, level };
+}
+
 const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 function initVoiceSetButton(block) {
@@ -859,6 +917,28 @@ function initVoiceSetButton(block) {
 
     recognition.addEventListener("result", (e) => {
       const transcript = e.results[0][0].transcript;
+      const isCardio = block.dataset.exerciseType === "cardio";
+      if (isCardio) {
+        const { duration, level } = parseSpokenCardioSet(transcript);
+        if (duration == null && level == null) {
+          toast(`Didn't catch that: "${transcript}"`);
+          return;
+        }
+        const targetRow = addSetRow(block);
+        if (duration != null) {
+          const input = targetRow.querySelector(".set-duration");
+          input.value = duration;
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        if (level != null) {
+          const input = targetRow.querySelector(".set-level");
+          input.value = level;
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        const parts = [duration != null ? `${duration} min` : null, level != null ? `level ${level}` : null].filter(Boolean);
+        toast(`Added set: ${parts.join(", ")}`);
+        return;
+      }
       const { reps, weight } = parseSpokenSet(transcript);
       if (reps == null && weight == null) {
         toast(`Didn't catch that: "${transcript}"`);
@@ -902,16 +982,24 @@ async function onBlockMuscleChange(block) {
   const muscle = block.querySelector(".ex-muscle").value;
   const exField = block.querySelector(".ex-exercise-field");
   if (!muscle) {
+    block.__exerciseTypes = {};
     setOptionFieldOptions(exField, [], { emptyText: "Pick a muscle group first" });
+    applyExerciseType(block, "strength");
     return;
   }
   const exercises = await api.get(`/api/exercises-by-muscle/${encodeURIComponent(muscle)}`);
+  block.__exerciseTypes = Object.fromEntries(exercises.map(ex => [ex.exercise, ex.type]));
   setOptionFieldOptions(exField, exercises.map(ex => ex.exercise), { emptyText: "No exercises for this muscle yet" });
+  // Best guess before a specific exercise is picked (almost everything
+  // under "Cardio" is duration+level) — the exercise dropdown's own change
+  // handler below corrects this once a specific exercise is chosen.
+  applyExerciseType(block, muscle === "Cardio" ? "cardio" : "strength");
 }
 
 function addExerciseBlock() {
   const block = document.createElement("div");
   block.className = "exercise-block grid-form";
+  block.__exerciseTypes = {};
   block.innerHTML = `
     <div class="exercise-block-header">
       <span class="exercise-block-title"></span>
@@ -956,6 +1044,11 @@ function addExerciseBlock() {
     if (restoringDraft) return; // restoreDraft() awaits its own explicit call instead
     onBlockMuscleChange(block);
   });
+  block.querySelector(".ex-exercise").addEventListener("change", () => {
+    if (restoringDraft) return; // restoreDraft() sets the block's type explicitly instead
+    const exerciseName = block.querySelector(".ex-exercise").value;
+    applyExerciseType(block, (block.__exerciseTypes && block.__exerciseTypes[exerciseName]) || "strength");
+  });
   block.querySelector(".add-set").addEventListener("click", () => addSetRow(block));
   block.querySelector(".add-set-same").addEventListener("click", () => addSetRow(block, { copyLast: true }));
   initVoiceSetButton(block);
@@ -992,15 +1085,22 @@ addExerciseBlock();
 document.getElementById("form-exercise-log").addEventListener("submit", async (e) => {
   e.preventDefault();
   const date = e.target.elements["date"].value;
-  const exercises = [...exercisesContainer.querySelectorAll(".exercise-block")].map(block => ({
-    muscle_group: block.querySelector(".ex-muscle").value,
-    exercise: block.querySelector(".ex-exercise").value,
-    sets: [...block.querySelectorAll(".set-row")].map(row => ({
-      reps: parseInt(row.querySelector(".set-reps").value, 10) || null,
-      weight_kg: parseFloat(row.querySelector(".set-weight").value) || null,
-      notes: row.querySelector(".set-notes").value,
-    })),
-  }));
+  const exercises = [...exercisesContainer.querySelectorAll(".exercise-block")].map(block => {
+    const isCardio = block.dataset.exerciseType === "cardio";
+    return {
+      muscle_group: block.querySelector(".ex-muscle").value,
+      exercise: block.querySelector(".ex-exercise").value,
+      sets: [...block.querySelectorAll(".set-row")].map(row => isCardio ? {
+        duration_minutes: parseFloat(row.querySelector(".set-duration").value) || null,
+        intensity_level: parseInt(row.querySelector(".set-level").value, 10) || null,
+        notes: row.querySelector(".set-notes").value,
+      } : {
+        reps: parseInt(row.querySelector(".set-reps").value, 10) || null,
+        weight_kg: parseFloat(row.querySelector(".set-weight").value) || null,
+        notes: row.querySelector(".set-notes").value,
+      }),
+    };
+  });
   if (!(await confirmModal(`Do you want to save these exercises for ${date}?`))) {
     return;
   }
@@ -1167,7 +1267,9 @@ function exerciseRowView(x) {
   return `
     <tr data-id="${x.id}">
       <td data-label="Muscle Group">${x.muscle_group}</td><td data-label="Exercise">${x.exercise}</td>
-      <td data-label="Set #">${x.set_number ?? ""}</td><td data-label="Reps">${x.reps ?? ""}</td><td data-label="Weight (kg)">${x.weight_kg ?? ""}</td><td data-label="Notes">${x.notes || ""}</td>
+      <td data-label="Set #">${x.set_number ?? ""}</td><td data-label="Reps">${x.reps ?? ""}</td><td data-label="Weight (kg)">${x.weight_kg ?? ""}</td>
+      <td data-label="Duration (min)">${x.duration_minutes ?? ""}</td><td data-label="Level">${x.intensity_level ?? ""}</td>
+      <td data-label="Notes">${x.notes || ""}</td>
       <td class="row-actions">
         <button class="edit-btn" data-id="${x.id}">Edit</button>
         <button class="del-btn" data-id="${x.id}">Delete</button>
@@ -1183,6 +1285,8 @@ function exerciseRowEdit(x) {
       <td data-label="Set #"><input type="number" class="edit-set" value="${x.set_number ?? ""}"></td>
       <td data-label="Reps"><input type="number" class="edit-reps" value="${x.reps ?? ""}"></td>
       <td data-label="Weight (kg)"><input type="number" step="0.5" class="edit-weight" value="${x.weight_kg ?? ""}"></td>
+      <td data-label="Duration (min)"><input type="number" class="edit-duration" value="${x.duration_minutes ?? ""}"></td>
+      <td data-label="Level"><input type="number" class="edit-level" value="${x.intensity_level ?? ""}"></td>
       <td data-label="Notes"><input type="text" class="edit-notes" value="${x.notes || ""}"></td>
       <td class="row-actions">
         <button class="save-btn" data-id="${x.id}">Save</button>
@@ -1224,6 +1328,8 @@ function bindExerciseEditRowEvents(id) {
       set_number: parseInt(row.querySelector(".edit-set").value, 10) || null,
       reps: parseInt(row.querySelector(".edit-reps").value, 10) || null,
       weight_kg: parseFloat(row.querySelector(".edit-weight").value) || null,
+      duration_minutes: parseFloat(row.querySelector(".edit-duration").value) || null,
+      intensity_level: parseInt(row.querySelector(".edit-level").value, 10) || null,
       notes: row.querySelector(".edit-notes").value,
     };
     try {
@@ -1266,15 +1372,23 @@ function clearDraft() {
 }
 
 function collectExerciseBlocksDraft() {
-  return [...exercisesContainer.querySelectorAll(".exercise-block")].map(block => ({
-    muscle_group: block.querySelector(".ex-muscle").value,
-    exercise: block.querySelector(".ex-exercise").value,
-    sets: [...block.querySelectorAll(".set-row")].map(row => ({
-      reps: row.querySelector(".set-reps").value,
-      weight_kg: row.querySelector(".set-weight").value,
-      notes: row.querySelector(".set-notes").value,
-    })),
-  }));
+  return [...exercisesContainer.querySelectorAll(".exercise-block")].map(block => {
+    const isCardio = block.dataset.exerciseType === "cardio";
+    return {
+      muscle_group: block.querySelector(".ex-muscle").value,
+      exercise: block.querySelector(".ex-exercise").value,
+      type: block.dataset.exerciseType || "strength",
+      sets: [...block.querySelectorAll(".set-row")].map(row => isCardio ? {
+        duration_minutes: row.querySelector(".set-duration").value,
+        intensity_level: row.querySelector(".set-level").value,
+        notes: row.querySelector(".set-notes").value,
+      } : {
+        reps: row.querySelector(".set-reps").value,
+        weight_kg: row.querySelector(".set-weight").value,
+        notes: row.querySelector(".set-notes").value,
+      }),
+    };
+  });
 }
 
 function saveWorkoutDraft() {
@@ -1335,13 +1449,21 @@ async function restoreDraft() {
             await onBlockMuscleChange(block);
             setOptionFieldValue(block.querySelector(".ex-exercise-field"), ex.exercise || "");
           }
+          block.dataset.exerciseType = ex.type || "strength";
+          updateSetColumnsLabel(block);
+          const isCardio = block.dataset.exerciseType === "cardio";
           block.querySelector(".ex-sets").innerHTML = "";
           const sets = ex.sets && ex.sets.length ? ex.sets : [{}];
           sets.forEach(() => addSetRow(block));
           const rows = block.querySelectorAll(".set-row");
           sets.forEach((s, i) => {
-            rows[i].querySelector(".set-reps").value = s.reps || "";
-            rows[i].querySelector(".set-weight").value = s.weight_kg || "";
+            if (isCardio) {
+              rows[i].querySelector(".set-duration").value = s.duration_minutes || "";
+              rows[i].querySelector(".set-level").value = s.intensity_level || "";
+            } else {
+              rows[i].querySelector(".set-reps").value = s.reps || "";
+              rows[i].querySelector(".set-weight").value = s.weight_kg || "";
+            }
             rows[i].querySelector(".set-notes").value = s.notes || "";
           });
         }

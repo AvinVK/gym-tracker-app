@@ -1124,8 +1124,8 @@ button:disabled {
     row-gap: 6px;
   }
   .set-row .set-number { grid-area: num; }
-  .set-row .stepper-reps { grid-area: reps; }
-  .set-row .stepper-weight { grid-area: weight; }
+  .set-row .stepper-reps, .set-row .stepper-duration { grid-area: reps; }
+  .set-row .stepper-weight, .set-row .stepper-level { grid-area: weight; }
   .set-row .set-remove { grid-area: remove; }
   .set-row .set-notes { grid-area: notes; }
 }
