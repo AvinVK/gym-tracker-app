@@ -957,14 +957,24 @@ function updateSetColumnsLabel(block) {
   cols[1].textContent = isCardio ? "Level" : "Weight (kg)";
 }
 
+function updateSetTypeToggle(block) {
+  const type = block.dataset.exerciseType || "strength";
+  block.querySelectorAll(".set-type-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.type === type));
+}
+
 // Switches a block between "strength" (Reps + Weight) and "cardio"
 // (Duration + Level) — e.g. a treadmill has neither reps nor a weight, just
-// how long and at what level. Only rebuilds the sets list when the type
-// actually changes, so picking a different exercise of the *same* type
-// (Bench Press -> Incline Press) never throws away sets already entered.
+// how long and at what level. Defaults to whatever the picked exercise is
+// classified as in the DB, but the Reps/Time toggle next to "Sets" lets a
+// user override that per-block for any exercise (someone might want to time
+// a set of burpees, or count reps of something classified as cardio). Only
+// rebuilds the sets list when the type actually changes, so picking a
+// different exercise of the *same* type (Bench Press -> Incline Press)
+// never throws away sets already entered.
 function applyExerciseType(block, type) {
   const prevType = block.dataset.exerciseType || "strength";
   block.dataset.exerciseType = type;
+  updateSetTypeToggle(block);
   if (type === prevType) return;
   updateSetColumnsLabel(block);
   block.querySelector(".ex-sets").innerHTML = "";
@@ -1205,7 +1215,13 @@ function addExerciseBlock() {
       </div>
     </label>
     <div class="full">
-      <label>Sets</label>
+      <div class="sets-header">
+        <label>Sets</label>
+        <div class="set-type-toggle" role="group" aria-label="How to log sets">
+          <button type="button" class="set-type-btn" data-type="strength">Reps</button>
+          <button type="button" class="set-type-btn" data-type="cardio">Time</button>
+        </div>
+      </div>
       <div class="set-columns-label" aria-hidden="true">
         <span class="set-columns-label-spacer"></span>
         <span class="set-columns-label-col">Reps</span>
@@ -1232,6 +1248,10 @@ function addExerciseBlock() {
   });
   block.querySelector(".add-set").addEventListener("click", () => addSetRow(block));
   block.querySelector(".add-set-same").addEventListener("click", () => addSetRow(block, { copyLast: true }));
+  block.querySelectorAll(".set-type-btn").forEach(btn => {
+    btn.addEventListener("click", () => applyExerciseType(block, btn.dataset.type));
+  });
+  updateSetTypeToggle(block);
   initVoiceSetButton(block);
   block.querySelector(".exercise-remove").addEventListener("click", () => {
     block.remove();
@@ -1632,6 +1652,7 @@ async function restoreDraft() {
           }
           block.dataset.exerciseType = ex.type || "strength";
           updateSetColumnsLabel(block);
+          updateSetTypeToggle(block);
           const isCardio = block.dataset.exerciseType === "cardio";
           block.querySelector(".ex-sets").innerHTML = "";
           const sets = ex.sets && ex.sets.length ? ex.sets : [{}];
