@@ -375,42 +375,6 @@ button:disabled {
   transform: none !important;
 }
 
-/* ---------------- Time field (custom in-app picker) ---------------- */
-.time-field-btn {
-  width: 100%;
-  min-width: 118px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 14.5px;
-  font-weight: 500;
-  font-family: inherit;
-  padding: 10px 12px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: #fbfbfe;
-  color: var(--ink);
-  cursor: pointer;
-  text-align: left;
-  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
-}
-.time-field-btn:hover { background: #fff; }
-.time-field-btn:focus-visible {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px rgba(109, 94, 248, .14);
-}
-.time-field-btn:disabled {
-  background: #f1f1f6;
-  color: var(--muted);
-  cursor: not-allowed;
-  opacity: .85;
-}
-.time-field-value { white-space: nowrap; }
-.time-field-value.placeholder { color: #9aa1b5; }
-.time-field-icon { font-size: 13px; flex-shrink: 0; }
-
 /* ---------------- Energy field (custom in-app picker) ---------------- */
 .energy-field-btn {
   width: 100%;
@@ -517,13 +481,6 @@ button:disabled {
   scrollbar-width: none;
 }
 .time-picker-col::-webkit-scrollbar { display: none; }
-.time-picker-sep {
-  align-self: center;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--ink);
-  padding-bottom: 2px;
-}
 .time-picker-option {
   height: 44px;
   display: flex;
@@ -548,44 +505,6 @@ button:disabled {
   color: #e7e8ef;
   cursor: not-allowed;
 }
-.time-picker-presets-label {
-  margin: 14px 0 6px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: var(--muted);
-}
-.time-picker-presets {
-  display: flex;
-  gap: 8px;
-}
-.time-picker-preset {
-  flex: 1;
-  padding: 9px 4px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: #fbfbfe;
-  color: var(--ink);
-  font-size: 12.5px;
-  font-weight: 700;
-  font-family: inherit;
-  cursor: pointer;
-  transition: background .15s ease, color .15s ease, border-color .15s ease;
-}
-.time-picker-preset:hover { background: #f6f5ff; }
-.time-picker-preset.selected {
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  border-color: transparent;
-  color: #fff;
-}
-.time-picker-preset:disabled {
-  background: #f1f1f6;
-  color: #c7c9d6;
-  border-color: var(--border);
-  cursor: not-allowed;
-}
-.time-picker-preset:disabled:hover { background: #f1f1f6; }
 .time-picker-card .confirm-actions { margin-top: 14px; }
 
 /* ---------------- Option field (custom in-app select, e.g. muscle group / exercise) ---------------- */

@@ -108,6 +108,10 @@ function renderDatePickerGrid() {
     } else {
       btn.addEventListener("click", () => {
         setDateFieldValue(dpActiveField.container, iso);
+        const hiddenInput = dpActiveField.container.querySelector("input[type=hidden]");
+        if (hiddenInput.id === "workout-date" && iso !== todayStr) {
+          toast("You're logging a previous workout");
+        }
         closeDatePicker();
       });
     }
@@ -412,240 +416,6 @@ async function loadMuscleOptions() {
   availableMuscles = await api.get("/api/muscles");
   exercisesContainer.querySelectorAll(".ex-muscle-field").forEach(populateMuscleSelect);
 }
-
-// ---------------- Custom time picker (12hr UI -> 24hr storage) ----------------
-const tpModal = document.getElementById("time-picker-modal");
-const tpHoursCol = document.getElementById("tp-hours");
-const tpMinutesCol = document.getElementById("tp-minutes");
-const tpAmpmCol = document.getElementById("tp-ampm");
-const tpPresets = document.getElementById("tp-presets");
-let tpActiveContainer = null;
-let tpSelected = { hour: null, minute: null, ampm: "AM" };
-// Minutes-since-midnight (24h) that the currently-open picker's selection
-// must be strictly after — set from a sibling "start time" field via
-// data-after-field, null when this picker has no such constraint.
-let tpMinMinutes = null;
-
-tpHoursCol.innerHTML = Array.from({ length: 12 }, (_, i) => i + 1)
-  .map(h => `<button type="button" class="time-picker-option" data-value="${h}">${h}</button>`).join("");
-tpMinutesCol.innerHTML = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"))
-  .map(m => `<button type="button" class="time-picker-option" data-value="${m}">${m}</button>`).join("");
-tpAmpmCol.innerHTML = ["AM", "PM"]
-  .map(a => `<button type="button" class="time-picker-option" data-value="${a}">${a}</button>`).join("");
-
-function to12Hour(h24, m) {
-  const h24n = parseInt(h24, 10);
-  let h12 = h24n % 12;
-  if (h12 === 0) h12 = 12;
-  return { h12: String(h12), m, ampm: h24n >= 12 ? "PM" : "AM" };
-}
-
-function timeMinutes12(hour12, minute, ampm) {
-  let h24 = parseInt(hour12, 10) % 12;
-  if (ampm === "PM") h24 += 12;
-  return h24 * 60 + parseInt(minute, 10);
-}
-
-function timeMinutes24(hhmm) {
-  const [h, m] = hhmm.split(":").map(Number);
-  return h * 60 + m;
-}
-
-// Reads the value of the field this container is constrained to come after
-// (e.g. End Time reading Start Time's value), via data-after-field — which
-// holds either the sibling's `name` (main form) or its hidden-input `class`
-// (History edit row, which has no `name` attributes).
-function relatedTimeValue(container) {
-  const key = container.dataset.afterField;
-  if (!key) return null;
-  const scope = container.closest("form") || container.closest("tr");
-  if (!scope) return null;
-  const input = scope.querySelector(`[name="${key}"]`) || scope.querySelector(`.${key}`);
-  return input && input.value ? input.value : null;
-}
-
-function setTimeFieldValue(container, value) {
-  const hidden = container.querySelector("input[type=hidden]");
-  const valueEl = container.querySelector(".time-field-value");
-  hidden.value = value || "";
-  if (value) {
-    const { h12, m, ampm } = to12Hour(...value.split(":"));
-    valueEl.textContent = `${h12}:${m} ${ampm}`;
-    valueEl.classList.remove("placeholder");
-  } else {
-    valueEl.textContent = "--:-- --";
-    valueEl.classList.add("placeholder");
-  }
-  hidden.dispatchEvent(new Event("change", { bubbles: true }));
-}
-
-function highlightTimePickerSelection() {
-  tpHoursCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === String(tpSelected.hour)));
-  tpMinutesCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === String(tpSelected.minute)));
-  tpAmpmCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === tpSelected.ampm));
-  tpPresets.querySelectorAll(".time-picker-preset").forEach(b => b.classList.toggle("selected",
-    b.dataset.hour === String(tpSelected.hour) && b.dataset.minute === String(tpSelected.minute) && b.dataset.ampm === tpSelected.ampm));
-}
-
-// Instantly (no animation) scrolls `col` so the option matching `value`
-// sits centered in the wheel — used for every *programmatic* positioning
-// (opening the picker, tapping a row, tapping a preset). Free-hand scroll
-// gestures are handled separately by the scroll listener below, since
-// those move the column directly without going through this at all.
-function jumpToOption(col, value) {
-  const target = (value != null && [...col.querySelectorAll(".time-picker-option")].find(b => b.dataset.value === String(value))) || col.firstElementChild;
-  if (!target) return;
-  col.scrollTop = target.offsetTop - (col.clientHeight - target.offsetHeight) / 2;
-}
-
-// Whichever row's center lands nearest the column's vertical center is
-// "selected" purely by scroll position, matching a native wheel picker.
-function centeredOption(col) {
-  const mid = col.clientHeight / 2;
-  let closest = null;
-  let closestDist = Infinity;
-  col.querySelectorAll(".time-picker-option").forEach(opt => {
-    const dist = Math.abs((opt.offsetTop + opt.offsetHeight / 2) - (col.scrollTop + mid));
-    if (dist < closestDist) { closestDist = dist; closest = opt; }
-  });
-  return closest;
-}
-
-// Nearest option to `fromOpt` (by DOM order) that isn't disabled — used to
-// bounce a free-hand scroll off an out-of-range row onto the closest valid
-// one, the same way it'd refuse to land there in the first place on click.
-function nearestEnabledOption(col, fromOpt) {
-  const opts = [...col.querySelectorAll(".time-picker-option")];
-  const idx = opts.indexOf(fromOpt);
-  for (let d = 0; d < opts.length; d++) {
-    if (opts[idx + d] && !opts[idx + d].disabled) return opts[idx + d];
-    if (opts[idx - d] && !opts[idx - d].disabled) return opts[idx - d];
-  }
-  return fromOpt;
-}
-
-// Greys out (and disables clicking/landing on) every option in all three
-// columns that, combined with the OTHER columns' current selections, would
-// land at or before tpMinMinutes. Re-run after every selection change since
-// which rows are valid shifts as hour/minute/am-pm change.
-function applyTimePickerConstraints() {
-  const constrained = tpMinMinutes != null;
-  tpHoursCol.querySelectorAll(".time-picker-option").forEach(b => {
-    b.disabled = constrained && timeMinutes12(b.dataset.value, tpSelected.minute || "00", tpSelected.ampm || "AM") <= tpMinMinutes;
-  });
-  tpMinutesCol.querySelectorAll(".time-picker-option").forEach(b => {
-    b.disabled = constrained && timeMinutes12(tpSelected.hour || "12", b.dataset.value, tpSelected.ampm || "AM") <= tpMinMinutes;
-  });
-  tpAmpmCol.querySelectorAll(".time-picker-option").forEach(b => {
-    b.disabled = constrained && timeMinutes12(tpSelected.hour || "12", tpSelected.minute || "00", b.dataset.value) <= tpMinMinutes;
-  });
-  tpPresets.querySelectorAll(".time-picker-preset").forEach(b => {
-    b.disabled = constrained && timeMinutes12(b.dataset.hour, b.dataset.minute, b.dataset.ampm) <= tpMinMinutes;
-  });
-}
-
-const tpScrollTimers = new Map();
-function onWheelScroll(col, key) {
-  clearTimeout(tpScrollTimers.get(col));
-  tpScrollTimers.set(col, setTimeout(() => {
-    let opt = centeredOption(col);
-    if (!opt) return;
-    if (opt.disabled) {
-      opt = nearestEnabledOption(col, opt);
-      jumpToOption(col, opt.dataset.value);
-    }
-    tpSelected[key] = opt.dataset.value;
-    applyTimePickerConstraints();
-    highlightTimePickerSelection();
-  }, 100));
-}
-
-tpHoursCol.addEventListener("scroll", () => onWheelScroll(tpHoursCol, "hour"));
-tpMinutesCol.addEventListener("scroll", () => onWheelScroll(tpMinutesCol, "minute"));
-tpAmpmCol.addEventListener("scroll", () => onWheelScroll(tpAmpmCol, "ampm"));
-
-[tpHoursCol, tpMinutesCol, tpAmpmCol].forEach((col, i) => {
-  const key = ["hour", "minute", "ampm"][i];
-  col.addEventListener("click", (e) => {
-    const btn = e.target.closest(".time-picker-option");
-    if (!btn || btn.disabled) return;
-    tpSelected[key] = btn.dataset.value;
-    jumpToOption(col, btn.dataset.value);
-    applyTimePickerConstraints();
-    highlightTimePickerSelection();
-  });
-});
-
-tpPresets.addEventListener("click", (e) => {
-  const btn = e.target.closest(".time-picker-preset");
-  if (!btn || btn.disabled) return;
-  tpSelected = { hour: btn.dataset.hour, minute: btn.dataset.minute, ampm: btn.dataset.ampm };
-  jumpToOption(tpHoursCol, tpSelected.hour);
-  jumpToOption(tpMinutesCol, tpSelected.minute);
-  jumpToOption(tpAmpmCol, tpSelected.ampm);
-  applyTimePickerConstraints();
-  highlightTimePickerSelection();
-});
-
-function openTimePicker(container) {
-  tpActiveContainer = container;
-  const startVal = relatedTimeValue(container);
-  tpMinMinutes = startVal ? timeMinutes24(startVal) : null;
-  const hidden = container.querySelector("input[type=hidden]");
-  if (hidden.value) {
-    const { h12, m, ampm } = to12Hour(...hidden.value.split(":"));
-    tpSelected = { hour: h12, minute: m, ampm };
-  } else if (tpMinMinutes != null) {
-    // Open already scrolled to just after the start time instead of
-    // midnight, so the wheel's default position is itself a valid choice.
-    const defaultMinutes = (tpMinMinutes + 30) % (24 * 60);
-    const { h12, m, ampm } = to12Hour(String(Math.floor(defaultMinutes / 60)), String(defaultMinutes % 60).padStart(2, "0"));
-    tpSelected = { hour: h12, minute: m, ampm };
-  } else {
-    // The wheel always has *something* centered once it's open (unlike the
-    // old tap-to-select buttons, a scroll position can't be "empty") —
-    // default to the top row of each column, same as a fresh unscrolled
-    // wheel would naturally show.
-    tpSelected = { hour: "1", minute: "00", ampm: "AM" };
-  }
-  applyTimePickerConstraints();
-  highlightTimePickerSelection();
-  tpModal.hidden = false;
-  requestAnimationFrame(() => {
-    jumpToOption(tpHoursCol, tpSelected.hour);
-    jumpToOption(tpMinutesCol, tpSelected.minute);
-    jumpToOption(tpAmpmCol, tpSelected.ampm);
-  });
-}
-
-function closeTimePicker() {
-  tpModal.hidden = true;
-  tpActiveContainer = null;
-}
-
-document.getElementById("tp-cancel").addEventListener("click", closeTimePicker);
-tpModal.addEventListener("click", (e) => { if (e.target === tpModal) closeTimePicker(); });
-document.getElementById("tp-done").addEventListener("click", () => {
-  if (!tpActiveContainer) return;
-  const { hour, minute, ampm } = tpSelected;
-  if (hour && minute) {
-    let h24 = parseInt(hour, 10) % 12;
-    if (ampm === "PM") h24 += 12;
-    setTimeFieldValue(tpActiveContainer, `${String(h24).padStart(2, "0")}:${minute}`);
-  } else {
-    setTimeFieldValue(tpActiveContainer, "");
-  }
-  closeTimePicker();
-});
-
-function initTimeField(container) {
-  const btn = container.querySelector(".time-field-btn");
-  const hidden = container.querySelector("input[type=hidden]");
-  if (hidden.value) setTimeFieldValue(container, hidden.value);
-  btn.addEventListener("click", () => openTimePicker(container));
-}
-
-document.querySelectorAll("[data-time-field]").forEach(initTimeField);
 
 // ---------------- Custom energy-level picker ----------------
 const ENERGY_LEVELS = [
@@ -1162,9 +932,12 @@ function resetWorkoutFlowUI() {
   document.getElementById("card-exlog").hidden = true;
   document.getElementById("workout-edit-btn").hidden = true;
   savedWorkoutId = null;
-  setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), "");
-  setDateFieldValue(document.getElementById("exlog-date").closest(".date-field"), "");
-  workoutForm.querySelectorAll(".time-field").forEach(f => setTimeFieldValue(f, ""));
+  // Defaults to today rather than blank — most visits are logged the same
+  // day, so this saves a tap for the common case (see the date picker's
+  // click handler for the "logging a previous workout" prompt when
+  // someone deliberately picks an earlier date instead).
+  setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), todayStr);
+  setDateFieldValue(document.getElementById("exlog-date").closest(".date-field"), todayStr);
   workoutForm.querySelectorAll(".energy-field").forEach(f => setEnergyFieldValue(f, ""));
 }
 
@@ -1191,44 +964,6 @@ async function showExerciseDetail(date) {
 document.getElementById("exercise-detail-back").addEventListener("click", showWorkoutLog);
 
 // ---- Workout log table ----
-function formatTime12(t) {
-  if (!t) return "";
-  const [hStr, mStr] = t.split(":");
-  let h = parseInt(hStr, 10);
-  const ampm = h >= 12 ? "PM" : "AM";
-  h = h % 12;
-  if (h === 0) h = 12;
-  return `${h}:${mStr} ${ampm}`;
-}
-
-function formatDuration(hours) {
-  if (hours == null) return "";
-  let h = Math.floor(hours);
-  let m = Math.round((hours - h) * 60);
-  if (m === 60) { h += 1; m = 0; }
-  if (h === 0 && m === 0) return "0 mins";
-  const parts = [];
-  if (h > 0) parts.push(`${h} hr${h !== 1 ? "s" : ""}`);
-  if (m > 0) parts.push(`${m} min${m !== 1 ? "s" : ""}`);
-  return parts.join(" ");
-}
-
-function timeFieldHtml(cls, value, afterCls) {
-  let display = "--:-- --";
-  if (value) {
-    const { h12, m, ampm } = to12Hour(...value.split(":"));
-    display = `${h12}:${m} ${ampm}`;
-  }
-  return `
-    <div class="time-field"${afterCls ? ` data-after-field="${afterCls}"` : ""}>
-      <button type="button" class="time-field-btn">
-        <span class="time-field-value${value ? "" : " placeholder"}">${display}</span>
-        <span class="time-field-icon" aria-hidden="true">🕐</span>
-      </button>
-      <input type="hidden" class="${cls}" value="${value || ""}">
-    </div>`;
-}
-
 function energyFieldHtml(cls, value) {
   const info = energyLevelInfo(value);
   return `
@@ -1244,8 +979,7 @@ function energyFieldHtml(cls, value) {
 function workoutRowView(w) {
   return `
     <tr class="clickable-row" data-date="${w.date}" data-id="${w.id}">
-      <td data-label="Date">${w.date}</td><td data-label="Start">${formatTime12(w.start_time)}</td>
-      <td data-label="End">${formatTime12(w.end_time)}</td><td data-label="Duration">${formatDuration(w.duration_hours)}</td><td data-label="Energy Level">${w.energy_level ?? ""}</td><td data-label="Notes">${w.notes || ""}</td>
+      <td data-label="Date">${w.date}</td><td data-label="Energy Level">${w.energy_level ?? ""}</td><td data-label="Notes">${w.notes || ""}</td>
       <td class="row-actions">
         <button class="edit-btn" data-id="${w.id}">Edit</button>
       </td>
@@ -1264,9 +998,6 @@ function workoutRowEdit(w) {
           <input type="hidden" class="edit-date" value="${w.date}">
         </div>
       </td>
-      <td data-label="Start">${timeFieldHtml("edit-start", w.start_time)}</td>
-      <td data-label="End">${timeFieldHtml("edit-end", w.end_time, "edit-start")}</td>
-      <td data-label="Duration">${formatDuration(w.duration_hours)}</td>
       <td data-label="Energy Level">${energyFieldHtml("edit-energy", w.energy_level)}</td>
       <td data-label="Notes"><input type="text" class="edit-notes" value="${w.notes || ""}"></td>
       <td class="row-actions">
@@ -1300,14 +1031,11 @@ function bindWorkoutRowEvents() {
 function bindWorkoutEditRowEvents(id) {
   const row = document.querySelector(`#table-workout-log tbody tr[data-id="${id}"]`);
   initDateField(row.querySelector(".date-field"));
-  row.querySelectorAll(".time-field").forEach(initTimeField);
   initEnergyField(row.querySelector(".energy-field"));
   row.querySelector(".save-btn").addEventListener("click", async (e) => {
     e.stopPropagation();
     const body = {
       date: row.querySelector(".edit-date").value,
-      start_time: row.querySelector(".edit-start").value,
-      end_time: row.querySelector(".edit-end").value,
       energy_level: row.querySelector(".edit-energy").value || null,
       notes: row.querySelector(".edit-notes").value,
     };
@@ -1483,10 +1211,6 @@ async function restoreDraft() {
       if (w.hours_since_meal) form.querySelector('[name="hours_since_meal"]').value = w.hours_since_meal;
       if (w.notes) form.querySelector('[name="notes"]').value = w.notes;
       if (w.date) setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), w.date);
-      const startGroup = form.querySelector('input[name="start_time"]')?.closest(".time-field");
-      const endGroup = form.querySelector('input[name="end_time"]')?.closest(".time-field");
-      if (startGroup && w.start_time) setTimeFieldValue(startGroup, w.start_time);
-      if (endGroup && w.end_time) setTimeFieldValue(endGroup, w.end_time);
     }
 
     if (draft.workoutSubmitted) {

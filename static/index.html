@@ -104,32 +104,6 @@
   </div>
 </div>
 
-<div id="time-picker-modal" class="modal-overlay" hidden>
-  <div class="modal-card time-picker-card">
-    <h2>Select Time</h2>
-    <div class="time-picker-wheel">
-      <div class="time-picker-highlight" aria-hidden="true"></div>
-      <div class="time-picker-columns">
-        <div class="time-picker-col" id="tp-hours"></div>
-        <div class="time-picker-sep">:</div>
-        <div class="time-picker-col" id="tp-minutes"></div>
-        <div class="time-picker-col" id="tp-ampm"></div>
-      </div>
-    </div>
-    <p class="time-picker-presets-label">Presets</p>
-    <div class="time-picker-presets" id="tp-presets">
-      <button type="button" class="time-picker-preset" data-hour="9" data-minute="00" data-ampm="AM">9 AM</button>
-      <button type="button" class="time-picker-preset" data-hour="12" data-minute="00" data-ampm="PM">12 PM</button>
-      <button type="button" class="time-picker-preset" data-hour="4" data-minute="00" data-ampm="PM">4 PM</button>
-      <button type="button" class="time-picker-preset" data-hour="6" data-minute="00" data-ampm="PM">6 PM</button>
-    </div>
-    <div class="confirm-actions">
-      <button type="button" class="secondary" id="tp-cancel">Cancel</button>
-      <button type="button" class="primary" id="tp-done">Done</button>
-    </div>
-  </div>
-</div>
-
 <div id="energy-picker-modal" class="modal-overlay" hidden>
   <div class="modal-card time-picker-card">
     <h2>How do you feel?</h2>
@@ -205,24 +179,6 @@
             <input type="hidden" name="date" id="workout-date" required>
           </div>
         </label>
-        <label>Start Time
-          <div class="time-field" data-time-field>
-            <button type="button" class="time-field-btn">
-              <span class="time-field-value placeholder">--:-- --</span>
-              <span class="time-field-icon" aria-hidden="true">🕐</span>
-            </button>
-            <input type="hidden" name="start_time">
-          </div>
-        </label>
-        <label>End Time
-          <div class="time-field" data-time-field data-after-field="start_time">
-            <button type="button" class="time-field-btn">
-              <span class="time-field-value placeholder">--:-- --</span>
-              <span class="time-field-icon" aria-hidden="true">🕐</span>
-            </button>
-            <input type="hidden" name="end_time">
-          </div>
-        </label>
         <label>Energy Level
           <div class="energy-field" data-energy-field>
             <button type="button" class="energy-field-btn">
@@ -275,7 +231,7 @@
       <div class="table-scroll">
         <table class="data-table" id="table-workout-log">
           <thead>
-            <tr><th>Date</th><th>Start</th><th>End</th><th>Duration</th><th>Energy Level</th><th>Notes</th><th></th></tr>
+            <tr><th>Date</th><th>Energy Level</th><th>Notes</th><th></th></tr>
           </thead>
           <tbody></tbody>
         </table>

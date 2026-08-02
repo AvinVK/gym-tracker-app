@@ -261,21 +261,6 @@ def exercises_by_muscle(muscle):
 # ---------------------------------------------------------------
 # Workout Log API
 # ---------------------------------------------------------------
-def compute_duration(start_time, end_time):
-    if not start_time or not end_time:
-        return None
-    try:
-        fmt = "%H:%M"
-        t1 = datetime.strptime(start_time, fmt)
-        t2 = datetime.strptime(end_time, fmt)
-        delta = (t2 - t1).total_seconds() / 3600.0
-        if delta < 0:
-            delta += 24
-        return round(delta, 2)
-    except ValueError:
-        return None
-
-
 @app.route("/api/workout-log", methods=["GET"])
 def list_workout_log():
     user_id = get_current_user_id()
@@ -299,20 +284,17 @@ def add_workout_log():
         return jsonify({"error": "date is required"}), 400
     if is_future_date(date):
         return jsonify({"error": "date cannot be in the future"}), 400
-    start_time = data.get("start_time") or None
-    end_time = data.get("end_time") or None
-    duration = compute_duration(start_time, end_time)
     db = get_db()
     cur = db.execute(
-        "INSERT INTO workout_log (user_id, date, start_time, end_time, duration_hours, energy_level, "
-        "pre_workout_meal, hours_since_meal, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO workout_log (user_id, date, energy_level, pre_workout_meal, hours_since_meal, notes) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
         (
-            user_id, date, start_time, end_time, duration, data.get("energy_level"),
+            user_id, date, data.get("energy_level"),
             data.get("pre_workout_meal", ""), data.get("hours_since_meal") or None, data.get("notes", ""),
         ),
     )
     db.commit()
-    return jsonify({"id": cur.lastrowid, "duration_hours": duration}), 201
+    return jsonify({"id": cur.lastrowid}), 201
 
 
 @app.route("/api/workout-log/<int:row_id>", methods=["PUT"])
@@ -326,21 +308,18 @@ def update_workout_log(row_id):
         return jsonify({"error": "date is required"}), 400
     if is_future_date(date):
         return jsonify({"error": "date cannot be in the future"}), 400
-    start_time = data.get("start_time") or None
-    end_time = data.get("end_time") or None
-    duration = compute_duration(start_time, end_time)
     db = get_db()
     db.execute(
-        "UPDATE workout_log SET date = ?, start_time = ?, end_time = ?, duration_hours = ?, "
-        "energy_level = ?, pre_workout_meal = ?, hours_since_meal = ?, notes = ? WHERE id = ? AND user_id = ?",
+        "UPDATE workout_log SET date = ?, energy_level = ?, pre_workout_meal = ?, hours_since_meal = ?, "
+        "notes = ? WHERE id = ? AND user_id = ?",
         (
-            date, start_time, end_time, duration, data.get("energy_level"),
+            date, data.get("energy_level"),
             data.get("pre_workout_meal", ""), data.get("hours_since_meal") or None, data.get("notes", ""),
             row_id, user_id,
         ),
     )
     db.commit()
-    return jsonify({"id": row_id, "duration_hours": duration})
+    return jsonify({"id": row_id})
 
 
 # ---------------------------------------------------------------
