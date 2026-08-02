@@ -831,8 +831,16 @@ button:disabled {
 }
 .exercise-block .exercise-remove:hover { background: #fdeaee; }
 
+/* Same grid-template-columns as .set-row below, not an approximation —
+   flexbox with a hand-picked spacer width used to drift out of alignment
+   with the real columns as soon as label text length differed much from
+   "Reps"/"Weight (kg)" (e.g. "Duration (min)"/"Level"). Only 3 of the 5
+   tracks are filled (spacer, col, col); the notes/remove tracks are left
+   empty by simply having no 4th/5th child, which is fine since grid
+   auto-placement still lines the two labels up with reps/weight exactly. */
 .set-columns-label {
-  display: flex;
+  display: grid;
+  grid-template-columns: 48px 1fr 1fr 1.4fr 30px;
   gap: 8px;
   margin-bottom: 4px;
   font-size: 10.5px;
@@ -841,8 +849,7 @@ button:disabled {
   letter-spacing: .03em;
   color: var(--muted);
 }
-.set-columns-label-spacer { flex: 0 0 48px; }
-.set-columns-label-col { flex: 1; text-align: center; }
+.set-columns-label-col { text-align: center; }
 
 .set-row {
   display: grid;
