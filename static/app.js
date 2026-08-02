@@ -634,6 +634,187 @@ function initMealTimingField(container) {
 
 document.querySelectorAll("[data-meal-timing-field]").forEach(initMealTimingField);
 
+// ---------------- Custom "set duration" picker (cardio sets) ----------------
+// Sets are added/removed dynamically (addSetRow), so unlike the pickers above
+// there's no static [data-x-field] to wire up at load time — initSetDurationField
+// is instead called on each new row's field container as it's created.
+const SET_DURATION_MINUTES = Array.from({ length: 121 }, (_, i) => i); // 0 to 120 min
+
+const sdpModal = document.getElementById("set-duration-picker-modal");
+const sdpMinutesCol = document.getElementById("sdp-minutes");
+let sdpActiveContainer = null;
+let sdpSelected = null;
+
+sdpMinutesCol.innerHTML = SET_DURATION_MINUTES
+  .map(m => `<button type="button" class="time-picker-option" data-value="${m}">${m} min</button>`)
+  .join("");
+
+function setSetDurationValue(row, value) {
+  const hidden = row.querySelector(".set-duration");
+  const valueEl = row.querySelector(".set-duration-field-value");
+  const hasValue = value !== "" && value != null;
+  hidden.value = hasValue ? value : "";
+  valueEl.textContent = hasValue ? `${value} min` : "Set duration";
+  valueEl.classList.toggle("placeholder", !hasValue);
+  hidden.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function highlightSetDurationSelection() {
+  sdpMinutesCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === String(sdpSelected)));
+}
+
+function jumpToSetDurationOption(value) {
+  const target = (value != null && [...sdpMinutesCol.querySelectorAll(".time-picker-option")].find(b => b.dataset.value === String(value))) || sdpMinutesCol.firstElementChild;
+  if (!target) return;
+  sdpMinutesCol.scrollTop = target.offsetTop - (sdpMinutesCol.clientHeight - target.offsetHeight) / 2;
+}
+
+function centeredSetDurationOption() {
+  const mid = sdpMinutesCol.clientHeight / 2;
+  let closest = null;
+  let closestDist = Infinity;
+  sdpMinutesCol.querySelectorAll(".time-picker-option").forEach(opt => {
+    const dist = Math.abs((opt.offsetTop + opt.offsetHeight / 2) - (sdpMinutesCol.scrollTop + mid));
+    if (dist < closestDist) { closestDist = dist; closest = opt; }
+  });
+  return closest;
+}
+
+let sdpScrollTimer = null;
+sdpMinutesCol.addEventListener("scroll", () => {
+  clearTimeout(sdpScrollTimer);
+  sdpScrollTimer = setTimeout(() => {
+    const opt = centeredSetDurationOption();
+    if (!opt) return;
+    sdpSelected = opt.dataset.value;
+    highlightSetDurationSelection();
+  }, 100);
+});
+
+sdpMinutesCol.addEventListener("click", (e) => {
+  const btn = e.target.closest(".time-picker-option");
+  if (!btn) return;
+  sdpSelected = btn.dataset.value;
+  jumpToSetDurationOption(sdpSelected);
+  highlightSetDurationSelection();
+});
+
+function openSetDurationPicker(row) {
+  sdpActiveContainer = row;
+  const hidden = row.querySelector(".set-duration");
+  sdpSelected = hidden.value !== "" ? hidden.value : "0"; // wheel always centers on something
+  highlightSetDurationSelection();
+  sdpModal.hidden = false;
+  requestAnimationFrame(() => jumpToSetDurationOption(sdpSelected));
+}
+
+function closeSetDurationPicker() {
+  sdpModal.hidden = true;
+  sdpActiveContainer = null;
+}
+
+document.getElementById("sdp-cancel").addEventListener("click", closeSetDurationPicker);
+sdpModal.addEventListener("click", (e) => { if (e.target === sdpModal) closeSetDurationPicker(); });
+document.getElementById("sdp-done").addEventListener("click", () => {
+  if (!sdpActiveContainer) return;
+  setSetDurationValue(sdpActiveContainer, sdpSelected);
+  closeSetDurationPicker();
+});
+
+function initSetDurationField(container) {
+  const row = container.closest(".set-row");
+  container.querySelector(".set-wheel-field-btn").addEventListener("click", () => openSetDurationPicker(row));
+}
+
+// ---------------- Custom "set intensity level" picker (cardio sets) ----------------
+const SET_LEVELS = Array.from({ length: 10 }, (_, i) => i + 1); // 1 to 10
+
+const slpModal = document.getElementById("set-level-picker-modal");
+const slpLevelsCol = document.getElementById("slp-levels");
+let slpActiveContainer = null;
+let slpSelected = null;
+
+slpLevelsCol.innerHTML = SET_LEVELS
+  .map(n => `<button type="button" class="time-picker-option" data-value="${n}">Level ${n}</button>`)
+  .join("");
+
+function setSetLevelValue(row, value) {
+  const hidden = row.querySelector(".set-level");
+  const valueEl = row.querySelector(".set-level-field-value");
+  const hasValue = value !== "" && value != null;
+  hidden.value = hasValue ? value : "";
+  valueEl.textContent = hasValue ? `Level ${value}` : "Set level";
+  valueEl.classList.toggle("placeholder", !hasValue);
+  hidden.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function highlightSetLevelSelection() {
+  slpLevelsCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === String(slpSelected)));
+}
+
+function jumpToSetLevelOption(value) {
+  const target = (value != null && [...slpLevelsCol.querySelectorAll(".time-picker-option")].find(b => b.dataset.value === String(value))) || slpLevelsCol.firstElementChild;
+  if (!target) return;
+  slpLevelsCol.scrollTop = target.offsetTop - (slpLevelsCol.clientHeight - target.offsetHeight) / 2;
+}
+
+function centeredSetLevelOption() {
+  const mid = slpLevelsCol.clientHeight / 2;
+  let closest = null;
+  let closestDist = Infinity;
+  slpLevelsCol.querySelectorAll(".time-picker-option").forEach(opt => {
+    const dist = Math.abs((opt.offsetTop + opt.offsetHeight / 2) - (slpLevelsCol.scrollTop + mid));
+    if (dist < closestDist) { closestDist = dist; closest = opt; }
+  });
+  return closest;
+}
+
+let slpScrollTimer = null;
+slpLevelsCol.addEventListener("scroll", () => {
+  clearTimeout(slpScrollTimer);
+  slpScrollTimer = setTimeout(() => {
+    const opt = centeredSetLevelOption();
+    if (!opt) return;
+    slpSelected = opt.dataset.value;
+    highlightSetLevelSelection();
+  }, 100);
+});
+
+slpLevelsCol.addEventListener("click", (e) => {
+  const btn = e.target.closest(".time-picker-option");
+  if (!btn) return;
+  slpSelected = btn.dataset.value;
+  jumpToSetLevelOption(slpSelected);
+  highlightSetLevelSelection();
+});
+
+function openSetLevelPicker(row) {
+  slpActiveContainer = row;
+  const hidden = row.querySelector(".set-level");
+  slpSelected = hidden.value !== "" ? hidden.value : "5"; // wheel always centers on something
+  highlightSetLevelSelection();
+  slpModal.hidden = false;
+  requestAnimationFrame(() => jumpToSetLevelOption(slpSelected));
+}
+
+function closeSetLevelPicker() {
+  slpModal.hidden = true;
+  slpActiveContainer = null;
+}
+
+document.getElementById("slp-cancel").addEventListener("click", closeSetLevelPicker);
+slpModal.addEventListener("click", (e) => { if (e.target === slpModal) closeSetLevelPicker(); });
+document.getElementById("slp-done").addEventListener("click", () => {
+  if (!slpActiveContainer) return;
+  setSetLevelValue(slpActiveContainer, slpSelected);
+  closeSetLevelPicker();
+});
+
+function initSetLevelField(container) {
+  const row = container.closest(".set-row");
+  container.querySelector(".set-wheel-field-btn").addEventListener("click", () => openSetLevelPicker(row));
+}
+
 // ---------------- Custom option picker (muscle group / exercise dropdowns) ----------------
 const opModal = document.getElementById("option-picker-modal");
 const opTitle = document.getElementById("op-title");
@@ -799,15 +980,19 @@ function addSetRow(block, { copyLast = false } = {}) {
   row.className = "set-row";
   row.innerHTML = isCardio ? `
     <span class="set-number"></span>
-    <div class="stepper stepper-duration" data-step="1" data-min="0">
-      <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease duration">&minus;</button>
-      <input type="number" class="set-duration stepper-input" min="0" placeholder="0" aria-label="Duration in minutes" required>
-      <button type="button" class="stepper-btn stepper-plus" aria-label="Increase duration">+</button>
+    <div class="stepper-duration set-duration-field">
+      <button type="button" class="set-wheel-field-btn" aria-label="Set duration">
+        <span class="set-wheel-field-icon" aria-hidden="true">⏱️</span>
+        <span class="set-duration-field-value set-wheel-field-value placeholder">Set duration</span>
+      </button>
+      <input type="hidden" class="set-duration">
     </div>
-    <div class="stepper stepper-level" data-step="1" data-min="1">
-      <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease level">&minus;</button>
-      <input type="number" class="set-level stepper-input" min="1" placeholder="lvl" aria-label="Intensity level">
-      <button type="button" class="stepper-btn stepper-plus" aria-label="Increase level">+</button>
+    <div class="stepper-level set-level-field">
+      <button type="button" class="set-wheel-field-btn" aria-label="Set intensity level">
+        <span class="set-wheel-field-icon" aria-hidden="true">🔥</span>
+        <span class="set-level-field-value set-wheel-field-value placeholder">Set level</span>
+      </button>
+      <input type="hidden" class="set-level">
     </div>
     <input type="text" class="set-notes" placeholder="Note for this set (optional)">
     <button type="button" class="set-remove">✕</button>` : `
@@ -824,10 +1009,14 @@ function addSetRow(block, { copyLast = false } = {}) {
     </div>
     <input type="text" class="set-notes" placeholder="Note for this set (optional)">
     <button type="button" class="set-remove">✕</button>`;
+  if (isCardio) {
+    initSetDurationField(row.querySelector(".set-duration-field"));
+    initSetLevelField(row.querySelector(".set-level-field"));
+  }
   if (copyLast && lastRow) {
     if (isCardio) {
-      row.querySelector(".set-duration").value = lastRow.querySelector(".set-duration")?.value || "";
-      row.querySelector(".set-level").value = lastRow.querySelector(".set-level")?.value || "";
+      setSetDurationValue(row, lastRow.querySelector(".set-duration")?.value || "");
+      setSetLevelValue(row, lastRow.querySelector(".set-level")?.value || "");
     } else {
       row.querySelector(".set-reps").value = lastRow.querySelector(".set-reps")?.value || "";
       row.querySelector(".set-weight").value = lastRow.querySelector(".set-weight")?.value || "";
@@ -925,16 +1114,8 @@ function initVoiceSetButton(block) {
           return;
         }
         const targetRow = addSetRow(block);
-        if (duration != null) {
-          const input = targetRow.querySelector(".set-duration");
-          input.value = duration;
-          input.dispatchEvent(new Event("input", { bubbles: true }));
-        }
-        if (level != null) {
-          const input = targetRow.querySelector(".set-level");
-          input.value = level;
-          input.dispatchEvent(new Event("input", { bubbles: true }));
-        }
+        if (duration != null) setSetDurationValue(targetRow, duration);
+        if (level != null) setSetLevelValue(targetRow, level);
         const parts = [duration != null ? `${duration} min` : null, level != null ? `level ${level}` : null].filter(Boolean);
         toast(`Added set: ${parts.join(", ")}`);
         return;
@@ -1458,8 +1639,8 @@ async function restoreDraft() {
           const rows = block.querySelectorAll(".set-row");
           sets.forEach((s, i) => {
             if (isCardio) {
-              rows[i].querySelector(".set-duration").value = s.duration_minutes || "";
-              rows[i].querySelector(".set-level").value = s.intensity_level || "";
+              setSetDurationValue(rows[i], s.duration_minutes || "");
+              setSetLevelValue(rows[i], s.intensity_level || "");
             } else {
               rows[i].querySelector(".set-reps").value = s.reps || "";
               rows[i].querySelector(".set-weight").value = s.weight_kg || "";

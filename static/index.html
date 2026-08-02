@@ -140,6 +140,38 @@
   </div>
 </div>
 
+<div id="set-duration-picker-modal" class="modal-overlay" hidden>
+  <div class="modal-card time-picker-card">
+    <h2>Set duration</h2>
+    <div class="time-picker-wheel duration-picker-wheel">
+      <div class="time-picker-highlight" aria-hidden="true"></div>
+      <div class="time-picker-columns">
+        <div class="time-picker-col" id="sdp-minutes"></div>
+      </div>
+    </div>
+    <div class="confirm-actions">
+      <button type="button" class="secondary" id="sdp-cancel">Cancel</button>
+      <button type="button" class="primary" id="sdp-done">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="set-level-picker-modal" class="modal-overlay" hidden>
+  <div class="modal-card time-picker-card">
+    <h2>Set intensity level</h2>
+    <div class="time-picker-wheel level-picker-wheel">
+      <div class="time-picker-highlight" aria-hidden="true"></div>
+      <div class="time-picker-columns">
+        <div class="time-picker-col" id="slp-levels"></div>
+      </div>
+    </div>
+    <div class="confirm-actions">
+      <button type="button" class="secondary" id="slp-cancel">Cancel</button>
+      <button type="button" class="primary" id="slp-done">Done</button>
+    </div>
+  </div>
+</div>
+
 <div id="option-picker-modal" class="modal-overlay" hidden>
   <div class="modal-card option-picker-card">
     <h2 id="op-title">Select</h2>

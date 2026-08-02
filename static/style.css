@@ -461,6 +461,44 @@ button:disabled {
 
 .energy-picker-wheel .time-picker-col { width: 100px; }
 .meal-timing-picker-wheel .time-picker-col { width: 180px; }
+.duration-picker-wheel .time-picker-col { width: 140px; }
+.level-picker-wheel .time-picker-col { width: 140px; }
+
+/* ---------------- Set duration / level fields (custom in-app wheel picker,
+   used inside cardio set rows in place of the +/- stepper) ---------------- */
+.set-duration-field, .set-level-field { display: flex; }
+.set-wheel-field-btn {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 9px 6px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fbfbfe;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.set-wheel-field-btn:hover { background: #fff; }
+.set-wheel-field-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(109, 94, 248, .14);
+}
+.set-wheel-field-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.set-wheel-field-value.placeholder { color: #9aa1b5; }
+.set-wheel-field-icon { font-size: 12px; flex-shrink: 0; }
 .energy-picker-caption {
   text-align: center;
   margin-top: 12px;
