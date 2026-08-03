@@ -952,9 +952,27 @@ function initStepper(container) {
 
 function updateSetColumnsLabel(block) {
   const isCardio = block.dataset.exerciseType === "cardio";
+  const levelOverride = EXERCISE_LEVEL_OVERRIDES[block.querySelector(".ex-exercise").value];
   const cols = block.querySelectorAll(".set-columns-label-col");
   cols[0].textContent = isCardio ? "Duration (min)" : "Reps";
-  cols[1].textContent = isCardio ? "Level" : "Weight (kg)";
+  cols[1].textContent = isCardio ? (levelOverride ? levelOverride.label : "Level") : "Weight (kg)";
+}
+
+// Rebuilds the sets list when the currently-selected exercise's Level
+// override (see EXERCISE_LEVEL_OVERRIDES) changes - e.g. Treadmill Walk
+// swaps the generic 1-10 intensity Level for an actual Speed reading, so
+// switching to/from it needs a different 2nd cardio field, not just a
+// different label. Same rebuild-only-when-needed guard as
+// applyExerciseType/applyExtraField.
+function applyLevelOverride(block) {
+  const levelOverride = EXERCISE_LEVEL_OVERRIDES[block.querySelector(".ex-exercise").value];
+  const prevKey = block.dataset.levelOverrideKey || "";
+  const newKey = levelOverride ? levelOverride.key : "";
+  block.dataset.levelOverrideKey = newKey;
+  updateSetColumnsLabel(block);
+  if (newKey === prevKey) return;
+  block.querySelector(".ex-sets").innerHTML = "";
+  addSetRow(block);
 }
 
 // Adds/removes the 3rd "extra field" label column (e.g. "Inclination (%)")
@@ -1023,7 +1041,9 @@ function addSetRow(block, { copyLast = false } = {}) {
   const existingRows = block.querySelectorAll(".set-row");
   const lastRow = existingRows[existingRows.length - 1];
   const isCardio = block.dataset.exerciseType === "cardio";
-  const extraField = EXERCISE_EXTRA_FIELDS[block.querySelector(".ex-exercise").value];
+  const exerciseName = block.querySelector(".ex-exercise").value;
+  const levelOverride = EXERCISE_LEVEL_OVERRIDES[exerciseName];
+  const extraField = EXERCISE_EXTRA_FIELDS[exerciseName];
   const row = document.createElement("div");
   row.className = "set-row" + (extraField ? " has-extra" : "");
   const extraHtml = extraField ? `
@@ -1032,6 +1052,22 @@ function addSetRow(block, { copyLast = false } = {}) {
       <input type="number" class="set-extra stepper-input" min="${extraField.min}" placeholder="${extraField.placeholder || ""}" aria-label="${extraField.label}">
       <button type="button" class="stepper-btn stepper-plus" aria-label="Increase ${extraField.label}">+</button>
     </div>` : "";
+  // The 2nd cardio field is normally the generic 1-10 intensity Level
+  // wheel-picker, but some exercises (Treadmill Walk) swap it for a plain
+  // stepper field instead (e.g. actual Speed) via EXERCISE_LEVEL_OVERRIDES.
+  const levelHtml = levelOverride ? `
+    <div class="stepper set-speed-field" data-step="${levelOverride.step}" data-min="${levelOverride.min}">
+      <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease ${levelOverride.label}">&minus;</button>
+      <input type="number" class="set-speed stepper-input" min="${levelOverride.min}" step="${levelOverride.step}" placeholder="${levelOverride.placeholder || ""}" aria-label="${levelOverride.label}">
+      <button type="button" class="stepper-btn stepper-plus" aria-label="Increase ${levelOverride.label}">+</button>
+    </div>` : `
+    <div class="stepper-level set-level-field">
+      <button type="button" class="set-wheel-field-btn" aria-label="Set intensity level">
+        <span class="set-wheel-field-icon" aria-hidden="true">🔥</span>
+        <span class="set-level-field-value set-wheel-field-value placeholder">Set level</span>
+      </button>
+      <input type="hidden" class="set-level">
+    </div>`;
   row.innerHTML = isCardio ? `
     <span class="set-number"></span>
     <div class="stepper-duration set-duration-field">
@@ -1041,13 +1077,7 @@ function addSetRow(block, { copyLast = false } = {}) {
       </button>
       <input type="hidden" class="set-duration">
     </div>
-    <div class="stepper-level set-level-field">
-      <button type="button" class="set-wheel-field-btn" aria-label="Set intensity level">
-        <span class="set-wheel-field-icon" aria-hidden="true">🔥</span>
-        <span class="set-level-field-value set-wheel-field-value placeholder">Set level</span>
-      </button>
-      <input type="hidden" class="set-level">
-    </div>
+    ${levelHtml}
     ${extraHtml}
     <button type="button" class="set-remove">✕</button>` : `
     <span class="set-number"></span>
@@ -1065,12 +1095,16 @@ function addSetRow(block, { copyLast = false } = {}) {
     <button type="button" class="set-remove">✕</button>`;
   if (isCardio) {
     initSetDurationField(row.querySelector(".set-duration-field"));
-    initSetLevelField(row.querySelector(".set-level-field"));
+    if (!levelOverride) initSetLevelField(row.querySelector(".set-level-field"));
   }
   if (copyLast && lastRow) {
     if (isCardio) {
       setSetDurationValue(row, lastRow.querySelector(".set-duration")?.value || "");
-      setSetLevelValue(row, lastRow.querySelector(".set-level")?.value || "");
+      if (levelOverride) {
+        row.querySelector(".set-speed").value = lastRow.querySelector(".set-speed")?.value || "";
+      } else {
+        setSetLevelValue(row, lastRow.querySelector(".set-level")?.value || "");
+      }
     } else {
       row.querySelector(".set-reps").value = lastRow.querySelector(".set-reps")?.value || "";
       row.querySelector(".set-weight").value = lastRow.querySelector(".set-weight")?.value || "";
@@ -1275,6 +1309,15 @@ const EXERCISE_EXTRA_FIELDS = {
   "Treadmill Walk": { key: "inclination_percent", label: "Inclination (%)", step: 1, min: 0, placeholder: "0" },
 };
 
+// Swaps the generic 1-10 intensity "Level" wheel-picker (the normal 2nd
+// cardio field) for a plain stepper field on exercises where "Level"
+// doesn't make sense - Treadmill Walk cares about actual Speed, not an
+// arbitrary intensity rating. Also stored in the per-set `attributes` JSON,
+// same mechanism as EXERCISE_EXTRA_FIELDS.
+const EXERCISE_LEVEL_OVERRIDES = {
+  "Treadmill Walk": { key: "speed_kmh", label: "Speed (km/h)", step: 0.5, min: 0, placeholder: "0" },
+};
+
 async function onBlockMuscleChange(block) {
   const muscle = block.querySelector(".ex-muscle").value;
   const exField = block.querySelector(".ex-exercise-field");
@@ -1283,6 +1326,7 @@ async function onBlockMuscleChange(block) {
     setOptionFieldOptions(exField, [], { emptyText: "Pick a muscle group first" });
     applyExerciseType(block, "strength");
     applyExtraField(block);
+    applyLevelOverride(block);
     return;
   }
   const exercises = await api.get(`/api/exercises-by-muscle/${encodeURIComponent(muscle)}`);
@@ -1298,6 +1342,7 @@ async function onBlockMuscleChange(block) {
   // handler below corrects this once a specific exercise is chosen.
   applyExerciseType(block, muscle === "Cardio" ? "cardio" : "strength");
   applyExtraField(block);
+  applyLevelOverride(block);
 }
 
 function addExerciseBlock() {
@@ -1365,6 +1410,7 @@ function addExerciseBlock() {
     const exerciseName = block.querySelector(".ex-exercise").value;
     applyExerciseType(block, (block.__exerciseTypes && block.__exerciseTypes[exerciseName]) || "strength");
     applyExtraField(block);
+    applyLevelOverride(block);
   });
   block.querySelector(".add-set").addEventListener("click", () => addSetRow(block));
   block.querySelector(".add-set-same").addEventListener("click", () => addSetRow(block, { copyLast: true }));
@@ -1410,6 +1456,7 @@ document.getElementById("form-exercise-log").addEventListener("submit", async (e
   const exercises = [...exercisesContainer.querySelectorAll(".exercise-block")].map(block => {
     const isCardio = block.dataset.exerciseType === "cardio";
     const exerciseName = block.querySelector(".ex-exercise").value;
+    const levelOverride = EXERCISE_LEVEL_OVERRIDES[exerciseName];
     const extraField = EXERCISE_EXTRA_FIELDS[exerciseName];
     const notes = block.querySelector(".ex-notes").value;
     return {
@@ -1418,7 +1465,9 @@ document.getElementById("form-exercise-log").addEventListener("submit", async (e
       sets: [...block.querySelectorAll(".set-row")].map((row, i) => {
         const set = isCardio ? {
           duration_minutes: parseFloat(row.querySelector(".set-duration").value) || null,
-          intensity_level: parseInt(row.querySelector(".set-level").value, 10) || null,
+          ...(levelOverride
+            ? { [levelOverride.key]: parseFloat(row.querySelector(".set-speed").value) || null }
+            : { intensity_level: parseInt(row.querySelector(".set-level").value, 10) || null }),
         } : {
           reps: parseInt(row.querySelector(".set-reps").value, 10) || null,
           weight_kg: parseFloat(row.querySelector(".set-weight").value) || null,
@@ -1714,9 +1763,13 @@ function collectExerciseBlocksDraft() {
       type: block.dataset.exerciseType || "strength",
       notes: block.querySelector(".ex-notes").value,
       sets: [...block.querySelectorAll(".set-row")].map(row => {
+        // levelValue holds whichever the 2nd cardio field currently is
+        // (the generic Level wheel-picker, or a per-exercise override like
+        // Speed) - restoreDraft figures out which one to write back to the
+        // same way, based on what addSetRow actually rendered for it.
         const s = isCardio ? {
           duration_minutes: row.querySelector(".set-duration").value,
-          intensity_level: row.querySelector(".set-level").value,
+          levelValue: (row.querySelector(".set-speed") || row.querySelector(".set-level")).value,
         } : {
           reps: row.querySelector(".set-reps").value,
           weight_kg: row.querySelector(".set-weight").value,
@@ -1788,6 +1841,7 @@ async function restoreDraft() {
             setOptionFieldValue(block.querySelector(".ex-exercise-field"), ex.exercise || "");
           }
           block.dataset.exerciseType = ex.type || "strength";
+          block.dataset.levelOverrideKey = (EXERCISE_LEVEL_OVERRIDES[ex.exercise] || {}).key || "";
           updateSetColumnsLabel(block);
           updateSetTypeToggle(block);
           block.dataset.extraFieldKey = (EXERCISE_EXTRA_FIELDS[ex.exercise] || {}).key || "";
@@ -1801,7 +1855,9 @@ async function restoreDraft() {
           sets.forEach((s, i) => {
             if (isCardio) {
               setSetDurationValue(rows[i], s.duration_minutes || "");
-              setSetLevelValue(rows[i], s.intensity_level || "");
+              const speedInput = rows[i].querySelector(".set-speed");
+              if (speedInput) speedInput.value = s.levelValue || "";
+              else setSetLevelValue(rows[i], s.levelValue || "");
             } else {
               rows[i].querySelector(".set-reps").value = s.reps || "";
               rows[i].querySelector(".set-weight").value = s.weight_kg || "";

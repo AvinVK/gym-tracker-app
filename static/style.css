@@ -1226,7 +1226,7 @@ button:disabled {
   }
   .set-row .set-number { grid-area: num; }
   .set-row .stepper-reps, .set-row .stepper-duration { grid-area: reps; }
-  .set-row .stepper-weight, .set-row .stepper-level { grid-area: weight; }
+  .set-row .stepper-weight, .set-row .stepper-level, .set-row .set-speed-field { grid-area: weight; }
   .set-row .set-remove { grid-area: remove; }
   .set-row .set-extra-field { grid-area: extra; }
 }
