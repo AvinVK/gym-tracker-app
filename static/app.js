@@ -337,6 +337,62 @@ document.getElementById("view-profile-btn").addEventListener("click", () => {
   showProfile();
 });
 
+// ---------------- Your Cycle ----------------
+// No per-user cycle length is collected, so this estimates every cycle as
+// a standard 28 days from the last period date - the simplified 4-phase
+// model most consumer cycle-tracking apps use absent more history.
+const CYCLE_LENGTH_DAYS = 28;
+const CYCLE_PHASES = [
+  { key: "menstrual", label: "Menstrual Phase", startDay: 1, endDay: 5 },
+  { key: "follicular", label: "Follicular Phase", startDay: 6, endDay: 13 },
+  { key: "ovulation", label: "Ovulation Phase", startDay: 14, endDay: 14 },
+  { key: "luteal", label: "Luteal Phase", startDay: 15, endDay: 28 },
+];
+
+function cyclePhaseForDay(day) {
+  return CYCLE_PHASES.find(p => day >= p.startDay && day <= p.endDay) || CYCLE_PHASES[CYCLE_PHASES.length - 1];
+}
+
+function renderCycleTab() {
+  const emptyEl = document.getElementById("cycle-empty");
+  const summaryEl = document.getElementById("cycle-summary");
+  const noteEl = document.getElementById("cycle-estimate-note");
+  const lastPeriod = currentUser && currentUser.last_period_date;
+  if (!lastPeriod) {
+    emptyEl.hidden = false;
+    summaryEl.hidden = true;
+    noteEl.hidden = true;
+    document.querySelectorAll(".cycle-phase-card").forEach(c => c.classList.remove("active"));
+    return;
+  }
+  emptyEl.hidden = true;
+  summaryEl.hidden = false;
+  noteEl.hidden = false;
+
+  const start = new Date(lastPeriod + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const daysSince = Math.floor((today - start) / 86400000);
+  // +1 so the last period date itself is cycle day 1, not day 0.
+  const cycleDay = (((daysSince % CYCLE_LENGTH_DAYS) + CYCLE_LENGTH_DAYS) % CYCLE_LENGTH_DAYS) + 1;
+
+  const currentPhase = cyclePhaseForDay(cycleDay);
+  const currentIndex = CYCLE_PHASES.indexOf(currentPhase);
+  const nextPhase = CYCLE_PHASES[(currentIndex + 1) % CYCLE_PHASES.length];
+  const daysUntilNext = nextPhase.startDay > cycleDay
+    ? nextPhase.startDay - cycleDay
+    : (CYCLE_LENGTH_DAYS - cycleDay) + nextPhase.startDay;
+
+  document.getElementById("cycle-current-phase").textContent = currentPhase.label;
+  document.getElementById("cycle-current-detail").textContent = `Day ${cycleDay} of ~${CYCLE_LENGTH_DAYS}`;
+  document.getElementById("cycle-next-phase").textContent = nextPhase.label;
+  document.getElementById("cycle-next-detail").textContent = `Starts in ${daysUntilNext} day${daysUntilNext === 1 ? "" : "s"}`;
+
+  document.querySelectorAll(".cycle-phase-card").forEach(c => c.classList.toggle("active", c.dataset.phase === currentPhase.key));
+}
+
+document.getElementById("cycle-add-date-btn").addEventListener("click", showProfile);
+
 document.getElementById("profile-back").addEventListener("click", () => {
   document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
   document.getElementById("tab-log").classList.add("active");
@@ -391,6 +447,8 @@ document.querySelectorAll(".main-tab-btn").forEach(btn => {
       activeSubTab.classList.add("active");
       document.getElementById("tab-" + activeSubTab.dataset.tab).classList.add("active");
       if (activeSubTab.dataset.tab === "history") loadHistory();
+    } else if (btn.dataset.maintab === "cycle") {
+      renderCycleTab();
     }
   });
 });

@@ -315,9 +315,72 @@
 
   <!-- ================= YOUR CYCLE ================= -->
   <section id="maintab-cycle" class="main-tab-panel">
-    <div class="card placeholder-card">
+    <div class="card">
       <h2>Your Cycle</h2>
-      <p class="placeholder-text">Cycle tracking is coming soon.</p>
+      <div class="cycle-empty-state" id="cycle-empty" hidden>
+        <p class="placeholder-text">Add your last period date in your profile to see your current cycle phase.</p>
+        <button type="button" class="secondary" id="cycle-add-date-btn">Go to Profile</button>
+      </div>
+      <div class="cycle-summary" id="cycle-summary" hidden>
+        <div class="cycle-summary-block">
+          <span class="cycle-summary-label">Current Phase</span>
+          <span class="cycle-summary-value" id="cycle-current-phase">-</span>
+          <span class="cycle-summary-sub" id="cycle-current-detail"></span>
+        </div>
+        <div class="cycle-summary-divider" aria-hidden="true"></div>
+        <div class="cycle-summary-block">
+          <span class="cycle-summary-label">Next Phase</span>
+          <span class="cycle-summary-value" id="cycle-next-phase">-</span>
+          <span class="cycle-summary-sub" id="cycle-next-detail"></span>
+        </div>
+      </div>
+      <p class="cycle-estimate-note" id="cycle-estimate-note" hidden>Estimated from a standard 28-day cycle starting on your last period date.</p>
+    </div>
+
+    <div class="card">
+      <h2>Menstrual Cycle Phases</h2>
+      <div class="cycle-phase-list">
+        <div class="cycle-phase-card" data-phase="menstrual">
+          <span class="cycle-phase-icon" aria-hidden="true">🩸</span>
+          <div class="cycle-phase-info">
+            <div class="cycle-phase-header">
+              <h3>Menstrual Phase</h3>
+              <span class="cycle-phase-days">Day 1-5</span>
+            </div>
+            <p>The uterine lining sheds and bleeding occurs. Energy is often lower — lighter workouts like walking or yoga can feel better than high-intensity training.</p>
+          </div>
+        </div>
+        <div class="cycle-phase-card" data-phase="follicular">
+          <span class="cycle-phase-icon" aria-hidden="true">🌱</span>
+          <div class="cycle-phase-info">
+            <div class="cycle-phase-header">
+              <h3>Follicular Phase</h3>
+              <span class="cycle-phase-days">Day 6-13</span>
+            </div>
+            <p>Estrogen rises as the body prepares to release an egg. Energy and strength typically climb — a good window to push a little harder in training.</p>
+          </div>
+        </div>
+        <div class="cycle-phase-card" data-phase="ovulation">
+          <span class="cycle-phase-icon" aria-hidden="true">🥚</span>
+          <div class="cycle-phase-info">
+            <div class="cycle-phase-header">
+              <h3>Ovulation Phase</h3>
+              <span class="cycle-phase-days">Day 14</span>
+            </div>
+            <p>An egg is released — often the peak of energy and strength in the cycle. A good window for harder sessions or chasing a PR.</p>
+          </div>
+        </div>
+        <div class="cycle-phase-card" data-phase="luteal">
+          <span class="cycle-phase-icon" aria-hidden="true">🌙</span>
+          <div class="cycle-phase-info">
+            <div class="cycle-phase-header">
+              <h3>Luteal Phase</h3>
+              <span class="cycle-phase-days">Day 15-28</span>
+            </div>
+            <p>Progesterone rises, then drops toward the end of the phase — PMS symptoms and lower energy are common near the end. Moderate, steady training tends to work best.</p>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
