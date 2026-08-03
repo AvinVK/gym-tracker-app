@@ -45,11 +45,12 @@ function toast(msg) {
 }
 
 // ---------------- Confirm modal ----------------
-function confirmModal(message) {
+function confirmModal(message, okLabel = "Yes, Save") {
   const modal = document.getElementById("confirm-modal");
   const okBtn = document.getElementById("confirm-modal-ok");
   const cancelBtn = document.getElementById("confirm-modal-cancel");
   document.getElementById("confirm-modal-message").textContent = message;
+  okBtn.textContent = okLabel;
   modal.hidden = false;
 
   return new Promise(resolve => {
@@ -815,11 +816,13 @@ function closeSetDurationPicker() {
 
 document.getElementById("sdp-cancel").addEventListener("click", closeSetDurationPicker);
 sdpModal.addEventListener("click", (e) => { if (e.target === sdpModal) closeSetDurationPicker(); });
-document.getElementById("sdp-done").addEventListener("click", () => {
+document.getElementById("sdp-done").addEventListener("click", async () => {
   if (!sdpActiveContainer) return;
   const row = sdpActiveContainer;
+  const newValue = parseFloat(sdpSelected);
+  closeSetDurationPicker(); // close first so the confirm modal isn't stacked on top of it
+  if (!(await guardPrEdit(row, newValue, " min"))) return;
   setSetDurationValue(row, sdpSelected);
-  closeSetDurationPicker();
   const block = row.closest(".exercise-block");
   checkForPR(block, row, block.querySelector(".ex-exercise").value, true);
 });
@@ -1083,7 +1086,7 @@ async function checkForPR(block, row, exerciseName, isCardio) {
   const metricKey = isCardio ? "duration_minutes" : "weight_kg";
   const inputSelector = isCardio ? ".set-duration" : ".set-weight";
   const value = parseFloat(row.querySelector(inputSelector)?.value);
-  if (isNaN(value) || value <= 0) return;
+  if (isNaN(value) || value <= 0) { delete row.dataset.prValue; return; }
 
   const history = await getExerciseHistory();
   let priorBest = 0;
@@ -1094,7 +1097,7 @@ async function checkForPR(block, row, exerciseName, isCardio) {
       priorBest = Math.max(priorBest, x[metricKey]);
     }
   });
-  if (!hasHistory) return; // nothing to beat yet - logging an exercise for the first time isn't a "PR"
+  if (!hasHistory) { delete row.dataset.prValue; return; } // nothing to beat yet - logging an exercise for the first time isn't a "PR"
 
   // Also beat any other not-yet-saved set for the same exercise already
   // entered in this block this session, not just what's already on the
@@ -1106,12 +1109,33 @@ async function checkForPR(block, row, exerciseName, isCardio) {
   });
 
   if (value > priorBest) {
+    // Marks this row as currently holding a recorded PR - guardPrEdit()
+    // uses this to require confirmation before letting the value change
+    // again, so an accidental later edit can't silently corrupt it.
+    row.dataset.prValue = value;
     const dedupeKey = `${exerciseName}:${value}`;
     if (!notifiedPRs.has(dedupeKey)) {
       notifiedPRs.add(dedupeKey);
       toast(`You just hit a new PR for ${exerciseName} exercise!`);
     }
+  } else {
+    delete row.dataset.prValue;
   }
+}
+
+// If this row's current field value was already recorded as a PR, changing
+// it needs confirmation first - silently editing it away could corrupt the
+// PR history (e.g. accidentally bumping a real 50kg PR to a typo'd 52.5kg).
+// Returns true if it's fine to proceed with the change.
+async function guardPrEdit(row, newValue, unit) {
+  const prValue = row.dataset.prValue;
+  if (prValue == null || parseFloat(prValue) === newValue) return true;
+  const ok = await confirmModal(
+    `This set was recorded as your new PR of ${prValue}${unit} — change it to ${newValue}${unit}?`,
+    "Yes, Change It"
+  );
+  if (ok) delete row.dataset.prValue; // re-evaluated fresh by checkForPR right after
+  return ok;
 }
 
 function updateSetColumnsLabel(block) {
@@ -1285,7 +1309,18 @@ function addSetRow(block, { copyLast = false } = {}) {
     const weightInput = row.querySelector(".set-weight");
     weightInput.addEventListener("input", () => {
       clearTimeout(weightInput.__prTimer);
-      weightInput.__prTimer = setTimeout(() => {
+      weightInput.__prTimer = setTimeout(async () => {
+        const newValue = parseFloat(weightInput.value);
+        if (isNaN(newValue)) return;
+        const proceed = await guardPrEdit(row, newValue, "kg");
+        if (!proceed) {
+          // Revert without dispatching "input" - that would just re-enter
+          // this same debounce loop. "change" still lets the delegated
+          // draft-autosave listener pick up the reverted value.
+          weightInput.value = row.dataset.prValue;
+          weightInput.dispatchEvent(new Event("change", { bubbles: true }));
+          return;
+        }
         checkForPR(block, row, block.querySelector(".ex-exercise").value, false);
       }, 500);
     });
