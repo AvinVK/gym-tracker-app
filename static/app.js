@@ -503,6 +503,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.classList.add("active");
     document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
     if (btn.dataset.tab === "history") loadHistory();
+    else if (btn.dataset.tab === "prs") renderPRsTable();
   });
 });
 
@@ -1871,6 +1872,68 @@ async function loadHistory() {
   showWorkoutLog();
   currentWorkouts = await api.get("/api/workout-log");
   renderWorkoutTable();
+}
+
+// ---- PRs tab ----
+// Same metric split as checkForPR(): weight for strength sets, duration for
+// cardio sets. A row only ever has one or the other, EXCEPT an exercise
+// logged both ways at different times (the Reps/Time toggle allows that per
+// block), so both are tracked independently per exercise rather than
+// assuming one metric per exercise.
+function computeExercisePRs(history) {
+  const prs = {};
+  history.forEach(x => {
+    if (!prs[x.exercise]) prs[x.exercise] = { muscleGroup: x.muscle_group, weight: null, duration: null };
+    const entry = prs[x.exercise];
+    if (x.weight_kg != null && (!entry.weight || x.weight_kg > entry.weight.value)) {
+      entry.weight = { value: x.weight_kg, date: x.date };
+    }
+    if (x.duration_minutes != null && (!entry.duration || x.duration_minutes > entry.duration.value)) {
+      entry.duration = { value: x.duration_minutes, date: x.date };
+    }
+  });
+  return prs;
+}
+
+function formatPRCell(entry) {
+  const parts = [];
+  if (entry.weight) parts.push(`${entry.weight.value} kg`);
+  if (entry.duration) parts.push(`${entry.duration.value} min`);
+  return parts.join(" / ");
+}
+
+function formatPRDate(entry) {
+  const dates = [...new Set([entry.weight?.date, entry.duration?.date].filter(Boolean))];
+  return dates.join(" / ");
+}
+
+async function renderPRsTable() {
+  const history = await getExerciseHistory();
+  const prs = computeExercisePRs(history);
+  const exercises = Object.keys(prs).sort((a, b) => {
+    const mg = prs[a].muscleGroup.localeCompare(prs[b].muscleGroup);
+    return mg !== 0 ? mg : a.localeCompare(b);
+  });
+
+  const emptyEl = document.getElementById("prs-empty");
+  const tableEl = document.getElementById("table-prs");
+  if (exercises.length === 0) {
+    emptyEl.hidden = false;
+    tableEl.hidden = true;
+    return;
+  }
+  emptyEl.hidden = true;
+  tableEl.hidden = false;
+
+  document.querySelector("#table-prs tbody").innerHTML = exercises.map(name => {
+    const entry = prs[name];
+    return `<tr>
+      <td data-label="Muscle Group">${entry.muscleGroup}</td>
+      <td data-label="Exercise">${name}</td>
+      <td data-label="PR">${formatPRCell(entry)}</td>
+      <td data-label="Date">${formatPRDate(entry)}</td>
+    </tr>`;
+  }).join("");
 }
 
 // ---- Exercise detail table ----
