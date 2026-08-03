@@ -284,6 +284,14 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 .cycle-phase-card.active .cycle-phase-days { color: var(--accent-dark); }
 
 /* ---------------- Your Performance ---------------- */
+.perf-chart-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+}
 .perf-picker {
   display: flex;
   flex-direction: column;
@@ -312,14 +320,16 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   font-size: 11px;
   font-family: inherit;
 }
+/* Stroke/fill color deliberately not set here - each line segment and dot
+   is colored per its cycle-phase run (see renderPerformanceChart), so a
+   CSS color here would win over that per-element attribute and flatten
+   every phase back to one color. */
 .perf-chart .perf-line {
   fill: none;
-  stroke: var(--accent);
   stroke-width: 2;
   stroke-linejoin: round;
   stroke-linecap: round;
 }
-.perf-chart .perf-dot { fill: var(--accent); }
 .perf-chart .perf-dot-ring { fill: var(--card); }
 .perf-chart .perf-value-label {
   fill: var(--ink);
@@ -1274,6 +1284,7 @@ button:disabled {
   color: var(--muted);
 }
 .phase-legend-item { display: inline-flex; align-items: center; }
+#perf-phase-legend { margin: 14px 0 0; }
 
 /* A plain <table> ignores overflow on itself in most engines, so the
    scroll container has to be a wrapping block element instead. */

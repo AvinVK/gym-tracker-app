@@ -1941,15 +1941,26 @@ function formatPerfDate(dateStr) {
   return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+// Color for a single point's date, reusing the same CYCLE_PHASES colors as
+// the History phase dots and Your Cycle cards - e.g. a menstrual-phase
+// point gets the same pink used everywhere else for "menstrual". Falls
+// back to plain accent purple when cycle tracking is off (no phase to
+// color by), so the chart still renders sensibly for a user like kohal.
+function colorForDate(dateStr) {
+  const phase = cyclePhaseForDate(dateStr);
+  return phase ? phase.color : "#6d5ef8";
+}
+
 function renderPerformanceChart(series) {
   const svg = document.getElementById("perf-chart");
   const wrap = document.getElementById("perf-chart-wrap");
   const tooltip = document.getElementById("perf-tooltip");
+  const legendEl = document.getElementById("perf-phase-legend");
   svg.innerHTML = "";
   tooltip.hidden = true;
 
   const { unit, points } = series;
-  if (points.length === 0) return;
+  if (points.length === 0) { legendEl.hidden = true; return; }
 
   const plotLeft = PERF_PAD.left, plotRight = PERF_CHART_W - PERF_PAD.right;
   const plotTop = PERF_PAD.top, plotBottom = PERF_CHART_H - PERF_PAD.bottom;
@@ -1962,6 +1973,24 @@ function renderPerformanceChart(series) {
 
   const xFor = i => points.length === 1 ? plotLeft + plotW / 2 : plotLeft + ((dates[i] - minDate) / dateSpan) * plotW;
   const yFor = v => plotTop + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+
+  const segColors = points.map(p => colorForDate(p.date));
+  const tracksCycle = points.some(p => cyclePhaseForDate(p.date));
+
+  // Area fill first (bottom of the stack) so the gridlines drawn next
+  // still show through the translucent fill instead of hiding under it.
+  // One quad per consecutive pair of points (not one shape per phase run) -
+  // grouping same-phase points into a single run left a gap wherever a
+  // single differently-phased point sat between two runs, since nothing
+  // then connected it to its neighbors. Per-segment coloring is always
+  // contiguous: every pair of adjacent points gets its own colored quad,
+  // and adjacent quads share an edge so there's never a break in the fill.
+  for (let i = 0; i < points.length - 1; i++) {
+    const x1 = xFor(i), x2 = xFor(i + 1);
+    const y1 = yFor(points[i].value), y2 = yFor(points[i + 1].value);
+    const d = `M${x1},${plotBottom} L${x1},${y1} L${x2},${y2} L${x2},${plotBottom} Z`;
+    svg.appendChild(svgEl("path", { d, fill: segColors[i], "fill-opacity": "0.28", stroke: "none" }));
+  }
 
   // Y gridlines + labels - clean rounded numbers per the mark spec.
   for (let v = yMin; v <= yMax + 0.001; v += step) {
@@ -1984,11 +2013,16 @@ function renderPerformanceChart(series) {
     svg.appendChild(label);
   });
 
-  const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"}${xFor(i)},${yFor(p.value)}`).join(" ");
-  svg.appendChild(svgEl("path", { class: "perf-line", d: pathD }));
-
+  // Line: same per-segment coloring as the area fill, for the same
+  // never-a-gap reason - each 2-point segment is its own <path>, colored
+  // by its starting point, so a lone differently-phased point still
+  // connects to both neighbors instead of floating disconnected.
+  for (let i = 0; i < points.length - 1; i++) {
+    const d = `M${xFor(i)},${yFor(points[i].value)} L${xFor(i + 1)},${yFor(points[i + 1].value)}`;
+    svg.appendChild(svgEl("path", { class: "perf-line", d, stroke: segColors[i] }));
+  }
   points.forEach((p, i) => {
-    svg.appendChild(svgEl("circle", { class: "perf-dot", cx: xFor(i), cy: yFor(p.value), r: 3 }));
+    svg.appendChild(svgEl("circle", { cx: xFor(i), cy: yFor(p.value), r: 3, fill: segColors[i] }));
   });
 
   // Direct-label only the two moments that matter - current value and the
@@ -2001,13 +2035,22 @@ function renderPerformanceChart(series) {
   function drawMarker(i, labelText, labelClass) {
     const cx = xFor(i), cy = yFor(points[i].value);
     svg.appendChild(svgEl("circle", { class: "perf-dot-ring", cx, cy, r: 6 }));
-    svg.appendChild(svgEl("circle", { class: "perf-dot", cx, cy, r: 4 }));
+    svg.appendChild(svgEl("circle", { cx, cy, r: 4, fill: segColors[i] }));
     const label = svgEl("text", { class: labelClass, x: cx, y: cy - 14, "text-anchor": "middle" });
     label.textContent = labelText;
     svg.appendChild(label);
   }
   drawMarker(lastIndex, `${points[lastIndex].value} ${unit}`, "perf-value-label");
   if (maxIndex !== lastIndex) drawMarker(maxIndex, `PR: ${points[maxIndex].value} ${unit}`, "perf-pr-label");
+
+  if (tracksCycle) {
+    legendEl.hidden = false;
+    legendEl.innerHTML = CYCLE_PHASES.map(p =>
+      `<span class="phase-legend-item"><span class="phase-dot" style="background:${p.color}"></span>${p.label}</span>`
+    ).join("");
+  } else {
+    legendEl.hidden = true;
+  }
 
   // Hover: crosshair snaps to the nearest point on X; one tooltip shows
   // that point's date + value. The hit target is the whole plot area, not
@@ -2025,7 +2068,8 @@ function renderPerformanceChart(series) {
     valueEl.textContent = `${p.value} ${unit}`;
     const dateEl = document.createElement("div");
     dateEl.className = "perf-tooltip-date";
-    dateEl.textContent = formatPerfDate(p.date);
+    const phase = cyclePhaseForDate(p.date);
+    dateEl.textContent = phase ? `${formatPerfDate(p.date)} — ${phase.label}` : formatPerfDate(p.date);
     tooltip.appendChild(valueEl);
     tooltip.appendChild(dateEl);
     const wrapRect = wrap.getBoundingClientRect();
