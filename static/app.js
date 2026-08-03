@@ -817,8 +817,11 @@ document.getElementById("sdp-cancel").addEventListener("click", closeSetDuration
 sdpModal.addEventListener("click", (e) => { if (e.target === sdpModal) closeSetDurationPicker(); });
 document.getElementById("sdp-done").addEventListener("click", () => {
   if (!sdpActiveContainer) return;
-  setSetDurationValue(sdpActiveContainer, sdpSelected);
+  const row = sdpActiveContainer;
+  setSetDurationValue(row, sdpSelected);
   closeSetDurationPicker();
+  const block = row.closest(".exercise-block");
+  checkForPR(block, row, block.querySelector(".ex-exercise").value, true);
 });
 
 function initSetDurationField(container) {
@@ -1050,6 +1053,67 @@ function initStepper(container) {
   container.querySelector(".stepper-plus").addEventListener("click", () => adjust(step));
 }
 
+// ---------------- PR (personal record) detection ----------------
+// Fetched once per page load and cached - a PR only needs to beat whatever
+// was already saved before this session. Invalidated after a successful
+// exercise-log submit so a second logging session later the same page load
+// sees the fresh max instead of a stale cache.
+let exerciseHistoryCache = null;
+async function getExerciseHistory() {
+  if (!exerciseHistoryCache) {
+    try {
+      exerciseHistoryCache = await api.get("/api/exercise-log");
+    } catch (err) {
+      exerciseHistoryCache = [];
+    }
+  }
+  return exerciseHistoryCache;
+}
+
+// Dedupes so nudging a stepper back and forth across the same record value
+// doesn't toast every time - keyed by exercise+value, cleared only on a
+// full page load (a fresh session for PR-spotting purposes).
+const notifiedPRs = new Set();
+
+// PR metric is weight for strength sets, duration for cardio sets - Level
+// is a subjective 1-10 rating and Speed only exists for some exercises, so
+// duration is the one metric every cardio exercise actually has.
+async function checkForPR(block, row, exerciseName, isCardio) {
+  if (!exerciseName) return;
+  const metricKey = isCardio ? "duration_minutes" : "weight_kg";
+  const inputSelector = isCardio ? ".set-duration" : ".set-weight";
+  const value = parseFloat(row.querySelector(inputSelector)?.value);
+  if (isNaN(value) || value <= 0) return;
+
+  const history = await getExerciseHistory();
+  let priorBest = 0;
+  let hasHistory = false;
+  history.forEach(x => {
+    if (x.exercise === exerciseName && x[metricKey] != null) {
+      hasHistory = true;
+      priorBest = Math.max(priorBest, x[metricKey]);
+    }
+  });
+  if (!hasHistory) return; // nothing to beat yet - logging an exercise for the first time isn't a "PR"
+
+  // Also beat any other not-yet-saved set for the same exercise already
+  // entered in this block this session, not just what's already on the
+  // server, so the 2nd set of a brand new PR streak isn't wrongly re-toasted.
+  block.querySelectorAll(".set-row").forEach(r => {
+    if (r === row) return;
+    const v = parseFloat(r.querySelector(inputSelector)?.value);
+    if (!isNaN(v)) priorBest = Math.max(priorBest, v);
+  });
+
+  if (value > priorBest) {
+    const dedupeKey = `${exerciseName}:${value}`;
+    if (!notifiedPRs.has(dedupeKey)) {
+      notifiedPRs.add(dedupeKey);
+      toast(`You just hit a new PR for ${exerciseName} exercise!`);
+    }
+  }
+}
+
 function updateSetColumnsLabel(block) {
   const isCardio = block.dataset.exerciseType === "cardio";
   const levelOverride = EXERCISE_LEVEL_OVERRIDES[block.querySelector(".ex-exercise").value];
@@ -1214,6 +1278,18 @@ function addSetRow(block, { copyLast = false } = {}) {
     }
   }
   row.querySelectorAll(".stepper").forEach(initStepper);
+  if (!isCardio) {
+    // Debounced so nudging the stepper's +/- buttons repeatedly (each one
+    // fires its own "input" event) only checks once the value settles,
+    // instead of once per click on the way up.
+    const weightInput = row.querySelector(".set-weight");
+    weightInput.addEventListener("input", () => {
+      clearTimeout(weightInput.__prTimer);
+      weightInput.__prTimer = setTimeout(() => {
+        checkForPR(block, row, block.querySelector(".ex-exercise").value, false);
+      }, 500);
+    });
+  }
   row.querySelector(".set-remove").addEventListener("click", () => {
     row.remove();
     renumberSets(block);
@@ -1309,6 +1385,7 @@ function initVoiceSetButton(block) {
         if (level != null) setSetLevelValue(targetRow, level);
         const parts = [duration != null ? `${duration} min` : null, level != null ? `level ${level}` : null].filter(Boolean);
         toast(`Added set: ${parts.join(", ")}`);
+        if (duration != null) checkForPR(block, targetRow, block.querySelector(".ex-exercise").value, true);
         return;
       }
       const { reps, weight } = parseSpokenSet(transcript);
@@ -1589,6 +1666,7 @@ document.getElementById("form-exercise-log").addEventListener("submit", async (e
   }
   try {
     await api.post("/api/exercise-log", { date, exercises });
+    exerciseHistoryCache = null; // stale after this submit - refetch next time a PR check needs it
     toast("Exercises logged");
     resetWorkoutFlowUI();
     clearDraft();
