@@ -338,6 +338,35 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   letter-spacing: 0;
 }
 
+/* .grid-form label normally stacks its contents (checkbox above text) via
+   flex-direction: column - this needs to beat that with matching
+   specificity (element+class vs class alone loses), so it's scoped to
+   ".grid-form label.checkbox-field" rather than just ".checkbox-field". */
+.grid-form label.checkbox-field {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  text-transform: none;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--ink);
+  letter-spacing: 0;
+  cursor: pointer;
+}
+.checkbox-field input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.field-hint {
+  margin: -8px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
 /* ---------------- Cards ---------------- */
 .card {
   background: var(--card);

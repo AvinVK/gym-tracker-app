@@ -46,7 +46,12 @@
       <label>Age <span class="field-optional">(optional)</span>
         <input type="number" name="age" min="1" max="120" placeholder="Age">
       </label>
-      <label>Last Period Date <span class="field-optional">(optional)</span>
+      <label class="full checkbox-field">
+        <input type="checkbox" id="signup-track-cycle">
+        <span>Track my menstrual cycle</span>
+      </label>
+      <p class="field-hint full">Turn this on and Clock It will show your current cycle phase and how it lines up with your workout performance in Your Cycle.</p>
+      <label class="full" id="signup-period-date-label" hidden>Last Period Date
         <div class="date-field" data-date-field data-max="today">
           <button type="button" class="date-field-btn">
             <span class="date-field-value placeholder">dd-mm-yyyy</span>
@@ -406,7 +411,12 @@
         <label>Age
           <input type="number" name="age" id="profile-age" min="1" max="120">
         </label>
-        <label>Last Period Date
+        <label class="full checkbox-field">
+          <input type="checkbox" id="profile-track-cycle">
+          <span>Track my menstrual cycle</span>
+        </label>
+        <p class="field-hint full">Turn this on and Clock It will show your current cycle phase and how it lines up with your workout performance in Your Cycle.</p>
+        <label class="full" id="profile-period-date-label" hidden>Last Period Date
           <div class="date-field" data-date-field data-max="today">
             <button type="button" class="date-field-btn">
               <span class="date-field-value placeholder">dd-mm-yyyy</span>

@@ -231,6 +231,7 @@ document.getElementById("form-auth-email").addEventListener("submit", async (e) 
       const signupForm = document.getElementById("form-auth-signup");
       signupForm.reset();
       setDateFieldValue(signupForm.querySelector('[name="last_period_date"]').closest(".date-field"), "");
+      document.getElementById("signup-period-date-label").hidden = true;
       showAuthStep("auth-signup-modal");
     }
   } catch (err) {
@@ -242,8 +243,29 @@ document.getElementById("auth-signup-back").addEventListener("click", () => {
   showAuthStep("auth-email-modal");
 });
 
+// Last Period Date is only required when the "track my cycle" checkbox is
+// on - shows/hides the date field to match, and clears out any previously
+// picked date when switching it off so a stale value can't sneak into a
+// submit that no longer intends to send one.
+function wireCycleOptIn(checkbox, dateLabel) {
+  checkbox.addEventListener("change", () => {
+    dateLabel.hidden = !checkbox.checked;
+    if (!checkbox.checked) {
+      setDateFieldValue(dateLabel.querySelector(".date-field"), "");
+    }
+  });
+}
+
+const signupTrackCycle = document.getElementById("signup-track-cycle");
+const signupPeriodDateLabel = document.getElementById("signup-period-date-label");
+wireCycleOptIn(signupTrackCycle, signupPeriodDateLabel);
+
 document.getElementById("form-auth-signup").addEventListener("submit", async (e) => {
   e.preventDefault();
+  if (signupTrackCycle.checked && !e.target.querySelector('[name="last_period_date"]').value) {
+    toast("Add your last period date, or turn off cycle tracking");
+    return;
+  }
   const fd = new FormData(e.target);
   const body = { ...Object.fromEntries(fd.entries()), name: authDraft.name, email: authDraft.email };
   try {
@@ -328,9 +350,14 @@ function showProfile() {
 
   document.getElementById("profile-name").value = currentUser.name || "";
   document.getElementById("profile-age").value = currentUser.age ?? "";
+  const tracksCycle = !!currentUser.last_period_date;
+  document.getElementById("profile-track-cycle").checked = tracksCycle;
+  document.getElementById("profile-period-date-label").hidden = !tracksCycle;
   setDateFieldValue(document.getElementById("profile-last-period").closest(".date-field"), currentUser.last_period_date || "");
   renderProfileAvatar();
 }
+
+wireCycleOptIn(document.getElementById("profile-track-cycle"), document.getElementById("profile-period-date-label"));
 
 document.getElementById("view-profile-btn").addEventListener("click", () => {
   userMenuDropdown.hidden = true;
@@ -405,6 +432,10 @@ document.getElementById("profile-back").addEventListener("click", () => {
 
 document.getElementById("form-profile").addEventListener("submit", async (e) => {
   e.preventDefault();
+  if (document.getElementById("profile-track-cycle").checked && !document.getElementById("profile-last-period").value) {
+    toast("Add your last period date, or turn off cycle tracking");
+    return;
+  }
   const fd = new FormData(e.target);
   const body = Object.fromEntries(fd.entries());
   try {
