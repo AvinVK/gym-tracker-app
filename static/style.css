@@ -1176,6 +1176,31 @@ button:disabled {
 .stepper-input[type=number] { -moz-appearance: textfield; }
 
 /* ---------------- History table ---------------- */
+/* Cycle-phase dot shown next to each date instead of a dedicated column -
+   color meanings come from CYCLE_PHASES in app.js and are spelled out in
+   .phase-legend above the table. */
+.phase-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+/* Wraps the dot + date text as a single flex item so the mobile card
+   layout's `justify-content: space-between` (label vs. value) doesn't
+   split the dot away from the date it belongs to. */
+.date-with-phase { display: inline-flex; align-items: center; }
+.phase-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: -6px 0 14px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.phase-legend-item { display: inline-flex; align-items: center; }
+
 /* A plain <table> ignores overflow on itself in most engines, so the
    scroll container has to be a wrapping block element instead. */
 .table-scroll {
