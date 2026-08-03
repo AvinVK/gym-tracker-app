@@ -410,9 +410,25 @@
 
   <!-- ================= YOUR PERFORMANCE ================= -->
   <section id="maintab-performance" class="main-tab-panel">
-    <div class="card placeholder-card">
+    <div class="card">
       <h2>Your Performance</h2>
-      <p class="placeholder-text">Performance graph is coming soon.</p>
+      <p class="placeholder-text" id="perf-empty" hidden>Log a few sets to see your progress here.</p>
+      <div id="perf-content" hidden>
+        <label class="perf-picker">
+          <span class="perf-picker-label">Exercise</span>
+          <div class="option-field perf-exercise-field" data-option-field data-title="Exercise">
+            <button type="button" class="option-field-btn">
+              <span class="option-field-value placeholder">Select an exercise...</span>
+              <span class="option-field-caret" aria-hidden="true">&#9662;</span>
+            </button>
+            <input type="hidden" id="perf-exercise-value">
+          </div>
+        </label>
+        <div class="perf-chart-wrap" id="perf-chart-wrap">
+          <svg id="perf-chart" class="perf-chart" viewBox="0 0 600 260" preserveAspectRatio="none"></svg>
+          <div class="perf-tooltip" id="perf-tooltip" hidden></div>
+        </div>
+      </div>
     </div>
   </section>
 

@@ -283,6 +283,80 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 }
 .cycle-phase-card.active .cycle-phase-days { color: var(--accent-dark); }
 
+/* ---------------- Your Performance ---------------- */
+.perf-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+  max-width: 320px;
+}
+.perf-picker-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+}
+.perf-chart-wrap { position: relative; }
+.perf-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  touch-action: none;
+}
+.perf-chart .perf-gridline { stroke: var(--border); stroke-width: 1; shape-rendering: crispEdges; }
+.perf-chart .perf-axis-label {
+  fill: var(--muted);
+  font-size: 11px;
+  font-family: inherit;
+}
+.perf-chart .perf-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.perf-chart .perf-dot { fill: var(--accent); }
+.perf-chart .perf-dot-ring { fill: var(--card); }
+.perf-chart .perf-value-label {
+  fill: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+}
+.perf-chart .perf-pr-label {
+  fill: var(--accent-dark);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+}
+.perf-chart .perf-crosshair {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0;
+  pointer-events: none;
+}
+.perf-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--ink);
+  color: #fff;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  transform: translate(-50%, -100%);
+  box-shadow: var(--shadow-md);
+  z-index: 2;
+}
+.perf-tooltip-value { font-weight: 700; }
+.perf-tooltip-date { color: rgba(255,255,255,.7); font-size: 11px; }
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }

@@ -492,6 +492,8 @@ document.querySelectorAll(".main-tab-btn").forEach(btn => {
       if (activeSubTab.dataset.tab === "history") loadHistory();
     } else if (btn.dataset.maintab === "cycle") {
       renderCycleTab();
+    } else if (btn.dataset.maintab === "performance") {
+      renderPerformanceTab();
     }
   });
 });
@@ -1935,6 +1937,213 @@ async function renderPRsTable() {
     </tr>`;
   }).join("");
 }
+
+// ---- Your Performance tab: PR progression chart ----
+const PERF_CHART_W = 600;
+const PERF_CHART_H = 260;
+const PERF_PAD = { left: 46, right: 16, top: 20, bottom: 30 };
+
+function svgEl(tag, attrs) {
+  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+
+// One point per day: the best set logged that day for that exercise (top
+// set), not every individual set - so the line reads as "how the exercise
+// progressed" rather than a noisy scatter of every rep scheme tried. Same
+// weight-vs-duration split as checkForPR()/computeExercisePRs(), except an
+// exercise logged both ways (rare) picks whichever has more data points
+// rather than showing two incompatible units on one chart.
+function computeExerciseSeries(history, exerciseName) {
+  const rows = history.filter(x => x.exercise === exerciseName);
+  const weightCount = rows.filter(x => x.weight_kg != null).length;
+  const durationCount = rows.filter(x => x.duration_minutes != null).length;
+  const metricKey = durationCount > weightCount ? "duration_minutes" : "weight_kg";
+  const unit = metricKey === "weight_kg" ? "kg" : "min";
+
+  const byDate = {};
+  rows.forEach(x => {
+    const v = x[metricKey];
+    if (v == null) return;
+    if (!byDate[x.date] || v > byDate[x.date]) byDate[x.date] = v;
+  });
+  const points = Object.keys(byDate).sort().map(date => ({ date, value: byDate[date] }));
+  return { unit, points };
+}
+
+// Rounds an axis step to a "clean" number (1/2/5/10 x a power of ten)
+// instead of whatever the raw data range happens to divide into.
+function niceStep(range) {
+  const rough = range / 4;
+  const mag = Math.pow(10, Math.floor(Math.log10(rough || 1)));
+  const norm = rough / mag;
+  let step;
+  if (norm < 1.5) step = 1;
+  else if (norm < 3) step = 2;
+  else if (norm < 7) step = 5;
+  else step = 10;
+  return step * mag;
+}
+
+// Not zero-based on purpose: a strength/cardio PR chart is read for slope
+// and position, not filled area, so zooming into the data's actual range
+// (with one step of padding above/below) makes real progress visible
+// instead of flattening a 30->40kg climb against a 0-40 axis.
+function computeYAxis(values) {
+  const dataMin = Math.min(...values);
+  const dataMax = Math.max(...values);
+  const step = niceStep(Math.max(dataMax - dataMin, 1));
+  const yMin = Math.max(0, Math.floor(dataMin / step) * step - step);
+  let yMax = Math.ceil(dataMax / step) * step + step;
+  if (yMax === yMin) yMax = yMin + step;
+  return { yMin, yMax, step };
+}
+
+function formatPerfDate(dateStr) {
+  return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function renderPerformanceChart(series) {
+  const svg = document.getElementById("perf-chart");
+  const wrap = document.getElementById("perf-chart-wrap");
+  const tooltip = document.getElementById("perf-tooltip");
+  svg.innerHTML = "";
+  tooltip.hidden = true;
+
+  const { unit, points } = series;
+  if (points.length === 0) return;
+
+  const plotLeft = PERF_PAD.left, plotRight = PERF_CHART_W - PERF_PAD.right;
+  const plotTop = PERF_PAD.top, plotBottom = PERF_CHART_H - PERF_PAD.bottom;
+  const plotW = plotRight - plotLeft, plotH = plotBottom - plotTop;
+
+  const { yMin, yMax, step } = computeYAxis(points.map(p => p.value));
+  const dates = points.map(p => new Date(p.date + "T00:00:00").getTime());
+  const minDate = dates[0], maxDate = dates[dates.length - 1];
+  const dateSpan = Math.max(maxDate - minDate, 1);
+
+  const xFor = i => points.length === 1 ? plotLeft + plotW / 2 : plotLeft + ((dates[i] - minDate) / dateSpan) * plotW;
+  const yFor = v => plotTop + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+
+  // Y gridlines + labels - clean rounded numbers per the mark spec.
+  for (let v = yMin; v <= yMax + 0.001; v += step) {
+    const y = yFor(v);
+    svg.appendChild(svgEl("line", { class: "perf-gridline", x1: plotLeft, x2: plotRight, y1: y, y2: y }));
+    const label = svgEl("text", { class: "perf-axis-label", x: plotLeft - 8, y: y + 4, "text-anchor": "end" });
+    label.textContent = String(Math.round(v * 10) / 10);
+    svg.appendChild(label);
+  }
+
+  // X labels: at most 5, evenly spaced by index - never one per point.
+  const xTickCount = Math.min(points.length, 5);
+  const xTickIndices = new Set();
+  for (let i = 0; i < xTickCount; i++) {
+    xTickIndices.add(Math.round((i / (xTickCount - 1 || 1)) * (points.length - 1)));
+  }
+  xTickIndices.forEach(i => {
+    const label = svgEl("text", { class: "perf-axis-label", x: xFor(i), y: PERF_CHART_H - 8, "text-anchor": "middle" });
+    label.textContent = formatPerfDate(points[i].date);
+    svg.appendChild(label);
+  });
+
+  const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"}${xFor(i)},${yFor(p.value)}`).join(" ");
+  svg.appendChild(svgEl("path", { class: "perf-line", d: pathD }));
+
+  points.forEach((p, i) => {
+    svg.appendChild(svgEl("circle", { class: "perf-dot", cx: xFor(i), cy: yFor(p.value), r: 3 }));
+  });
+
+  // Direct-label only the two moments that matter - current value and the
+  // all-time PR (same point when she's currently at her peak) - never a
+  // number on every dot.
+  let maxIndex = 0;
+  points.forEach((p, i) => { if (p.value > points[maxIndex].value) maxIndex = i; });
+  const lastIndex = points.length - 1;
+
+  function drawMarker(i, labelText, labelClass) {
+    const cx = xFor(i), cy = yFor(points[i].value);
+    svg.appendChild(svgEl("circle", { class: "perf-dot-ring", cx, cy, r: 6 }));
+    svg.appendChild(svgEl("circle", { class: "perf-dot", cx, cy, r: 4 }));
+    const label = svgEl("text", { class: labelClass, x: cx, y: cy - 14, "text-anchor": "middle" });
+    label.textContent = labelText;
+    svg.appendChild(label);
+  }
+  drawMarker(lastIndex, `${points[lastIndex].value} ${unit}`, "perf-value-label");
+  if (maxIndex !== lastIndex) drawMarker(maxIndex, `PR: ${points[maxIndex].value} ${unit}`, "perf-pr-label");
+
+  // Hover: crosshair snaps to the nearest point on X; one tooltip shows
+  // that point's date + value. The hit target is the whole plot area, not
+  // just the 3px dots, so the pointer only has to be roughly on target.
+  const crosshair = svgEl("line", { class: "perf-crosshair", x1: 0, x2: 0, y1: plotTop, y2: plotBottom });
+  svg.appendChild(crosshair);
+  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent" });
+  svg.appendChild(hitRect);
+
+  function showTooltip(i, clientX, clientY) {
+    const p = points[i];
+    tooltip.innerHTML = "";
+    const valueEl = document.createElement("div");
+    valueEl.className = "perf-tooltip-value";
+    valueEl.textContent = `${p.value} ${unit}`;
+    const dateEl = document.createElement("div");
+    dateEl.className = "perf-tooltip-date";
+    dateEl.textContent = formatPerfDate(p.date);
+    tooltip.appendChild(valueEl);
+    tooltip.appendChild(dateEl);
+    const wrapRect = wrap.getBoundingClientRect();
+    tooltip.style.left = `${clientX - wrapRect.left}px`;
+    tooltip.style.top = `${clientY - wrapRect.top - 12}px`;
+    tooltip.hidden = false;
+    crosshair.setAttribute("x1", xFor(i));
+    crosshair.setAttribute("x2", xFor(i));
+    crosshair.style.opacity = 1;
+  }
+  function hideTooltip() {
+    tooltip.hidden = true;
+    crosshair.style.opacity = 0;
+  }
+  hitRect.addEventListener("pointermove", (e) => {
+    const svgRect = svg.getBoundingClientRect();
+    const scaleX = PERF_CHART_W / svgRect.width;
+    const localX = (e.clientX - svgRect.left) * scaleX;
+    let nearest = 0, nearestDist = Infinity;
+    points.forEach((p, i) => {
+      const d = Math.abs(xFor(i) - localX);
+      if (d < nearestDist) { nearestDist = d; nearest = i; }
+    });
+    showTooltip(nearest, e.clientX, e.clientY);
+  });
+  hitRect.addEventListener("pointerleave", hideTooltip);
+}
+
+async function renderPerformanceTab() {
+  const history = await getExerciseHistory();
+  const exercises = [...new Set(history.map(x => x.exercise))].sort();
+
+  const emptyEl = document.getElementById("perf-empty");
+  const contentEl = document.getElementById("perf-content");
+  if (exercises.length === 0) {
+    emptyEl.hidden = false;
+    contentEl.hidden = true;
+    return;
+  }
+  emptyEl.hidden = true;
+  contentEl.hidden = false;
+
+  const field = document.querySelector(".perf-exercise-field");
+  setOptionFieldOptions(field, exercises);
+  const currentValue = field.querySelector("input[type=hidden]").value;
+  const selected = exercises.includes(currentValue) ? currentValue : exercises[0];
+  setOptionFieldValue(field, selected);
+  renderPerformanceChart(computeExerciseSeries(history, selected));
+}
+
+initOptionField(document.querySelector(".perf-exercise-field"));
+document.getElementById("perf-exercise-value").addEventListener("change", async (e) => {
+  const history = await getExerciseHistory();
+  renderPerformanceChart(computeExerciseSeries(history, e.target.value));
+});
 
 // ---- Exercise detail table ----
 function exerciseRowView(x) {
