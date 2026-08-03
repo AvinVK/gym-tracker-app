@@ -46,7 +46,12 @@
       <label>Age <span class="field-optional">(optional)</span>
         <input type="number" name="age" min="1" max="120" placeholder="Age">
       </label>
-      <label>Last Period Date <span class="field-optional">(optional)</span>
+      <label class="full checkbox-field">
+        <input type="checkbox" id="signup-track-cycle">
+        <span>Track my menstrual cycle</span>
+      </label>
+      <p class="field-hint full">Turn this on and Clock It will show your current cycle phase and how it lines up with your workout performance in Your Cycle.</p>
+      <label class="full" id="signup-period-date-label" hidden>Last Period Date
         <div class="date-field" data-date-field data-max="today">
           <button type="button" class="date-field-btn">
             <span class="date-field-value placeholder">dd-mm-yyyy</span>
@@ -104,32 +109,6 @@
   </div>
 </div>
 
-<div id="time-picker-modal" class="modal-overlay" hidden>
-  <div class="modal-card time-picker-card">
-    <h2>Select Time</h2>
-    <div class="time-picker-wheel">
-      <div class="time-picker-highlight" aria-hidden="true"></div>
-      <div class="time-picker-columns">
-        <div class="time-picker-col" id="tp-hours"></div>
-        <div class="time-picker-sep">:</div>
-        <div class="time-picker-col" id="tp-minutes"></div>
-        <div class="time-picker-col" id="tp-ampm"></div>
-      </div>
-    </div>
-    <p class="time-picker-presets-label">Presets</p>
-    <div class="time-picker-presets" id="tp-presets">
-      <button type="button" class="time-picker-preset" data-hour="9" data-minute="00" data-ampm="AM">9 AM</button>
-      <button type="button" class="time-picker-preset" data-hour="12" data-minute="00" data-ampm="PM">12 PM</button>
-      <button type="button" class="time-picker-preset" data-hour="4" data-minute="00" data-ampm="PM">4 PM</button>
-      <button type="button" class="time-picker-preset" data-hour="6" data-minute="00" data-ampm="PM">6 PM</button>
-    </div>
-    <div class="confirm-actions">
-      <button type="button" class="secondary" id="tp-cancel">Cancel</button>
-      <button type="button" class="primary" id="tp-done">Done</button>
-    </div>
-  </div>
-</div>
-
 <div id="energy-picker-modal" class="modal-overlay" hidden>
   <div class="modal-card time-picker-card">
     <h2>How do you feel?</h2>
@@ -146,6 +125,54 @@
     <div class="confirm-actions">
       <button type="button" class="secondary" id="ep-cancel">Cancel</button>
       <button type="button" class="primary" id="ep-done">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="meal-timing-picker-modal" class="modal-overlay" hidden>
+  <div class="modal-card time-picker-card">
+    <h2>How long ago did you eat?</h2>
+    <div class="time-picker-wheel meal-timing-picker-wheel">
+      <div class="time-picker-highlight" aria-hidden="true"></div>
+      <div class="time-picker-columns">
+        <div class="time-picker-col" id="mtp-hours"></div>
+      </div>
+    </div>
+    <div class="confirm-actions">
+      <button type="button" class="secondary" id="mtp-cancel">Cancel</button>
+      <button type="button" class="primary" id="mtp-done">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="set-duration-picker-modal" class="modal-overlay" hidden>
+  <div class="modal-card time-picker-card">
+    <h2>Set duration</h2>
+    <div class="time-picker-wheel duration-picker-wheel">
+      <div class="time-picker-highlight" aria-hidden="true"></div>
+      <div class="time-picker-columns">
+        <div class="time-picker-col" id="sdp-minutes"></div>
+      </div>
+    </div>
+    <div class="confirm-actions">
+      <button type="button" class="secondary" id="sdp-cancel">Cancel</button>
+      <button type="button" class="primary" id="sdp-done">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="set-level-picker-modal" class="modal-overlay" hidden>
+  <div class="modal-card time-picker-card">
+    <h2>Set intensity level</h2>
+    <div class="time-picker-wheel level-picker-wheel">
+      <div class="time-picker-highlight" aria-hidden="true"></div>
+      <div class="time-picker-columns">
+        <div class="time-picker-col" id="slp-levels"></div>
+      </div>
+    </div>
+    <div class="confirm-actions">
+      <button type="button" class="secondary" id="slp-cancel">Cancel</button>
+      <button type="button" class="primary" id="slp-done">Done</button>
     </div>
   </div>
 </div>
@@ -178,6 +205,7 @@
   <button class="main-tab-btn active" data-maintab="workout">Workout</button>
   <button class="main-tab-btn" data-maintab="diet">Diet</button>
   <button class="main-tab-btn" data-maintab="cycle">Your Cycle</button>
+  <button class="main-tab-btn" data-maintab="performance">Your Performance</button>
 </nav>
 
 <main>
@@ -205,24 +233,6 @@
             <input type="hidden" name="date" id="workout-date" required>
           </div>
         </label>
-        <label>Start Time
-          <div class="time-field" data-time-field>
-            <button type="button" class="time-field-btn">
-              <span class="time-field-value placeholder">--:-- --</span>
-              <span class="time-field-icon" aria-hidden="true">🕐</span>
-            </button>
-            <input type="hidden" name="start_time">
-          </div>
-        </label>
-        <label>End Time
-          <div class="time-field" data-time-field data-after-field="start_time">
-            <button type="button" class="time-field-btn">
-              <span class="time-field-value placeholder">--:-- --</span>
-              <span class="time-field-icon" aria-hidden="true">🕐</span>
-            </button>
-            <input type="hidden" name="end_time">
-          </div>
-        </label>
         <label>Energy Level
           <div class="energy-field" data-energy-field>
             <button type="button" class="energy-field-btn">
@@ -230,6 +240,18 @@
               <span class="energy-field-icon" aria-hidden="true">⚡</span>
             </button>
             <input type="hidden" name="energy_level">
+          </div>
+        </label>
+        <label>What did you eat before the gym?
+          <input type="text" name="pre_workout_meal" placeholder="e.g. banana, protein shake">
+        </label>
+        <label>Time Since Eating
+          <div class="meal-timing-field" data-meal-timing-field>
+            <button type="button" class="meal-timing-field-btn">
+              <span class="meal-timing-field-value placeholder">How long ago?</span>
+              <span class="meal-timing-field-icon" aria-hidden="true">🍽️</span>
+            </button>
+            <input type="hidden" name="hours_since_meal">
           </div>
         </label>
         <label class="full">Notes
@@ -262,10 +284,11 @@
   <section id="tab-history" class="tab-panel">
     <div class="card" id="card-workout-log">
       <h2>Workout Log</h2>
+      <div class="phase-legend" id="workout-log-phase-legend" hidden></div>
       <div class="table-scroll">
         <table class="data-table" id="table-workout-log">
           <thead>
-            <tr><th>Date</th><th>Start</th><th>End</th><th>Duration</th><th>Energy Level</th><th>Notes</th><th></th></tr>
+            <tr><th>Date</th><th>Muscles Targeted</th><th>Energy Level</th><th>Notes</th><th></th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -280,7 +303,7 @@
       <div class="table-scroll">
         <table class="data-table" id="table-exercise-log">
           <thead>
-            <tr><th>Muscle Group</th><th>Exercise</th><th>Set #</th><th>Reps</th><th>Weight (kg)</th><th>Notes</th><th></th></tr>
+            <tr><th>Muscle Group</th><th>Exercise</th><th>Set #</th><th>Reps</th><th>Weight (kg)</th><th>Duration (min)</th><th>Level</th><th>Notes</th><th></th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -299,9 +322,104 @@
 
   <!-- ================= YOUR CYCLE ================= -->
   <section id="maintab-cycle" class="main-tab-panel">
-    <div class="card placeholder-card">
+    <div class="card">
       <h2>Your Cycle</h2>
-      <p class="placeholder-text">Cycle tracking is coming soon.</p>
+      <div class="cycle-empty-state" id="cycle-empty" hidden>
+        <p class="placeholder-text">Add your last period date in your profile to see your current cycle phase.</p>
+        <button type="button" class="secondary" id="cycle-add-date-btn">Go to Profile</button>
+      </div>
+      <div class="cycle-summary" id="cycle-summary" hidden>
+        <div class="cycle-summary-block">
+          <span class="cycle-summary-label">Current Phase</span>
+          <span class="cycle-summary-value" id="cycle-current-phase">-</span>
+          <span class="cycle-summary-sub" id="cycle-current-detail"></span>
+        </div>
+        <div class="cycle-summary-divider" aria-hidden="true"></div>
+        <div class="cycle-summary-block">
+          <span class="cycle-summary-label">Next Phase</span>
+          <span class="cycle-summary-value" id="cycle-next-phase">-</span>
+          <span class="cycle-summary-sub" id="cycle-next-detail"></span>
+        </div>
+      </div>
+      <p class="cycle-estimate-note" id="cycle-estimate-note" hidden>Estimated from a standard 28-day cycle starting on your last period date.</p>
+    </div>
+
+    <div class="card">
+      <h2>Menstrual Cycle Phases</h2>
+      <div class="cycle-phase-list">
+        <div class="cycle-phase-card" data-phase="menstrual">
+          <span class="cycle-phase-icon" aria-hidden="true">🩸</span>
+          <div class="cycle-phase-info">
+            <div class="cycle-phase-header">
+              <h3>Menstrual Phase</h3>
+              <span class="cycle-phase-days">Day 1-5</span>
+            </div>
+            <p>The uterine lining sheds and bleeding occurs. Energy is often lower — lighter workouts like walking or yoga can feel better than high-intensity training.</p>
+          </div>
+        </div>
+        <div class="cycle-phase-card" data-phase="follicular">
+          <span class="cycle-phase-icon" aria-hidden="true">🌱</span>
+          <div class="cycle-phase-info">
+            <div class="cycle-phase-header">
+              <h3>Follicular Phase</h3>
+              <span class="cycle-phase-days">Day 6-13</span>
+            </div>
+            <p>Estrogen rises as the body prepares to release an egg. Energy and strength typically climb — a good window to push a little harder in training.</p>
+          </div>
+        </div>
+        <div class="cycle-phase-card" data-phase="ovulation">
+          <span class="cycle-phase-icon" aria-hidden="true">🥚</span>
+          <div class="cycle-phase-info">
+            <div class="cycle-phase-header">
+              <h3>Ovulation Phase</h3>
+              <span class="cycle-phase-days">Day 14</span>
+            </div>
+            <p>An egg is released — often the peak of energy and strength in the cycle. A good window for harder sessions or chasing a PR.</p>
+          </div>
+        </div>
+        <div class="cycle-phase-card" data-phase="luteal">
+          <span class="cycle-phase-icon" aria-hidden="true">🌙</span>
+          <div class="cycle-phase-info">
+            <div class="cycle-phase-header">
+              <h3>Luteal Phase</h3>
+              <span class="cycle-phase-days">Day 15-28</span>
+            </div>
+            <p>Progesterone rises, then drops toward the end of the phase — PMS symptoms and lower energy are common near the end. Moderate, steady training tends to work best.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= YOUR PERFORMANCE ================= -->
+  <section id="maintab-performance" class="main-tab-panel">
+    <div class="card">
+      <h2>Your Performance</h2>
+      <p class="placeholder-text" id="perf-empty" hidden>Log a few sets to see your progress here.</p>
+      <div id="perf-content" hidden>
+        <h3 class="perf-chart-title">PRs</h3>
+        <label class="perf-picker">
+          <span class="perf-picker-label">Exercise</span>
+          <div class="option-field perf-exercise-field" data-option-field data-title="Exercise">
+            <button type="button" class="option-field-btn">
+              <span class="option-field-value placeholder">Select an exercise...</span>
+              <span class="option-field-caret" aria-hidden="true">&#9662;</span>
+            </button>
+            <input type="hidden" id="perf-exercise-value">
+          </div>
+        </label>
+        <div class="perf-chart-wrap" id="perf-chart-wrap">
+          <svg id="perf-chart" class="perf-chart" viewBox="0 0 600 260" preserveAspectRatio="none"></svg>
+          <div class="perf-tooltip" id="perf-tooltip" hidden></div>
+        </div>
+        <div class="phase-legend" id="perf-phase-legend" hidden></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>PRs by Cycle Phase</h2>
+      <p class="placeholder-text" id="prphase-empty" hidden>Log a few sets and turn on cycle tracking in your profile to see this breakdown.</p>
+      <div id="prphase-content" hidden></div>
     </div>
   </section>
 
@@ -327,7 +445,12 @@
         <label>Age
           <input type="number" name="age" id="profile-age" min="1" max="120">
         </label>
-        <label>Last Period Date
+        <label class="full checkbox-field">
+          <input type="checkbox" id="profile-track-cycle">
+          <span>Track my menstrual cycle</span>
+        </label>
+        <p class="field-hint full">Turn this on and Clock It will show your current cycle phase and how it lines up with your workout performance in Your Cycle.</p>
+        <label class="full" id="profile-period-date-label" hidden>Last Period Date
           <div class="date-field" data-date-field data-max="today">
             <button type="button" class="date-field-btn">
               <span class="date-field-value placeholder">dd-mm-yyyy</span>

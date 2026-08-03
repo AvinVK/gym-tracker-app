@@ -1,3 +1,4 @@
+import json
 import os
 import sqlite3
 
@@ -87,7 +88,8 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS exercise_plan (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     target_muscle TEXT NOT NULL,
-    exercise TEXT NOT NULL
+    exercise TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'strength'
 );
 
 CREATE TABLE IF NOT EXISTS workout_log (
@@ -98,6 +100,8 @@ CREATE TABLE IF NOT EXISTS workout_log (
     end_time TEXT,
     duration_hours REAL,
     energy_level INTEGER,
+    pre_workout_meal TEXT,
+    hours_since_meal REAL,
     notes TEXT
 );
 
@@ -108,8 +112,7 @@ CREATE TABLE IF NOT EXISTS exercise_log (
     muscle_group TEXT NOT NULL,
     exercise TEXT NOT NULL,
     set_number INTEGER,
-    reps INTEGER,
-    weight_kg REAL,
+    attributes TEXT,
     notes TEXT
 );
 
@@ -131,6 +134,35 @@ def _ensure_column(conn, table, column, coltype):
     cols = [r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()]
     if column not in cols:
         conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
+
+
+def _migrate_exercise_log_attributes(conn):
+    """One-time migration: reps/weight_kg/duration_minutes/intensity_level
+    used to be their own columns, but a given set only ever fills in one pair
+    (reps+weight OR duration+level) - the other two are always NULL, and any
+    future one-off field (e.g. incline_percent on a treadmill set) would mean
+    yet another mostly-empty column. Folding them into a single JSON
+    `attributes` column avoids that. Only touches rows that haven't been
+    migrated yet (attributes IS NULL), so it's safe to run on every startup,
+    and only drops the old columns if this SQLite build supports DROP COLUMN
+    (added in 3.35) - if it doesn't, they're just left behind unused, same as
+    any other column removal in this app.
+    """
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(exercise_log)").fetchall()]
+    old_cols = [c for c in ("reps", "weight_kg", "duration_minutes", "intensity_level") if c in cols]
+    if not old_cols:
+        return
+    select_cols = ", ".join(old_cols)
+    rows = conn.execute(f"SELECT id, {select_cols} FROM exercise_log WHERE attributes IS NULL").fetchall()
+    for row in rows:
+        row_id = row[0]
+        attrs = {col: val for col, val in zip(old_cols, row[1:]) if val is not None}
+        conn.execute("UPDATE exercise_log SET attributes = ? WHERE id = ?", (json.dumps(attrs), row_id))
+    for col in old_cols:
+        try:
+            conn.execute(f"ALTER TABLE exercise_log DROP COLUMN {col}")
+        except sqlite3.OperationalError:
+            pass
 
 
 def get_db():
@@ -157,6 +189,11 @@ def init_db():
     # an already-deployed DB have no owner yet. Backfill those separately.
     _ensure_column(conn, "workout_log", "user_id", "INTEGER REFERENCES users(id)")
     _ensure_column(conn, "exercise_log", "user_id", "INTEGER REFERENCES users(id)")
+    _ensure_column(conn, "workout_log", "pre_workout_meal", "TEXT")
+    _ensure_column(conn, "workout_log", "hours_since_meal", "REAL")
+    _ensure_column(conn, "exercise_plan", "type", "TEXT NOT NULL DEFAULT 'strength'")
+    _ensure_column(conn, "exercise_log", "attributes", "TEXT")
+    _migrate_exercise_log_attributes(conn)
     # username retained only for rows created before this column existed;
     # no longer written to by the app (email is the login identifier now).
     _ensure_column(conn, "users", "username", "TEXT")
@@ -168,6 +205,14 @@ def init_db():
             "INSERT INTO exercise_plan (target_muscle, exercise) VALUES (?, ?)",
             SEED_EXERCISES,
         )
+    # Cheap default classification, not a one-time migration: exercises under
+    # the seeded "Cardio" muscle group are duration+level (treadmill, step
+    # machine, ...) rather than reps+weight. Runs every startup (after the
+    # seed insert above, so it actually applies to fresh installs too) rather
+    # than once since there's no UI yet to reclassify an individual exercise
+    # (e.g. rep-counted cardio like Burpees) away from this default — revisit
+    # if that's ever added, so it doesn't stomp a manual override.
+    conn.execute("UPDATE exercise_plan SET type = 'cardio' WHERE target_muscle = 'Cardio'")
     conn.commit()
     conn.close()
 

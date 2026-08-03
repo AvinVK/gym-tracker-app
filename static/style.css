@@ -175,6 +175,241 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 .placeholder-card { text-align: center; padding: 36px 18px; }
 .placeholder-text { margin: 0; color: var(--muted); font-size: 14px; }
 
+/* ---------------- Your Cycle ---------------- */
+.cycle-empty-state { text-align: center; padding: 8px 0 4px; }
+.cycle-empty-state .placeholder-text { margin-bottom: 14px; }
+.cycle-empty-state .secondary {
+  display: inline-block;
+  width: auto;
+  grid-column: unset;
+  padding: 10px 22px;
+  margin-top: 0;
+}
+
+.cycle-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.cycle-summary-block {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cycle-summary-divider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border);
+}
+.cycle-summary-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+}
+.cycle-summary-value {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -.01em;
+}
+.cycle-summary-sub {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.cycle-estimate-note {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.cycle-phase-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cycle-phase-card {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fbfbfe;
+  transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+}
+.cycle-phase-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  line-height: 1.3;
+}
+.cycle-phase-info { min-width: 0; }
+.cycle-phase-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.cycle-phase-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.cycle-phase-days {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cycle-phase-info p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.cycle-phase-card.active {
+  border-color: var(--accent);
+  background: #f1effe;
+  box-shadow: 0 0 0 3px rgba(109, 94, 248, .12);
+}
+.cycle-phase-card.active .cycle-phase-days { color: var(--accent-dark); }
+
+/* ---------------- Your Performance ---------------- */
+.perf-chart-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+}
+.perf-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+  max-width: 320px;
+}
+.perf-picker-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+}
+.perf-chart-wrap { position: relative; }
+.perf-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  touch-action: none;
+}
+.perf-chart .perf-gridline { stroke: var(--border); stroke-width: 1; shape-rendering: crispEdges; }
+.perf-chart .perf-axis-label {
+  fill: var(--muted);
+  font-size: 11px;
+  font-family: inherit;
+}
+/* Stroke/fill color deliberately not set here - each line segment and dot
+   is colored per its cycle-phase run (see renderPerformanceChart), so a
+   CSS color here would win over that per-element attribute and flatten
+   every phase back to one color. */
+.perf-chart .perf-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.perf-chart .perf-dot-ring { fill: var(--card); }
+.perf-chart .perf-value-label {
+  fill: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+}
+.perf-chart .perf-pr-label {
+  fill: var(--accent-dark);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+}
+.perf-chart .perf-crosshair {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0;
+  pointer-events: none;
+}
+.perf-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--ink);
+  color: #fff;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  transform: translate(-50%, -100%);
+  box-shadow: var(--shadow-md);
+  z-index: 2;
+}
+.perf-tooltip-value { font-weight: 700; }
+.perf-tooltip-date { color: rgba(255,255,255,.7); font-size: 11px; }
+
+.prphase-row {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.prphase-row:last-child { border-bottom: none; }
+.prphase-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+.prphase-name {
+  display: flex;
+  align-items: center;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.prphase-name .phase-dot { margin-right: 8px; }
+.prphase-count {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.prphase-bar-track {
+  height: 10px;
+  border-radius: 0 5px 5px 0;
+  background: var(--bg-soft);
+  overflow: hidden;
+}
+.prphase-bar-fill {
+  height: 100%;
+  border-radius: 0 5px 5px 0;
+}
+.prphase-exercises {
+  margin: 7px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -228,6 +463,35 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   font-weight: 500;
   color: #b3b8c9;
   letter-spacing: 0;
+}
+
+/* .grid-form label normally stacks its contents (checkbox above text) via
+   flex-direction: column - this needs to beat that with matching
+   specificity (element+class vs class alone loses), so it's scoped to
+   ".grid-form label.checkbox-field" rather than just ".checkbox-field". */
+.grid-form label.checkbox-field {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  text-transform: none;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--ink);
+  letter-spacing: 0;
+  cursor: pointer;
+}
+.checkbox-field input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.field-hint {
+  margin: -8px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--muted);
 }
 
 /* ---------------- Cards ---------------- */
@@ -375,42 +639,6 @@ button:disabled {
   transform: none !important;
 }
 
-/* ---------------- Time field (custom in-app picker) ---------------- */
-.time-field-btn {
-  width: 100%;
-  min-width: 118px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 14.5px;
-  font-weight: 500;
-  font-family: inherit;
-  padding: 10px 12px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: #fbfbfe;
-  color: var(--ink);
-  cursor: pointer;
-  text-align: left;
-  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
-}
-.time-field-btn:hover { background: #fff; }
-.time-field-btn:focus-visible {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px rgba(109, 94, 248, .14);
-}
-.time-field-btn:disabled {
-  background: #f1f1f6;
-  color: var(--muted);
-  cursor: not-allowed;
-  opacity: .85;
-}
-.time-field-value { white-space: nowrap; }
-.time-field-value.placeholder { color: #9aa1b5; }
-.time-field-icon { font-size: 13px; flex-shrink: 0; }
-
 /* ---------------- Energy field (custom in-app picker) ---------------- */
 .energy-field-btn {
   width: 100%;
@@ -453,7 +681,88 @@ button:disabled {
 .energy-field-value.placeholder { color: #9aa1b5; }
 .energy-field-icon { font-size: 13px; flex-shrink: 0; }
 
+/* ---------------- Meal timing field (custom in-app picker) ---------------- */
+.meal-timing-field-btn {
+  width: 100%;
+  min-width: 118px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14.5px;
+  font-weight: 500;
+  font-family: inherit;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fbfbfe;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.meal-timing-field-btn:hover { background: #fff; }
+.meal-timing-field-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(109, 94, 248, .14);
+}
+.meal-timing-field-btn:disabled {
+  background: #f1f1f6;
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: .85;
+}
+.meal-timing-field-value {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.meal-timing-field-value.placeholder { color: #9aa1b5; }
+.meal-timing-field-icon { font-size: 13px; flex-shrink: 0; }
+
 .energy-picker-wheel .time-picker-col { width: 100px; }
+.meal-timing-picker-wheel .time-picker-col { width: 180px; }
+.duration-picker-wheel .time-picker-col { width: 140px; }
+.level-picker-wheel .time-picker-col { width: 140px; }
+
+/* ---------------- Set duration / level fields (custom in-app wheel picker,
+   used inside cardio set rows in place of the +/- stepper) ---------------- */
+.set-duration-field, .set-level-field { display: flex; }
+.set-wheel-field-btn {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 9px 6px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fbfbfe;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.set-wheel-field-btn:hover { background: #fff; }
+.set-wheel-field-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(109, 94, 248, .14);
+}
+.set-wheel-field-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.set-wheel-field-value.placeholder { color: #9aa1b5; }
+.set-wheel-field-icon { font-size: 12px; flex-shrink: 0; }
 .energy-picker-caption {
   text-align: center;
   margin-top: 12px;
@@ -517,13 +826,6 @@ button:disabled {
   scrollbar-width: none;
 }
 .time-picker-col::-webkit-scrollbar { display: none; }
-.time-picker-sep {
-  align-self: center;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--ink);
-  padding-bottom: 2px;
-}
 .time-picker-option {
   height: 44px;
   display: flex;
@@ -548,44 +850,6 @@ button:disabled {
   color: #e7e8ef;
   cursor: not-allowed;
 }
-.time-picker-presets-label {
-  margin: 14px 0 6px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: var(--muted);
-}
-.time-picker-presets {
-  display: flex;
-  gap: 8px;
-}
-.time-picker-preset {
-  flex: 1;
-  padding: 9px 4px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: #fbfbfe;
-  color: var(--ink);
-  font-size: 12.5px;
-  font-weight: 700;
-  font-family: inherit;
-  cursor: pointer;
-  transition: background .15s ease, color .15s ease, border-color .15s ease;
-}
-.time-picker-preset:hover { background: #f6f5ff; }
-.time-picker-preset.selected {
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  border-color: transparent;
-  color: #fff;
-}
-.time-picker-preset:disabled {
-  background: #f1f1f6;
-  color: #c7c9d6;
-  border-color: var(--border);
-  cursor: not-allowed;
-}
-.time-picker-preset:disabled:hover { background: #f1f1f6; }
 .time-picker-card .confirm-actions { margin-top: 14px; }
 
 /* ---------------- Option field (custom in-app select, e.g. muscle group / exercise) ---------------- */
@@ -809,6 +1073,35 @@ button:disabled {
   flex: 1;
   min-width: 0;
 }
+.add-set-voice, .note-mic-btn {
+  flex: 0 0 44px !important;
+  padding: 10px 0 !important;
+  font-size: 16px !important;
+}
+.add-set-voice:disabled, .note-mic-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.add-set-voice.listening, .note-mic-btn.listening {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+  animation: pulse-mic 1s ease infinite;
+}
+@keyframes pulse-mic {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 67, 108, .45); }
+  50% { box-shadow: 0 0 0 8px rgba(244, 67, 108, 0); }
+}
+
+.note-field {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.note-field input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
 
 /* ---------------- Exercise blocks ---------------- */
 .exercise-block {
@@ -850,8 +1143,51 @@ button:disabled {
 }
 .exercise-block .exercise-remove:hover { background: #fdeaee; }
 
-.set-columns-label {
+.sets-header {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.sets-header label { margin: 0; }
+.set-type-toggle {
+  display: flex;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #fbfbfe;
+  flex-shrink: 0;
+}
+.set-type-btn {
+  padding: 5px 12px;
+  border: none;
+  background: none;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s ease, color .15s ease;
+}
+.set-type-btn:not(.active):hover { background: #f1effe; }
+.set-type-btn.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #fff;
+}
+
+/* Same grid-template-columns as .set-row below, not an approximation —
+   flexbox with a hand-picked spacer width used to drift out of alignment
+   with the real columns as soon as label text length differed much from
+   "Reps"/"Weight (kg)" (e.g. "Duration (min)"/"Level"). Only 3 of the 4
+   tracks are filled (spacer, col, col); the remove track is left empty by
+   simply having no 4th child, which is fine since grid auto-placement
+   still lines the two labels up with reps/weight exactly. */
+.set-columns-label {
+  display: grid;
+  grid-template-columns: 48px 1fr 1fr 30px;
   gap: 8px;
   margin-bottom: 4px;
   font-size: 10.5px;
@@ -860,16 +1196,20 @@ button:disabled {
   letter-spacing: .03em;
   color: var(--muted);
 }
-.set-columns-label-spacer { flex: 0 0 48px; }
-.set-columns-label-col { flex: 1; text-align: center; }
+.set-columns-label-col { text-align: center; }
+/* One extra field (e.g. Inclination) some exercises have alongside
+   Reps/Weight or Duration/Level - same grid-template-columns as
+   .set-row.has-extra below, for the same alignment reason as above. */
+.set-columns-label.has-extra { grid-template-columns: 48px 1fr 1fr 1fr 30px; }
 
 .set-row {
   display: grid;
-  grid-template-columns: 48px 1fr 1fr 1.4fr 30px;
+  grid-template-columns: 48px 1fr 1fr 30px;
   gap: 8px;
   align-items: center;
   margin-bottom: 7px;
 }
+.set-row.has-extra { grid-template-columns: 48px 1fr 1fr 1fr 30px; }
 .set-row .set-number {
   font-size: 11.5px;
   font-weight: 700;
@@ -920,7 +1260,7 @@ button:disabled {
   border-color: var(--accent);
   box-shadow: 0 0 0 4px rgba(109, 94, 248, .14);
 }
-.stepper-btn {
+.stepper .stepper-btn {
   flex: 0 0 30px;
   border: none;
   background: #f1effe;
@@ -932,9 +1272,12 @@ button:disabled {
   font-family: inherit;
   transition: background .15s ease;
 }
-.stepper-btn:hover { background: #e7e1fd; }
-.stepper-btn:active { transform: scale(.93); }
-.stepper-input {
+.stepper .stepper-btn:hover { background: #e7e1fd; }
+.stepper .stepper-btn:active { transform: scale(.93); }
+/* Two classes' worth of specificity is deliberate — this needs to beat
+   ".grid-form input" (which sets its own border/padding/background) since
+   steppers live inside .grid-form both here and in the exercise blocks. */
+.stepper .stepper-input {
   flex: 1 1 auto;
   width: 100%;
   min-width: 0;
@@ -947,13 +1290,45 @@ button:disabled {
   font-family: inherit;
   color: var(--ink);
 }
-.stepper-input:focus { outline: none; }
+.stepper .stepper-input:focus {
+  outline: none;
+  border: none;
+  background: none;
+  box-shadow: none;
+}
+.stepper-input::placeholder { color: #9aa1b5; }
 /* Hide the native up/down arrows — the stepper's own +/- buttons replace them. */
 .stepper-input::-webkit-outer-spin-button,
 .stepper-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .stepper-input[type=number] { -moz-appearance: textfield; }
 
 /* ---------------- History table ---------------- */
+/* Cycle-phase dot shown next to each date instead of a dedicated column -
+   color meanings come from CYCLE_PHASES in app.js and are spelled out in
+   .phase-legend above the table. */
+.phase-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+/* Wraps the dot + date text as a single flex item so the mobile card
+   layout's `justify-content: space-between` (label vs. value) doesn't
+   split the dot away from the date it belongs to. */
+.date-with-phase { display: inline-flex; align-items: center; }
+.phase-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: -6px 0 14px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.phase-legend-item { display: inline-flex; align-items: center; }
+#perf-phase-legend { margin: 14px 0 0; }
+
 /* A plain <table> ignores overflow on itself in most engines, so the
    scroll container has to be a wrapping block element instead. */
 .table-scroll {
@@ -1120,22 +1495,28 @@ button:disabled {
     font-size: 16px;
   }
 
-  /* Built for the desktop 5-column .set-row grid (spacer + reps + weight +
-     notes + remove) — on the mobile 4-column layout below, "remove" moves
-     up next to weight, throwing off the alignment, so just drop the labels
-     rather than ship a header that visibly doesn't line up with its rows. */
+  /* Built for the desktop 4-column .set-row grid (spacer + reps + weight +
+     remove) — on the mobile 4-column layout below, "remove" moves up next
+     to weight, throwing off the alignment, so just drop the labels rather
+     than ship a header that visibly doesn't line up with its rows. */
   .set-columns-label { display: none; }
 
   .set-row {
     grid-template-columns: 40px 1fr 1fr 32px;
+    grid-template-areas: "num reps weight remove";
+  }
+  /* Exercises with an extra field (e.g. Treadmill Walk's Inclination) don't
+     fit a 3rd number box into the same row on a narrow screen, so it drops
+     to its own full-width row underneath instead. */
+  .set-row.has-extra {
     grid-template-areas:
       "num reps weight remove"
-      "notes notes notes notes";
+      "extra extra extra extra";
     row-gap: 6px;
   }
   .set-row .set-number { grid-area: num; }
-  .set-row .stepper-reps { grid-area: reps; }
-  .set-row .stepper-weight { grid-area: weight; }
+  .set-row .stepper-reps, .set-row .stepper-duration { grid-area: reps; }
+  .set-row .stepper-weight, .set-row .stepper-level, .set-row .set-speed-field { grid-area: weight; }
   .set-row .set-remove { grid-area: remove; }
-  .set-row .set-notes { grid-area: notes; }
+  .set-row .set-extra-field { grid-area: extra; }
 }

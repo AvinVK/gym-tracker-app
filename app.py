@@ -1,3 +1,4 @@
+import json
 import os
 import secrets
 import uuid
@@ -252,7 +253,7 @@ def list_muscles():
 def exercises_by_muscle(muscle):
     db = get_db()
     rows = db.execute(
-        "SELECT id, exercise FROM exercise_plan WHERE target_muscle = ? ORDER BY exercise",
+        "SELECT id, exercise, type FROM exercise_plan WHERE target_muscle = ? ORDER BY exercise",
         (muscle,),
     ).fetchall()
     return jsonify([dict(r) for r in rows])
@@ -261,21 +262,6 @@ def exercises_by_muscle(muscle):
 # ---------------------------------------------------------------
 # Workout Log API
 # ---------------------------------------------------------------
-def compute_duration(start_time, end_time):
-    if not start_time or not end_time:
-        return None
-    try:
-        fmt = "%H:%M"
-        t1 = datetime.strptime(start_time, fmt)
-        t2 = datetime.strptime(end_time, fmt)
-        delta = (t2 - t1).total_seconds() / 3600.0
-        if delta < 0:
-            delta += 24
-        return round(delta, 2)
-    except ValueError:
-        return None
-
-
 @app.route("/api/workout-log", methods=["GET"])
 def list_workout_log():
     user_id = get_current_user_id()
@@ -283,7 +269,12 @@ def list_workout_log():
         return jsonify({"error": "missing user"}), 401
     db = get_db()
     rows = db.execute(
-        "SELECT * FROM workout_log WHERE user_id = ? ORDER BY date DESC, id DESC", (user_id,)
+        "SELECT wl.*, ("
+        "  SELECT GROUP_CONCAT(DISTINCT el.muscle_group) FROM exercise_log el"
+        "  WHERE el.user_id = wl.user_id AND el.date = wl.date"
+        ") AS muscles "
+        "FROM workout_log wl WHERE wl.user_id = ? ORDER BY wl.date DESC, wl.id DESC",
+        (user_id,),
     ).fetchall()
     return jsonify([dict(r) for r in rows])
 
@@ -299,17 +290,17 @@ def add_workout_log():
         return jsonify({"error": "date is required"}), 400
     if is_future_date(date):
         return jsonify({"error": "date cannot be in the future"}), 400
-    start_time = data.get("start_time") or None
-    end_time = data.get("end_time") or None
-    duration = compute_duration(start_time, end_time)
     db = get_db()
     cur = db.execute(
-        "INSERT INTO workout_log (user_id, date, start_time, end_time, duration_hours, energy_level, notes) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (user_id, date, start_time, end_time, duration, data.get("energy_level"), data.get("notes", "")),
+        "INSERT INTO workout_log (user_id, date, energy_level, pre_workout_meal, hours_since_meal, notes) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (
+            user_id, date, data.get("energy_level"),
+            data.get("pre_workout_meal", ""), data.get("hours_since_meal") or None, data.get("notes", ""),
+        ),
     )
     db.commit()
-    return jsonify({"id": cur.lastrowid, "duration_hours": duration}), 201
+    return jsonify({"id": cur.lastrowid}), 201
 
 
 @app.route("/api/workout-log/<int:row_id>", methods=["PUT"])
@@ -323,22 +314,36 @@ def update_workout_log(row_id):
         return jsonify({"error": "date is required"}), 400
     if is_future_date(date):
         return jsonify({"error": "date cannot be in the future"}), 400
-    start_time = data.get("start_time") or None
-    end_time = data.get("end_time") or None
-    duration = compute_duration(start_time, end_time)
     db = get_db()
     db.execute(
-        "UPDATE workout_log SET date = ?, start_time = ?, end_time = ?, duration_hours = ?, "
-        "energy_level = ?, notes = ? WHERE id = ? AND user_id = ?",
-        (date, start_time, end_time, duration, data.get("energy_level"), data.get("notes", ""), row_id, user_id),
+        "UPDATE workout_log SET date = ?, energy_level = ?, pre_workout_meal = ?, hours_since_meal = ?, "
+        "notes = ? WHERE id = ? AND user_id = ?",
+        (
+            date, data.get("energy_level"),
+            data.get("pre_workout_meal", ""), data.get("hours_since_meal") or None, data.get("notes", ""),
+            row_id, user_id,
+        ),
     )
     db.commit()
-    return jsonify({"id": row_id, "duration_hours": duration})
+    return jsonify({"id": row_id})
 
 
 # ---------------------------------------------------------------
 # Exercise Log API (exercises done per session)
 # ---------------------------------------------------------------
+def _exercise_log_dict(row):
+    """Flattens the `attributes` JSON blob (reps/weight_kg/duration_minutes/
+    intensity_level/etc.) back onto the row so API consumers see the same
+    flat shape as before attributes existed - set-type-specific fields are
+    sparse (a set is either reps+weight or duration+level, never both) so
+    they're stored as one JSON column instead of several mostly-NULL ones."""
+    d = dict(row)
+    attrs = d.pop("attributes", None)
+    if attrs:
+        d.update(json.loads(attrs))
+    return d
+
+
 @app.route("/api/exercise-log", methods=["GET"])
 def list_exercise_log():
     user_id = get_current_user_id()
@@ -354,7 +359,7 @@ def list_exercise_log():
         rows = db.execute(
             "SELECT * FROM exercise_log WHERE user_id = ? ORDER BY date DESC, id DESC", (user_id,)
         ).fetchall()
-    return jsonify([dict(r) for r in rows])
+    return jsonify([_exercise_log_dict(r) for r in rows])
 
 
 @app.route("/api/exercise-log", methods=["POST"])
@@ -385,11 +390,14 @@ def add_exercise_log():
         if not muscle_group or not exercise or not sets:
             return jsonify({"error": "each exercise needs a muscle_group, exercise and at least one set"}), 400
         for i, s in enumerate(sets):
-            rows.append((user_id, date, muscle_group, exercise, i + 1, s.get("reps"), s.get("weight_kg"), s.get("notes", "")))
+            attrs = {k: v for k, v in s.items() if k != "notes" and v is not None}
+            rows.append((
+                user_id, date, muscle_group, exercise, i + 1, json.dumps(attrs), s.get("notes", ""),
+            ))
 
     cur = db.executemany(
-        "INSERT INTO exercise_log (user_id, date, muscle_group, exercise, set_number, reps, weight_kg, notes) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO exercise_log (user_id, date, muscle_group, exercise, set_number, attributes, notes) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
         rows,
     )
     db.commit()
@@ -406,12 +414,14 @@ def update_exercise_log(row_id):
     exercise = (data.get("exercise") or "").strip()
     if not muscle_group or not exercise:
         return jsonify({"error": "muscle_group and exercise are required"}), 400
+    non_attr_keys = {"muscle_group", "exercise", "set_number", "notes"}
+    attrs = {k: v for k, v in data.items() if k not in non_attr_keys and v is not None}
     db = get_db()
     db.execute(
-        "UPDATE exercise_log SET muscle_group = ?, exercise = ?, set_number = ?, reps = ?, "
-        "weight_kg = ?, notes = ? WHERE id = ? AND user_id = ?",
-        (muscle_group, exercise, data.get("set_number"), data.get("reps"),
-         data.get("weight_kg"), data.get("notes", ""), row_id, user_id),
+        "UPDATE exercise_log SET muscle_group = ?, exercise = ?, set_number = ?, attributes = ?, notes = ? "
+        "WHERE id = ? AND user_id = ?",
+        (muscle_group, exercise, data.get("set_number"), json.dumps(attrs),
+         data.get("notes", ""), row_id, user_id),
     )
     db.commit()
     return jsonify({"id": row_id})
