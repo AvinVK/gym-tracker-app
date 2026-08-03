@@ -2098,6 +2098,84 @@ function renderPerformanceChart(series) {
   hitRect.addEventListener("pointerleave", hideTooltip);
 }
 
+// For each exercise, takes whichever metric (weight or duration) has more
+// data points - same rule as computeExerciseSeries() - finds its all-time
+// best value and the date it was set, then buckets that exercise into
+// whichever cycle phase that date falls in. An exercise with no PR date
+// falling in a tracked cycle (or logged before cycle tracking was turned
+// on) simply doesn't appear in any bucket.
+function computePRPhaseBreakdown(history) {
+  const byExercise = {};
+  history.forEach(x => {
+    if (!byExercise[x.exercise]) byExercise[x.exercise] = [];
+    byExercise[x.exercise].push(x);
+  });
+
+  const byPhase = {};
+  CYCLE_PHASES.forEach(p => { byPhase[p.key] = []; });
+
+  Object.keys(byExercise).forEach(name => {
+    const rows = byExercise[name];
+    const weightCount = rows.filter(x => x.weight_kg != null).length;
+    const durationCount = rows.filter(x => x.duration_minutes != null).length;
+    const metricKey = durationCount > weightCount ? "duration_minutes" : "weight_kg";
+    const unit = metricKey === "weight_kg" ? "kg" : "min";
+    let best = null;
+    rows.forEach(x => {
+      const v = x[metricKey];
+      if (v == null) return;
+      if (!best || v > best.value) best = { value: v, date: x.date };
+    });
+    if (!best) return;
+    const phase = cyclePhaseForDate(best.date);
+    if (!phase) return;
+    byPhase[phase.key].push({ name, unit, value: best.value });
+  });
+
+  return byPhase;
+}
+
+// A horizontal bar per phase (count of exercises whose all-time PR landed
+// in that phase) is the right form for "compare a count across a few
+// categories" - a line chart is for trend over time, not this. Bar length
+// is relative to the phase with the most PRs; the exercise names ride
+// along underneath each bar since "how many" alone doesn't answer "which
+// ones" - the actual question being asked.
+function renderPRPhaseBreakdown(history) {
+  const byPhase = computePRPhaseBreakdown(history);
+  const totalCount = Object.values(byPhase).reduce((sum, arr) => sum + arr.length, 0);
+
+  const emptyEl = document.getElementById("prphase-empty");
+  const contentEl = document.getElementById("prphase-content");
+  if (totalCount === 0) {
+    emptyEl.hidden = false;
+    contentEl.hidden = true;
+    return;
+  }
+  emptyEl.hidden = true;
+  contentEl.hidden = false;
+
+  const maxCount = Math.max(...CYCLE_PHASES.map(p => byPhase[p.key].length), 1);
+  contentEl.innerHTML = CYCLE_PHASES.map(p => {
+    const items = byPhase[p.key];
+    const pct = items.length ? Math.max((items.length / maxCount) * 100, 6) : 2;
+    const names = items.length
+      ? items.map(it => `${it.name} (${it.value} ${it.unit})`).join(", ")
+      : "No PRs yet";
+    return `
+      <div class="prphase-row">
+        <div class="prphase-row-top">
+          <span class="prphase-name"><span class="phase-dot" style="background:${p.color}"></span>${p.label}</span>
+          <span class="prphase-count">${items.length} PR${items.length === 1 ? "" : "s"}</span>
+        </div>
+        <div class="prphase-bar-track">
+          <div class="prphase-bar-fill" style="width:${pct}%; background:${p.color};"></div>
+        </div>
+        <p class="prphase-exercises">${names}</p>
+      </div>`;
+  }).join("");
+}
+
 async function renderPerformanceTab() {
   const history = await getExerciseHistory();
   const exercises = [...new Set(history.map(x => x.exercise))].sort();
@@ -2107,17 +2185,18 @@ async function renderPerformanceTab() {
   if (exercises.length === 0) {
     emptyEl.hidden = false;
     contentEl.hidden = true;
-    return;
-  }
-  emptyEl.hidden = true;
-  contentEl.hidden = false;
+  } else {
+    emptyEl.hidden = true;
+    contentEl.hidden = false;
 
-  const field = document.querySelector(".perf-exercise-field");
-  setOptionFieldOptions(field, exercises);
-  const currentValue = field.querySelector("input[type=hidden]").value;
-  const selected = exercises.includes(currentValue) ? currentValue : exercises[0];
-  setOptionFieldValue(field, selected);
-  renderPerformanceChart(computeExerciseSeries(history, selected));
+    const field = document.querySelector(".perf-exercise-field");
+    setOptionFieldOptions(field, exercises);
+    const currentValue = field.querySelector("input[type=hidden]").value;
+    const selected = exercises.includes(currentValue) ? currentValue : exercises[0];
+    setOptionFieldValue(field, selected);
+    renderPerformanceChart(computeExerciseSeries(history, selected));
+  }
+  renderPRPhaseBreakdown(history);
 }
 
 initOptionField(document.querySelector(".perf-exercise-field"));
