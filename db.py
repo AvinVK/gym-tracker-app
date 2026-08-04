@@ -112,7 +112,11 @@ CREATE TABLE IF NOT EXISTS exercise_log (
     muscle_group TEXT NOT NULL,
     exercise TEXT NOT NULL,
     set_number INTEGER,
-    attributes TEXT,
+    reps INTEGER,
+    weight_kg REAL,
+    duration_minutes REAL,
+    intensity_level INTEGER,
+    extra_attributes TEXT,
     notes TEXT
 );
 
@@ -136,33 +140,42 @@ def _ensure_column(conn, table, column, coltype):
         conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
 
 
-def _migrate_exercise_log_attributes(conn):
-    """One-time migration: reps/weight_kg/duration_minutes/intensity_level
-    used to be their own columns, but a given set only ever fills in one pair
-    (reps+weight OR duration+level) - the other two are always NULL, and any
-    future one-off field (e.g. incline_percent on a treadmill set) would mean
-    yet another mostly-empty column. Folding them into a single JSON
-    `attributes` column avoids that. Only touches rows that haven't been
-    migrated yet (attributes IS NULL), so it's safe to run on every startup,
-    and only drops the old columns if this SQLite build supports DROP COLUMN
-    (added in 3.35) - if it doesn't, they're just left behind unused, same as
-    any other column removal in this app.
+EXERCISE_LOG_KNOWN_ATTRS = ("reps", "weight_kg", "duration_minutes", "intensity_level")
+
+
+def _migrate_exercise_log_split_attributes(conn):
+    """Second migration on top of the attributes-JSON refactor above: reps/
+    weight_kg/duration_minutes/intensity_level turned out not to be one-off
+    fields at all - they're used consistently across most exercises, so
+    folding them into a single JSON blob traded the original permanent-null
+    sparsity for a JSON-parse tax on the common case, with no upside. Splits
+    them back into real columns and keeps `extra_attributes` JSON only for
+    genuinely rare, exercise-specific fields (inclination_percent,
+    speed_kmh, ...), which is what that column was actually meant to solve.
+    Only runs while the old `attributes` column is still present, so it's
+    safe (and a no-op) on every startup once it's done its job, and only
+    drops that column if this SQLite build supports DROP COLUMN (added in
+    3.35) - if it doesn't, it's just left behind unused, same as any other
+    column removal in this app.
     """
     cols = [r[1] for r in conn.execute("PRAGMA table_info(exercise_log)").fetchall()]
-    old_cols = [c for c in ("reps", "weight_kg", "duration_minutes", "intensity_level") if c in cols]
-    if not old_cols:
+    if "attributes" not in cols:
         return
-    select_cols = ", ".join(old_cols)
-    rows = conn.execute(f"SELECT id, {select_cols} FROM exercise_log WHERE attributes IS NULL").fetchall()
-    for row in rows:
-        row_id = row[0]
-        attrs = {col: val for col, val in zip(old_cols, row[1:]) if val is not None}
-        conn.execute("UPDATE exercise_log SET attributes = ? WHERE id = ?", (json.dumps(attrs), row_id))
-    for col in old_cols:
-        try:
-            conn.execute(f"ALTER TABLE exercise_log DROP COLUMN {col}")
-        except sqlite3.OperationalError:
-            pass
+    rows = conn.execute("SELECT id, attributes FROM exercise_log").fetchall()
+    for row_id, raw in rows:
+        attrs = json.loads(raw) if raw else {}
+        known = {k: attrs.get(k) for k in EXERCISE_LOG_KNOWN_ATTRS}
+        extra = {k: v for k, v in attrs.items() if k not in EXERCISE_LOG_KNOWN_ATTRS}
+        conn.execute(
+            "UPDATE exercise_log SET reps = ?, weight_kg = ?, duration_minutes = ?, intensity_level = ?, "
+            "extra_attributes = ? WHERE id = ?",
+            (known["reps"], known["weight_kg"], known["duration_minutes"], known["intensity_level"],
+             json.dumps(extra) if extra else None, row_id),
+        )
+    try:
+        conn.execute("ALTER TABLE exercise_log DROP COLUMN attributes")
+    except sqlite3.OperationalError:
+        pass
 
 
 def get_db():
@@ -192,8 +205,12 @@ def init_db():
     _ensure_column(conn, "workout_log", "pre_workout_meal", "TEXT")
     _ensure_column(conn, "workout_log", "hours_since_meal", "REAL")
     _ensure_column(conn, "exercise_plan", "type", "TEXT NOT NULL DEFAULT 'strength'")
-    _ensure_column(conn, "exercise_log", "attributes", "TEXT")
-    _migrate_exercise_log_attributes(conn)
+    _ensure_column(conn, "exercise_log", "reps", "INTEGER")
+    _ensure_column(conn, "exercise_log", "weight_kg", "REAL")
+    _ensure_column(conn, "exercise_log", "duration_minutes", "REAL")
+    _ensure_column(conn, "exercise_log", "intensity_level", "INTEGER")
+    _ensure_column(conn, "exercise_log", "extra_attributes", "TEXT")
+    _migrate_exercise_log_split_attributes(conn)
     # username retained only for rows created before this column existed;
     # no longer written to by the app (email is the login identifier now).
     _ensure_column(conn, "users", "username", "TEXT")
