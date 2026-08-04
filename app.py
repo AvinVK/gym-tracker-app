@@ -331,16 +331,17 @@ def update_workout_log(row_id):
 # ---------------------------------------------------------------
 # Exercise Log API (exercises done per session)
 # ---------------------------------------------------------------
+EXERCISE_LOG_KNOWN_ATTRS = ("reps", "weight_kg", "duration_minutes", "intensity_level")
+
+
 def _exercise_log_dict(row):
-    """Flattens the `attributes` JSON blob (reps/weight_kg/duration_minutes/
-    intensity_level/etc.) back onto the row so API consumers see the same
-    flat shape as before attributes existed - set-type-specific fields are
-    sparse (a set is either reps+weight or duration+level, never both) so
-    they're stored as one JSON column instead of several mostly-NULL ones."""
+    """Flattens the `extra_attributes` JSON blob (rare, exercise-specific
+    fields like inclination_percent/speed_kmh) back onto the row so API
+    consumers see the same flat shape as the set data they submitted."""
     d = dict(row)
-    attrs = d.pop("attributes", None)
-    if attrs:
-        d.update(json.loads(attrs))
+    extra = d.pop("extra_attributes", None)
+    if extra:
+        d.update(json.loads(extra))
     return d
 
 
@@ -390,14 +391,20 @@ def add_exercise_log():
         if not muscle_group or not exercise or not sets:
             return jsonify({"error": "each exercise needs a muscle_group, exercise and at least one set"}), 400
         for i, s in enumerate(sets):
-            attrs = {k: v for k, v in s.items() if k != "notes" and v is not None}
+            extra = {
+                k: v for k, v in s.items()
+                if k != "notes" and k not in EXERCISE_LOG_KNOWN_ATTRS and v is not None
+            }
             rows.append((
-                user_id, date, muscle_group, exercise, i + 1, json.dumps(attrs), s.get("notes", ""),
+                user_id, date, muscle_group, exercise, i + 1,
+                s.get("reps"), s.get("weight_kg"), s.get("duration_minutes"), s.get("intensity_level"),
+                json.dumps(extra) if extra else None, s.get("notes", ""),
             ))
 
     cur = db.executemany(
-        "INSERT INTO exercise_log (user_id, date, muscle_group, exercise, set_number, attributes, notes) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO exercise_log (user_id, date, muscle_group, exercise, set_number, "
+        "reps, weight_kg, duration_minutes, intensity_level, extra_attributes, notes) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         rows,
     )
     db.commit()
@@ -414,13 +421,16 @@ def update_exercise_log(row_id):
     exercise = (data.get("exercise") or "").strip()
     if not muscle_group or not exercise:
         return jsonify({"error": "muscle_group and exercise are required"}), 400
-    non_attr_keys = {"muscle_group", "exercise", "set_number", "notes"}
-    attrs = {k: v for k, v in data.items() if k not in non_attr_keys and v is not None}
+    non_attr_keys = {"muscle_group", "exercise", "set_number", "notes"} | set(EXERCISE_LOG_KNOWN_ATTRS)
+    extra = {k: v for k, v in data.items() if k not in non_attr_keys and v is not None}
     db = get_db()
     db.execute(
-        "UPDATE exercise_log SET muscle_group = ?, exercise = ?, set_number = ?, attributes = ?, notes = ? "
+        "UPDATE exercise_log SET muscle_group = ?, exercise = ?, set_number = ?, "
+        "reps = ?, weight_kg = ?, duration_minutes = ?, intensity_level = ?, extra_attributes = ?, notes = ? "
         "WHERE id = ? AND user_id = ?",
-        (muscle_group, exercise, data.get("set_number"), json.dumps(attrs),
+        (muscle_group, exercise, data.get("set_number"),
+         data.get("reps"), data.get("weight_kg"), data.get("duration_minutes"), data.get("intensity_level"),
+         json.dumps(extra) if extra else None,
          data.get("notes", ""), row_id, user_id),
     )
     db.commit()
