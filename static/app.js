@@ -934,6 +934,7 @@ function initSetLevelField(container) {
 // ---------------- Custom option picker (muscle group / exercise dropdowns) ----------------
 const opModal = document.getElementById("option-picker-modal");
 const opTitle = document.getElementById("op-title");
+const opSearch = document.getElementById("op-search");
 const opList = document.getElementById("op-list");
 let opActiveContainer = null;
 
@@ -973,16 +974,32 @@ function setOptionFieldOptions(container, options, { emptyText, images, defaultO
   }
 }
 
-function renderOptionPickerList(container, { showAll } = {}) {
+function renderOptionPickerList(container, { showAll, query } = {}) {
   const options = container.__options || [];
   const defaultOptions = container.__defaultOptions;
-  // If the current value is already picked and isn't in the curated subset,
-  // start expanded - otherwise it'd look like the selection vanished.
   const current = container.querySelector("input[type=hidden]").value;
-  const visible = (!showAll && defaultOptions && (!current || defaultOptions.includes(current)))
-    ? defaultOptions
-    : options;
+  const q = (query || "").trim().toLowerCase();
+
+  let visible;
+  if (q) {
+    // A search query always searches the full catalog, not just the
+    // curated subset - typing "che" is a request to find something
+    // specific, not a request to browse.
+    visible = options.filter(o => o.toLowerCase().includes(q));
+  } else {
+    // If the current value is already picked and isn't in the curated
+    // subset, start expanded - otherwise it'd look like the selection
+    // vanished.
+    visible = (!showAll && defaultOptions && (!current || defaultOptions.includes(current)))
+      ? defaultOptions
+      : options;
+  }
+
   const images = container.__images || {};
+  if (!visible.length) {
+    opList.innerHTML = `<p class="option-picker-empty">No matches</p>`;
+    return;
+  }
   let html = visible
     .map(o => {
       const imgUrl = images[o] && images[o][0];
@@ -990,7 +1007,7 @@ function renderOptionPickerList(container, { showAll } = {}) {
       return `<button type="button" class="option-picker-item${o === current ? " selected" : ""}" data-value="${o}">${thumb}<span>${o}</span></button>`;
     })
     .join("");
-  if (visible === defaultOptions && options.length > defaultOptions.length) {
+  if (!q && visible === defaultOptions && options.length > defaultOptions.length) {
     html += `<button type="button" class="option-picker-show-all">Show all ${options.length} exercises &darr;</button>`;
   }
   opList.innerHTML = html;
@@ -1001,9 +1018,16 @@ function openOptionPicker(container) {
   if (!options.length) return;
   opActiveContainer = container;
   opTitle.textContent = container.dataset.title || "Select";
+  opSearch.value = "";
   renderOptionPickerList(container);
   opModal.hidden = false;
+  opSearch.focus();
 }
+
+opSearch.addEventListener("input", () => {
+  if (!opActiveContainer) return;
+  renderOptionPickerList(opActiveContainer, { query: opSearch.value });
+});
 
 function closeOptionPicker() {
   opModal.hidden = true;

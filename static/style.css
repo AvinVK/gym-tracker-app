@@ -901,6 +901,21 @@ button:disabled {
   font-weight: 700;
   color: var(--ink);
 }
+.option-picker-search {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--bg-soft);
+}
+.option-picker-search:focus {
+  outline: none;
+  border-color: var(--accent);
+}
 .option-picker-list {
   max-height: 320px;
   overflow-y: auto;
@@ -911,6 +926,13 @@ button:disabled {
   border-radius: var(--radius-sm);
   padding: 4px;
   margin-bottom: 14px;
+}
+.option-picker-empty {
+  margin: 0;
+  padding: 18px 8px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--muted);
 }
 .option-picker-item {
   display: flex;
