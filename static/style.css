@@ -94,7 +94,7 @@ body {
   align-items: center;
   gap: 10px;
 }
-.topbar-icon { font-size: 26px; filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)); }
+.topbar-icon { height: 34px; width: auto; filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)); }
 .user-menu {
   position: absolute;
   top: 18px;
