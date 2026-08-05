@@ -1428,22 +1428,29 @@ function parseSpokenSet(text) {
   return { reps, weight };
 }
 
-// Tries each speech-recognition alternative (best guess first) through
-// parseFn and keeps the first one that fills in every field - the top
-// alternative sometimes mishears a short word like "reps" while a
-// lower-ranked one gets it right, so checking a few before settling
-// meaningfully improves accuracy over trusting alternative #1 alone. Falls
-// back to the first alternative that got at least one field, or an empty
-// parse of the top alternative if none matched anything.
+// Merges parseFn's reading of each speech-recognition alternative, field by
+// field, always trusting the earliest (highest-confidence) alternative that
+// answered a given field and never letting a later one override it - only
+// used to fill in whatever the top alternative left blank. Picking whichever
+// alternative looked "most complete" (an earlier version of this function)
+// backfired on noisier phone-mic audio: a low-confidence alternative that
+// happened to parse cleanly, even wrongly, would win over a mostly-correct
+// top alternative just for being more "complete", which made results worse
+// on a phone than doing nothing beyond alternative #1 at all.
 function bestSpeechParse(results, parseFn) {
-  let partial = null;
+  let merged = null;
   for (let i = 0; i < results.length; i++) {
     const parsed = parseFn(results[i].transcript);
-    const values = Object.values(parsed);
-    if (values.length && values.every(v => v != null)) return parsed;
-    if (!partial && values.some(v => v != null)) partial = parsed;
+    if (!merged) {
+      merged = parsed;
+    } else {
+      for (const key in parsed) {
+        if (merged[key] == null && parsed[key] != null) merged[key] = parsed[key];
+      }
+    }
+    if (Object.values(merged).every(v => v != null)) break;
   }
-  return partial || parseFn(results[0]?.transcript || "");
+  return merged || parseFn(results[0]?.transcript || "");
 }
 
 // Same idea as parseSpokenSet, but for cardio: "15 minutes at level 6",
@@ -1480,8 +1487,11 @@ function initVoiceSetButton(block) {
     // >1 so a mis-transcribed "reps" in the top guess can still be caught by
     // checking the recognizer's other candidate transcripts (bestSpeechParse
     // below) instead of failing outright on whichever one happened to be
-    // ranked first.
-    recognition.maxAlternatives = 5;
+    // ranked first. Kept small, not maxed out - alternatives past the first
+    // couple are usually low-confidence noise on a phone mic, and
+    // bestSpeechParse only consults them to fill in a field the top
+    // alternative missed entirely, not to second-guess one it already got.
+    recognition.maxAlternatives = 3;
 
     btn.classList.add("listening");
     btn.disabled = true;
