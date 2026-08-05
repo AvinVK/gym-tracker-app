@@ -1493,6 +1493,14 @@ button:disabled {
   object-fit: cover;
   flex-shrink: 0;
   background: #f1effe;
+  position: relative;
+  transform-origin: left top;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.mngex-row:hover .mngex-thumb {
+  transform: scale(3);
+  z-index: 1;
+  box-shadow: 0 10px 24px -6px rgba(30, 20, 60, .35);
 }
 .mngex-name {
   font-size: 14px;
