@@ -1410,16 +1410,40 @@ function parseSpokenSet(text) {
       || t.match(/weight\D{0,10}?(\d+(?:\.\d+)?)/); // "weight 30" said without a unit
     if (weightMatch) weight = parseFloat(weightMatch[1]);
   }
-  const repsMatch = t.match(/(\d+(?:\.\d+)?)\s*reps?/);
+  // "reps" is a short, easily-mistranscribed word — speech recognizers
+  // commonly render it as "wraps", "raps", or "repetitions" instead, so this
+  // accepts those too rather than requiring an exact match. Both word orders
+  // are covered ("20 reps" and "reps 20"), same as the weight pattern above.
+  const REPS_WORD = "reps?|rep(?:')?s|repetitions?|repeats?|wraps?|raps?";
+  const repsMatch = t.match(new RegExp(`(\\d+(?:\\.\\d+)?)\\s*(?:${REPS_WORD})\\b`))
+    || t.match(new RegExp(`(?:${REPS_WORD})\\D{0,10}?(\\d+(?:\\.\\d+)?)`));
   let reps = repsMatch ? Math.round(parseFloat(repsMatch[1])) : null;
   if (reps == null) {
-    // No explicit "reps" keyword — fall back to the first number in the
-    // phrase that wasn't already claimed as the weight.
+    // No recognizable reps keyword at all — fall back to the first number in
+    // the phrase that wasn't already claimed as the weight.
     const nums = [...t.matchAll(/\d+(?:\.\d+)?/g)].map(m => parseFloat(m[0]));
     const candidate = nums.find(n => n !== weight);
     if (candidate != null) reps = Math.round(candidate);
   }
   return { reps, weight };
+}
+
+// Tries each speech-recognition alternative (best guess first) through
+// parseFn and keeps the first one that fills in every field - the top
+// alternative sometimes mishears a short word like "reps" while a
+// lower-ranked one gets it right, so checking a few before settling
+// meaningfully improves accuracy over trusting alternative #1 alone. Falls
+// back to the first alternative that got at least one field, or an empty
+// parse of the top alternative if none matched anything.
+function bestSpeechParse(results, parseFn) {
+  let partial = null;
+  for (let i = 0; i < results.length; i++) {
+    const parsed = parseFn(results[i].transcript);
+    const values = Object.values(parsed);
+    if (values.length && values.every(v => v != null)) return parsed;
+    if (!partial && values.some(v => v != null)) partial = parsed;
+  }
+  return partial || parseFn(results[0]?.transcript || "");
 }
 
 // Same idea as parseSpokenSet, but for cardio: "15 minutes at level 6",
@@ -1453,7 +1477,11 @@ function initVoiceSetButton(block) {
     const recognition = new SpeechRecognitionCtor();
     recognition.lang = "en-US";
     recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+    // >1 so a mis-transcribed "reps" in the top guess can still be caught by
+    // checking the recognizer's other candidate transcripts (bestSpeechParse
+    // below) instead of failing outright on whichever one happened to be
+    // ranked first.
+    recognition.maxAlternatives = 5;
 
     btn.classList.add("listening");
     btn.disabled = true;
@@ -1470,7 +1498,7 @@ function initVoiceSetButton(block) {
       const transcript = e.results[0][0].transcript;
       const isCardio = block.dataset.exerciseType === "cardio";
       if (isCardio) {
-        const { duration, level } = parseSpokenCardioSet(transcript);
+        const { duration, level } = bestSpeechParse(e.results[0], parseSpokenCardioSet);
         if (duration == null && level == null) {
           toast(`Didn't catch that: "${transcript}"`);
           return;
@@ -1483,7 +1511,7 @@ function initVoiceSetButton(block) {
         if (duration != null) checkForPR(block, targetRow, block.querySelector(".ex-exercise").value, true);
         return;
       }
-      const { reps, weight } = parseSpokenSet(transcript);
+      const { reps, weight } = bestSpeechParse(e.results[0], parseSpokenSet);
       if (reps == null && weight == null) {
         toast(`Didn't catch that: "${transcript}"`);
         return;
