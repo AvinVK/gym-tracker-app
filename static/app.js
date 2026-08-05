@@ -939,9 +939,14 @@ function setOptionFieldValue(container, value) {
   hidden.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-function setOptionFieldOptions(container, options, { emptyText, images } = {}) {
+function setOptionFieldOptions(container, options, { emptyText, images, defaultOptions } = {}) {
   container.__options = options;
   container.__images = images || {};
+  // A curated subset to show first (e.g. the exercise picker's hand-picked
+  // list) - openOptionPicker() shows only this until "Show all" is tapped,
+  // so a long imported catalog doesn't bury the familiar exercises. Falls
+  // back to the full list when there's no meaningful subset to prefer.
+  container.__defaultOptions = (defaultOptions && defaultOptions.length) ? defaultOptions : null;
   const btn = container.querySelector(".option-field-btn");
   const hidden = container.querySelector("input[type=hidden]");
   const valueEl = container.querySelector(".option-field-value");
@@ -960,20 +965,35 @@ function setOptionFieldOptions(container, options, { emptyText, images } = {}) {
   }
 }
 
-function openOptionPicker(container) {
+function renderOptionPickerList(container, { showAll } = {}) {
   const options = container.__options || [];
-  if (!options.length) return;
-  opActiveContainer = container;
-  opTitle.textContent = container.dataset.title || "Select";
+  const defaultOptions = container.__defaultOptions;
+  // If the current value is already picked and isn't in the curated subset,
+  // start expanded - otherwise it'd look like the selection vanished.
   const current = container.querySelector("input[type=hidden]").value;
+  const visible = (!showAll && defaultOptions && (!current || defaultOptions.includes(current)))
+    ? defaultOptions
+    : options;
   const images = container.__images || {};
-  opList.innerHTML = options
+  let html = visible
     .map(o => {
       const imgUrl = images[o] && images[o][0];
       const thumb = imgUrl ? `<img class="option-picker-thumb" src="${imgUrl}" alt="" loading="lazy">` : "";
       return `<button type="button" class="option-picker-item${o === current ? " selected" : ""}" data-value="${o}">${thumb}<span>${o}</span></button>`;
     })
     .join("");
+  if (visible === defaultOptions && options.length > defaultOptions.length) {
+    html += `<button type="button" class="option-picker-show-all">Show all ${options.length} exercises &darr;</button>`;
+  }
+  opList.innerHTML = html;
+}
+
+function openOptionPicker(container) {
+  const options = container.__options || [];
+  if (!options.length) return;
+  opActiveContainer = container;
+  opTitle.textContent = container.dataset.title || "Select";
+  renderOptionPickerList(container);
   opModal.hidden = false;
 }
 
@@ -983,8 +1003,13 @@ function closeOptionPicker() {
 }
 
 opList.addEventListener("click", (e) => {
+  if (!opActiveContainer) return;
+  if (e.target.closest(".option-picker-show-all")) {
+    renderOptionPickerList(opActiveContainer, { showAll: true });
+    return;
+  }
   const btn = e.target.closest(".option-picker-item");
-  if (!btn || !opActiveContainer) return;
+  if (!btn) return;
   setOptionFieldValue(opActiveContainer, btn.dataset.value);
   closeOptionPicker();
 });
@@ -1560,6 +1585,7 @@ async function onBlockMuscleChange(block) {
   setOptionFieldOptions(exField, exercises.map(ex => ex.exercise), {
     emptyText: "No exercises for this muscle yet",
     images: exerciseImages,
+    defaultOptions: exercises.filter(ex => ex.curated).map(ex => ex.exercise),
   });
   // Best guess before a specific exercise is picked (almost everything
   // under "Cardio" is duration+level) — the exercise dropdown's own change

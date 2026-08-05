@@ -949,6 +949,23 @@ button:disabled {
   z-index: 1;
   box-shadow: 0 10px 24px -6px rgba(30, 20, 60, .35);
 }
+.option-picker-show-all {
+  display: block;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 12px;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-dark);
+  text-align: center;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 8px;
+  transition: background .15s ease;
+}
+.option-picker-show-all:hover { background: #f6f5ff; }
 
 /* ---------------- Date field (custom in-app picker) ---------------- */
 .date-field-btn {

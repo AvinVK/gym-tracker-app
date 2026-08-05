@@ -13,11 +13,14 @@ EXERCISE_SEED_PATH = os.path.join(BASE_DIR, "data", "exercise_seed.json")
 
 
 def _load_seed_exercises():
-    """Each row is {target_muscle, exercise, images}: images is a list of
-    /exercise-images/... URLs (possibly empty) - see data/exercise_seed.json
-    for provenance (merged from the app's original hand-curated list plus
-    free-exercise-db, matched by name so historical exercise_log rows keep
-    resolving to the same exercise text)."""
+    """Each row is {target_muscle, exercise, images, curated}: images is a
+    list of /exercise-images/... URLs (possibly empty); curated marks the
+    app's original hand-picked 73 (vs. the ~850 bulk-imported from
+    free-exercise-db) so the picker can default to the familiar list instead
+    of dumping every imported variant on someone at once - see
+    data/exercise_seed.json for full provenance. Matched by name against the
+    original list so historical exercise_log rows keep resolving to the same
+    exercise text."""
     with open(EXERCISE_SEED_PATH, encoding="utf-8") as f:
         return json.load(f)
 
@@ -28,7 +31,8 @@ CREATE TABLE IF NOT EXISTS exercise_plan (
     target_muscle TEXT NOT NULL,
     exercise TEXT NOT NULL,
     type TEXT NOT NULL DEFAULT 'strength',
-    images TEXT
+    images TEXT,
+    curated INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS workout_log (
@@ -157,10 +161,12 @@ def init_db():
     _ensure_column(conn, "users", "email", "TEXT")
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email)")
     _ensure_column(conn, "exercise_plan", "images", "TEXT")
+    _ensure_column(conn, "exercise_plan", "curated", "INTEGER NOT NULL DEFAULT 0")
     if first_run:
         conn.executemany(
-            "INSERT INTO exercise_plan (target_muscle, exercise, images) VALUES (?, ?, ?)",
-            [(r["target_muscle"], r["exercise"], json.dumps(r["images"]) if r["images"] else None)
+            "INSERT INTO exercise_plan (target_muscle, exercise, images, curated) VALUES (?, ?, ?, ?)",
+            [(r["target_muscle"], r["exercise"], json.dumps(r["images"]) if r["images"] else None,
+              1 if r.get("curated") else 0)
              for r in _load_seed_exercises()],
         )
     # Cheap default classification, not a one-time migration: exercises under
@@ -180,11 +186,13 @@ def reseed_exercise_plan():
     conn = sqlite3.connect(DB_PATH)
     conn.executescript(SCHEMA)
     _ensure_column(conn, "exercise_plan", "images", "TEXT")
+    _ensure_column(conn, "exercise_plan", "curated", "INTEGER NOT NULL DEFAULT 0")
     seed = _load_seed_exercises()
     conn.execute("DELETE FROM exercise_plan")
     conn.executemany(
-        "INSERT INTO exercise_plan (target_muscle, exercise, images) VALUES (?, ?, ?)",
-        [(r["target_muscle"], r["exercise"], json.dumps(r["images"]) if r["images"] else None) for r in seed],
+        "INSERT INTO exercise_plan (target_muscle, exercise, images, curated) VALUES (?, ?, ?, ?)",
+        [(r["target_muscle"], r["exercise"], json.dumps(r["images"]) if r["images"] else None,
+          1 if r.get("curated") else 0) for r in seed],
     )
     conn.execute("UPDATE exercise_plan SET type = 'cardio' WHERE target_muscle = 'Cardio'")
     conn.commit()

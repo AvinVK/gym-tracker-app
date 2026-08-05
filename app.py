@@ -259,7 +259,8 @@ def list_muscles():
 def exercises_by_muscle(muscle):
     db = get_db()
     rows = db.execute(
-        "SELECT id, exercise, type, images FROM exercise_plan WHERE target_muscle = ? ORDER BY exercise",
+        "SELECT id, exercise, type, images, curated FROM exercise_plan WHERE target_muscle = ? "
+        "ORDER BY curated DESC, exercise",
         (muscle,),
     ).fetchall()
     return jsonify([_exercise_plan_dict(r) for r in rows])
