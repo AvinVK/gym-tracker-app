@@ -640,7 +640,12 @@ function initEnergyField(container) {
 document.querySelectorAll("[data-energy-field]").forEach(initEnergyField);
 
 // ---------------- Custom "time since eating" picker ----------------
-const MEAL_TIMING_HOURS = Array.from({ length: 13 }, (_, i) => i * 0.5); // 0 to 6 hrs, half-hour steps
+// 10/20/30/40 min, then 1 hr and up in 30-min steps to 6 hrs - stored as
+// hours (rounded to 2dp) since that's what workout_log.hours_since_meal is,
+// but generated from minutes here since that's how the increments were
+// actually specified.
+const MEAL_TIMING_MINUTES = [10, 20, 30, 40, ...Array.from({ length: 11 }, (_, i) => 60 + i * 30)];
+const MEAL_TIMING_HOURS = MEAL_TIMING_MINUTES.map(m => Math.round((m / 60) * 100) / 100);
 
 const mtpModal = document.getElementById("meal-timing-picker-modal");
 const mtpHoursCol = document.getElementById("mtp-hours");
@@ -649,6 +654,10 @@ let mtpSelected = null;
 
 function formatMealTimingLabel(value) {
   const n = parseFloat(value);
+  if (n < 1) {
+    const mins = Math.round(n * 60);
+    return `${mins} min${mins === 1 ? "" : "s"} ago`;
+  }
   return `${n} ${n === 1 ? "hr" : "hrs"} ago`;
 }
 
@@ -1013,7 +1022,10 @@ function openOptionPicker(container) {
   opSearch.value = "";
   renderOptionPickerList(container);
   opModal.hidden = false;
-  opSearch.focus();
+  // Deliberately not auto-focusing the search box here - on mobile that
+  // pops the keyboard open the instant the picker appears, covering half
+  // the list before the user has asked to type anything. It only opens now
+  // when they actually tap the search field themselves.
 }
 
 opSearch.addEventListener("input", () => {
