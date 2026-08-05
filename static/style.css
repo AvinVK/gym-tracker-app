@@ -913,9 +913,12 @@ button:disabled {
   margin-bottom: 14px;
 }
 .option-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   border: none;
   background: none;
-  padding: 10px 12px;
+  padding: 8px 12px;
   font-size: 14px;
   font-weight: 600;
   color: var(--ink);
@@ -929,6 +932,14 @@ button:disabled {
 .option-picker-item.selected {
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   color: #fff;
+}
+.option-picker-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #f1effe;
 }
 
 /* ---------------- Date field (custom in-app picker) ---------------- */

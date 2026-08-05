@@ -939,8 +939,9 @@ function setOptionFieldValue(container, value) {
   hidden.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-function setOptionFieldOptions(container, options, { emptyText } = {}) {
+function setOptionFieldOptions(container, options, { emptyText, images } = {}) {
   container.__options = options;
+  container.__images = images || {};
   const btn = container.querySelector(".option-field-btn");
   const hidden = container.querySelector("input[type=hidden]");
   const valueEl = container.querySelector(".option-field-value");
@@ -965,8 +966,13 @@ function openOptionPicker(container) {
   opActiveContainer = container;
   opTitle.textContent = container.dataset.title || "Select";
   const current = container.querySelector("input[type=hidden]").value;
+  const images = container.__images || {};
   opList.innerHTML = options
-    .map(o => `<button type="button" class="option-picker-item${o === current ? " selected" : ""}" data-value="${o}">${o}</button>`)
+    .map(o => {
+      const imgUrl = images[o] && images[o][0];
+      const thumb = imgUrl ? `<img class="option-picker-thumb" src="${imgUrl}" alt="" loading="lazy">` : "";
+      return `<button type="button" class="option-picker-item${o === current ? " selected" : ""}" data-value="${o}">${thumb}<span>${o}</span></button>`;
+    })
     .join("");
   opModal.hidden = false;
 }
@@ -1545,12 +1551,16 @@ async function onBlockMuscleChange(block) {
   }
   const exercises = await api.get(`/api/exercises-by-muscle/${encodeURIComponent(muscle)}`);
   block.__exerciseTypes = Object.fromEntries(exercises.map(ex => [ex.exercise, ex.type]));
+  const exerciseImages = Object.fromEntries(exercises.map(ex => [ex.exercise, ex.images]));
   // setOptionFieldOptions resets the exercise value (silently, no "change"
   // event) if it's not one of the new muscle's exercises - so the extra
   // field needs updating here too, not just from the exercise dropdown's
   // own change handler below, or switching away from Treadmill Walk would
   // leave a stale Inclination column showing.
-  setOptionFieldOptions(exField, exercises.map(ex => ex.exercise), { emptyText: "No exercises for this muscle yet" });
+  setOptionFieldOptions(exField, exercises.map(ex => ex.exercise), {
+    emptyText: "No exercises for this muscle yet",
+    images: exerciseImages,
+  });
   // Best guess before a specific exercise is picked (almost everything
   // under "Cardio" is duration+level) — the exercise dropdown's own change
   // handler below corrects this once a specific exercise is chosen.

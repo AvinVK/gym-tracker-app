@@ -9,87 +9,26 @@ import config
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, config.get("DB_NAME"))
 
-SEED_EXERCISES = [
-    ("Chest", "Bench Press"),
-    ("Chest", "Incline Press"),
-    ("Chest", "Decline Press"),
-    ("Chest", "Pec Deck Fly"),
-    ("Chest", "Upper chest cable crossover"),
-    ("Chest", "Lower chest cable crossover"),
-    ("Chest", "Pushups"),
-    ("Chest", "decline Pushups"),
-    ("Shoulders", "Dumbell Shoulder Press"),
-    ("Shoulders", "Machine Shoulder Press"),
-    ("Shoulders", "Face Pulls"),
-    ("Shoulders", "Lateral Raises"),
-    ("Shoulders", "Front Raises"),
-    ("Shoulders", "Arnold Press"),
-    ("Shoulders", "Rotation using plates"),
-    ("Triceps", "Tricep Pushdown"),
-    ("Triceps", "Tricep Dips"),
-    ("Triceps", "Skullcrushers"),
-    ("Triceps", "Overhead Cable Extension"),
-    ("Triceps", "Cable Kickback"),
-    ("Triceps", "Overhead Triceps Press"),
-    ("Back", "Deadlift"),
-    ("Back", "Lat pulldown"),
-    ("Back", "Close grip pulldown"),
-    ("Back", "Normal grip pulldown"),
-    ("Back", "Close grip machine pulldown"),
-    ("Back", "Single hand rowing"),
-    ("Back", "Seated Cable Row"),
-    ("Back", "Barbell / Dumbbell Row"),
-    ("Back", "Single arm pulldown"),
-    ("Back", "Cable Pulldown"),
-    ("Back", "Machine Rowing"),
-    ("Back", "Sled Rowing"),
-    ("Back", "Pull ups"),
-    ("Legs", "Squats"),
-    ("Legs", "Romanian Deadlift"),
-    ("Legs", "Leg Press"),
-    ("Legs", "Walking Lunges"),
-    ("Legs", "Leg Curl"),
-    ("Legs", "Calf Raises"),
-    ("Legs", "Leg Extensions"),
-    ("Legs", "Bulgarian Squats"),
-    ("Legs", "Jump Squats"),
-    ("Legs", "Box Jumps"),
-    ("Legs", "Sled Pull Push"),
-    ("Legs", "Hip Thrusts"),
-    ("Biceps", "Bicep Curls"),
-    ("Biceps", "Hammer Curls"),
-    ("Biceps", "Wall supported Curls"),
-    ("Biceps", "Preacher Curls"),
-    ("Biceps", "21ones"),
-    ("Biceps", "Decline Bench Curls"),
-    ("Biceps", "Cable Curls"),
-    ("Abs", "Crunches"),
-    ("Abs", "Abs Machine"),
-    ("Abs", "Leg raises"),
-    ("Abs", "Russian Twists"),
-    ("Abs", "Decline Sit ups"),
-    ("Abs", "Dumbell Side bends"),
-    ("Abs", "Standing Crunches"),
-    ("Abs", "Plancks"),
-    ("Abs", "Cable Crunches"),
-    ("Abs", "Knee Raises"),
-    ("Cardio", "Treadmill Walk"),
-    ("Cardio", "Step Machine"),
-    ("Cardio", "Burpees"),
-    ("Cardio", "Mountain Climbers"),
-    ("Cardio", "Stepper"),
-    ("Cardio", "Rope waves"),
-    ("Cardio", "Kettle Swings"),
-    ("Cardio", "Ball Slams"),
-    ("Cardio", "Knee Touches"),
-    ("Cardio", "Skipping")]
+EXERCISE_SEED_PATH = os.path.join(BASE_DIR, "data", "exercise_seed.json")
+
+
+def _load_seed_exercises():
+    """Each row is {target_muscle, exercise, images}: images is a list of
+    /exercise-images/... URLs (possibly empty) - see data/exercise_seed.json
+    for provenance (merged from the app's original hand-curated list plus
+    free-exercise-db, matched by name so historical exercise_log rows keep
+    resolving to the same exercise text)."""
+    with open(EXERCISE_SEED_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS exercise_plan (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     target_muscle TEXT NOT NULL,
     exercise TEXT NOT NULL,
-    type TEXT NOT NULL DEFAULT 'strength'
+    type TEXT NOT NULL DEFAULT 'strength',
+    images TEXT
 );
 
 CREATE TABLE IF NOT EXISTS workout_log (
@@ -217,10 +156,12 @@ def init_db():
     _ensure_column(conn, "users", "password_hash", "TEXT")
     _ensure_column(conn, "users", "email", "TEXT")
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email)")
+    _ensure_column(conn, "exercise_plan", "images", "TEXT")
     if first_run:
         conn.executemany(
-            "INSERT INTO exercise_plan (target_muscle, exercise) VALUES (?, ?)",
-            SEED_EXERCISES,
+            "INSERT INTO exercise_plan (target_muscle, exercise, images) VALUES (?, ?, ?)",
+            [(r["target_muscle"], r["exercise"], json.dumps(r["images"]) if r["images"] else None)
+             for r in _load_seed_exercises()],
         )
     # Cheap default classification, not a one-time migration: exercises under
     # the seeded "Cardio" muscle group are duration+level (treadmill, step
@@ -235,17 +176,20 @@ def init_db():
 
 
 def reseed_exercise_plan():
-    """Replace all exercise_plan rows with the current SEED_EXERCISES list."""
+    """Replace all exercise_plan rows with the current data/exercise_seed.json contents."""
     conn = sqlite3.connect(DB_PATH)
     conn.executescript(SCHEMA)
+    _ensure_column(conn, "exercise_plan", "images", "TEXT")
+    seed = _load_seed_exercises()
     conn.execute("DELETE FROM exercise_plan")
     conn.executemany(
-        "INSERT INTO exercise_plan (target_muscle, exercise) VALUES (?, ?)",
-        SEED_EXERCISES,
+        "INSERT INTO exercise_plan (target_muscle, exercise, images) VALUES (?, ?, ?)",
+        [(r["target_muscle"], r["exercise"], json.dumps(r["images"]) if r["images"] else None) for r in seed],
     )
+    conn.execute("UPDATE exercise_plan SET type = 'cardio' WHERE target_muscle = 'Cardio'")
     conn.commit()
     conn.close()
-    print(f"Reseeded exercise_plan with {len(SEED_EXERCISES)} exercises.")
+    print(f"Reseeded exercise_plan with {len(seed)} exercises.")
 
 def backfill_owner(user_id):
     """One-time cleanup: assign any pre-existing workout_log/exercise_log rows
