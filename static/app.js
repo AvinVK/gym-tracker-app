@@ -926,6 +926,7 @@ function initSetLevelField(container) {
 // ---------------- Custom option picker (muscle group / exercise dropdowns) ----------------
 const opModal = document.getElementById("option-picker-modal");
 const opTitle = document.getElementById("op-title");
+const opSearch = document.getElementById("op-search");
 const opList = document.getElementById("op-list");
 let opActiveContainer = null;
 
@@ -939,8 +940,14 @@ function setOptionFieldValue(container, value) {
   hidden.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-function setOptionFieldOptions(container, options, { emptyText } = {}) {
+function setOptionFieldOptions(container, options, { emptyText, images, defaultOptions } = {}) {
   container.__options = options;
+  container.__images = images || {};
+  // A curated subset to show first (e.g. the exercise picker's hand-picked
+  // list) - openOptionPicker() shows only this until "Show all" is tapped,
+  // so a long imported catalog doesn't bury the familiar exercises. Falls
+  // back to the full list when there's no meaningful subset to prefer.
+  container.__defaultOptions = (defaultOptions && defaultOptions.length) ? defaultOptions : null;
   const btn = container.querySelector(".option-field-btn");
   const hidden = container.querySelector("input[type=hidden]");
   const valueEl = container.querySelector(".option-field-value");
@@ -959,17 +966,60 @@ function setOptionFieldOptions(container, options, { emptyText } = {}) {
   }
 }
 
+function renderOptionPickerList(container, { showAll, query } = {}) {
+  const options = container.__options || [];
+  const defaultOptions = container.__defaultOptions;
+  const current = container.querySelector("input[type=hidden]").value;
+  const q = (query || "").trim().toLowerCase();
+
+  let visible;
+  if (q) {
+    // A search query always searches the full catalog, not just the
+    // curated subset - typing "che" is a request to find something
+    // specific, not a request to browse.
+    visible = options.filter(o => o.toLowerCase().includes(q));
+  } else {
+    // If the current value is already picked and isn't in the curated
+    // subset, start expanded - otherwise it'd look like the selection
+    // vanished.
+    visible = (!showAll && defaultOptions && (!current || defaultOptions.includes(current)))
+      ? defaultOptions
+      : options;
+  }
+
+  const images = container.__images || {};
+  if (!visible.length) {
+    opList.innerHTML = `<p class="option-picker-empty">No matches</p>`;
+    return;
+  }
+  let html = visible
+    .map(o => {
+      const imgUrl = images[o] && images[o][0];
+      const thumb = imgUrl ? `<img class="option-picker-thumb" src="${imgUrl}" alt="" loading="lazy">` : "";
+      return `<button type="button" class="option-picker-item${o === current ? " selected" : ""}" data-value="${o}">${thumb}<span>${o}</span></button>`;
+    })
+    .join("");
+  if (!q && visible === defaultOptions && options.length > defaultOptions.length) {
+    html += `<button type="button" class="option-picker-show-all">Show all ${options.length} exercises &darr;</button>`;
+  }
+  opList.innerHTML = html;
+}
+
 function openOptionPicker(container) {
   const options = container.__options || [];
   if (!options.length) return;
   opActiveContainer = container;
   opTitle.textContent = container.dataset.title || "Select";
-  const current = container.querySelector("input[type=hidden]").value;
-  opList.innerHTML = options
-    .map(o => `<button type="button" class="option-picker-item${o === current ? " selected" : ""}" data-value="${o}">${o}</button>`)
-    .join("");
+  opSearch.value = "";
+  renderOptionPickerList(container);
   opModal.hidden = false;
+  opSearch.focus();
 }
+
+opSearch.addEventListener("input", () => {
+  if (!opActiveContainer) return;
+  renderOptionPickerList(opActiveContainer, { query: opSearch.value });
+});
 
 function closeOptionPicker() {
   opModal.hidden = true;
@@ -977,8 +1027,13 @@ function closeOptionPicker() {
 }
 
 opList.addEventListener("click", (e) => {
+  if (!opActiveContainer) return;
+  if (e.target.closest(".option-picker-show-all")) {
+    renderOptionPickerList(opActiveContainer, { showAll: true });
+    return;
+  }
   const btn = e.target.closest(".option-picker-item");
-  if (!btn || !opActiveContainer) return;
+  if (!btn) return;
   setOptionFieldValue(opActiveContainer, btn.dataset.value);
   closeOptionPicker();
 });
@@ -1545,12 +1600,17 @@ async function onBlockMuscleChange(block) {
   }
   const exercises = await api.get(`/api/exercises-by-muscle/${encodeURIComponent(muscle)}`);
   block.__exerciseTypes = Object.fromEntries(exercises.map(ex => [ex.exercise, ex.type]));
+  const exerciseImages = Object.fromEntries(exercises.map(ex => [ex.exercise, ex.images]));
   // setOptionFieldOptions resets the exercise value (silently, no "change"
   // event) if it's not one of the new muscle's exercises - so the extra
   // field needs updating here too, not just from the exercise dropdown's
   // own change handler below, or switching away from Treadmill Walk would
   // leave a stale Inclination column showing.
-  setOptionFieldOptions(exField, exercises.map(ex => ex.exercise), { emptyText: "No exercises for this muscle yet" });
+  setOptionFieldOptions(exField, exercises.map(ex => ex.exercise), {
+    emptyText: "No exercises for this muscle yet",
+    images: exerciseImages,
+    defaultOptions: exercises.filter(ex => ex.curated).map(ex => ex.exercise),
+  });
   // Best guess before a specific exercise is picked (almost everything
   // under "Cardio" is duration+level) — the exercise dropdown's own change
   // handler below corrects this once a specific exercise is chosen.
@@ -1743,6 +1803,30 @@ const cardExerciseDetail = document.getElementById("card-exercise-detail");
 let currentWorkouts = [];
 let currentExerciseLogs = [];
 let currentDetailDate = null;
+let historyPage = 0; // 0 = this calendar week, 1 = last week, etc.
+let historyPhaseFilter = null; // null = All, else a CYCLE_PHASES key
+
+// Monday-start week containing dateStr, as a local midnight Date.
+function weekStartDate(dateStr) {
+  const d = new Date(dateStr + "T00:00:00");
+  const day = (d.getDay() + 6) % 7; // Mon=0 ... Sun=6
+  d.setDate(d.getDate() - day);
+  return d;
+}
+
+function weekIndexFor(dateStr) {
+  const msPerWeek = 7 * 86400000;
+  return Math.round((weekStartDate(todayStr) - weekStartDate(dateStr)) / msPerWeek);
+}
+
+function formatWeekRangeLabel(page) {
+  const start = weekStartDate(todayStr);
+  start.setDate(start.getDate() - page * 7);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  const fmt = d => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return page === 0 ? `This Week (${fmt(start)} – ${fmt(end)})` : `${fmt(start)} – ${fmt(end)}`;
+}
 
 function showWorkoutLog() {
   cardExerciseDetail.hidden = true;
@@ -1810,6 +1894,10 @@ function workoutRowEdit(w) {
     </tr>`;
 }
 
+// Doubles as both the phase-color legend and the history filter: each pill
+// is clickable, filters the table to that phase, and shows which filter
+// (if any) is currently active - one control instead of a legend plus a
+// separate filter dropdown.
 function renderPhaseLegend() {
   const legend = document.getElementById("workout-log-phase-legend");
   if (!currentUser || !currentUser.last_period_date) {
@@ -1817,17 +1905,59 @@ function renderPhaseLegend() {
     return;
   }
   legend.hidden = false;
-  legend.innerHTML = CYCLE_PHASES.map(p =>
-    `<span class="phase-legend-item"><span class="phase-dot" style="background:${p.color}"></span>${p.label}</span>`
+  const allPill = `<button type="button" class="phase-legend-item phase-filter-btn${historyPhaseFilter === null ? " active" : ""}" data-phase="">All</button>`;
+  const phasePills = CYCLE_PHASES.map(p =>
+    `<button type="button" class="phase-legend-item phase-filter-btn${historyPhaseFilter === p.key ? " active" : ""}" data-phase="${p.key}"><span class="phase-dot" style="background:${p.color}"></span>${p.label}</button>`
   ).join("");
+  legend.innerHTML = allPill + phasePills;
+  legend.querySelectorAll(".phase-filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      historyPhaseFilter = btn.dataset.phase || null;
+      renderWorkoutTable();
+    });
+  });
 }
 
 function renderWorkoutTable() {
+  const pageWorkouts = historyPhaseFilter
+    ? currentWorkouts.filter(w => cyclePhaseForDate(w.date)?.key === historyPhaseFilter)
+    : currentWorkouts.filter(w => weekIndexFor(w.date) === historyPage);
   const wBody = document.querySelector("#table-workout-log tbody");
-  wBody.innerHTML = currentWorkouts.map(workoutRowView).join("");
+  wBody.innerHTML = pageWorkouts.map(workoutRowView).join("");
   bindWorkoutRowEvents();
   renderPhaseLegend();
+
+  document.getElementById("history-pager").hidden = !!historyPhaseFilter;
+  if (!historyPhaseFilter) renderHistoryPager();
+
+  const emptyEl = document.getElementById("history-empty");
+  if (historyPhaseFilter && pageWorkouts.length === 0) {
+    const phase = CYCLE_PHASES.find(p => p.key === historyPhaseFilter);
+    emptyEl.textContent = `No workouts logged during your ${phase.label} yet.`;
+    emptyEl.hidden = false;
+  } else {
+    emptyEl.hidden = true;
+  }
 }
+
+function renderHistoryPager() {
+  const maxPage = currentWorkouts.length
+    ? Math.max(...currentWorkouts.map(w => weekIndexFor(w.date)))
+    : 0;
+  document.querySelector("#history-pager .history-pager-label").textContent = formatWeekRangeLabel(historyPage);
+  document.getElementById("history-pager-newer").disabled = historyPage === 0;
+  document.getElementById("history-pager-older").disabled = historyPage >= maxPage;
+}
+
+document.getElementById("history-pager-newer").addEventListener("click", () => {
+  if (historyPage === 0) return;
+  historyPage--;
+  renderWorkoutTable();
+});
+document.getElementById("history-pager-older").addEventListener("click", () => {
+  historyPage++;
+  renderWorkoutTable();
+});
 
 function bindWorkoutRowEvents() {
   const wBody = document.querySelector("#table-workout-log tbody");
@@ -1871,6 +2001,8 @@ function bindWorkoutEditRowEvents(id) {
 
 async function loadHistory() {
   showWorkoutLog();
+  historyPage = 0;
+  historyPhaseFilter = null;
   currentWorkouts = await api.get("/api/workout-log");
   renderWorkoutTable();
 }
@@ -2103,7 +2235,9 @@ function renderPerformanceChart(series) {
 // best value and the date it was set, then buckets that exercise into
 // whichever cycle phase that date falls in. An exercise with no PR date
 // falling in a tracked cycle (or logged before cycle tracking was turned
-// on) simply doesn't appear in any bucket.
+// on) simply doesn't appear in any bucket. An exercise logged only once
+// is skipped entirely - same "nothing to beat yet" rule as checkForPR's
+// live PR toast, since a lone data point trivially "wins" its own value.
 function computePRPhaseBreakdown(history) {
   const byExercise = {};
   history.forEach(x => {
@@ -2119,6 +2253,8 @@ function computePRPhaseBreakdown(history) {
     const weightCount = rows.filter(x => x.weight_kg != null).length;
     const durationCount = rows.filter(x => x.duration_minutes != null).length;
     const metricKey = durationCount > weightCount ? "duration_minutes" : "weight_kg";
+    const metricCount = metricKey === "weight_kg" ? weightCount : durationCount;
+    if (metricCount < 2) return;
     const unit = metricKey === "weight_kg" ? "kg" : "min";
     let best = null;
     rows.forEach(x => {
@@ -2439,3 +2575,4 @@ async function restoreDraft() {
 // loadMuscleOptions()/checkOnboarding() already kicked off earlier
 // (see "Onboarding / profile picker"); restoreDraft() runs per-profile
 // from inside selectProfile() once we know who's using the app.
+

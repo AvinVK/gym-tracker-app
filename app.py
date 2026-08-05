@@ -231,13 +231,19 @@ def upload_avatar(user_id):
 # ---------------------------------------------------------------
 # Exercise Plan API
 # ---------------------------------------------------------------
+def _exercise_plan_dict(row):
+    d = dict(row)
+    d["images"] = json.loads(d["images"]) if d.get("images") else []
+    return d
+
+
 @app.route("/api/exercise-plan", methods=["GET"])
 def list_exercise_plan():
     db = get_db()
     rows = db.execute(
         "SELECT * FROM exercise_plan ORDER BY target_muscle, id"
     ).fetchall()
-    return jsonify([dict(r) for r in rows])
+    return jsonify([_exercise_plan_dict(r) for r in rows])
 
 
 @app.route("/api/muscles", methods=["GET"])
@@ -253,10 +259,11 @@ def list_muscles():
 def exercises_by_muscle(muscle):
     db = get_db()
     rows = db.execute(
-        "SELECT id, exercise, type FROM exercise_plan WHERE target_muscle = ? ORDER BY exercise",
+        "SELECT id, exercise, type, images, curated FROM exercise_plan WHERE target_muscle = ? "
+        "ORDER BY curated DESC, exercise",
         (muscle,),
     ).fetchall()
-    return jsonify([dict(r) for r in rows])
+    return jsonify([_exercise_plan_dict(r) for r in rows])
 
 
 # ---------------------------------------------------------------

@@ -180,6 +180,7 @@
 <div id="option-picker-modal" class="modal-overlay" hidden>
   <div class="modal-card option-picker-card">
     <h2 id="op-title">Select</h2>
+    <input type="text" class="option-picker-search" id="op-search" placeholder="Search..." autocomplete="off">
     <div class="option-picker-list" id="op-list"></div>
     <button type="button" class="secondary" id="op-cancel">Cancel</button>
   </div>
@@ -285,6 +286,7 @@
     <div class="card" id="card-workout-log">
       <h2>Workout Log</h2>
       <div class="phase-legend" id="workout-log-phase-legend" hidden></div>
+      <p class="placeholder-text" id="history-empty" hidden></p>
       <div class="table-scroll">
         <table class="data-table" id="table-workout-log">
           <thead>
@@ -292,6 +294,11 @@
           </thead>
           <tbody></tbody>
         </table>
+      </div>
+      <div class="history-pager" id="history-pager">
+        <button type="button" class="history-pager-btn" id="history-pager-newer">&larr; Newer</button>
+        <span class="history-pager-label"></span>
+        <button type="button" class="history-pager-btn" id="history-pager-older">Older &rarr;</button>
       </div>
     </div>
 

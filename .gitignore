@@ -1,5 +1,22 @@
 __pycache__/
 *.pyc
 gym_tracker*.db
+gym_tracker*.db.bak*
+dev_server.log
 secret_key.txt
 .claude/
+
+# Node / Capacitor
+node_modules/
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/captures/
+android/.cxx/
+android/.idea/
+ios/App/build/
+ios/App/Pods/
+ios/App/App.xcworkspace/xcuserdata/
+ios/App/App.xcodeproj/xcuserdata/
+ios/App/DerivedData/

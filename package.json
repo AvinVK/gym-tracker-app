@@ -1,0 +1,32 @@
+{
+  "name": "gym-tracker-app",
+  "version": "1.0.0",
+  "description": "A small local web app: Flask backend + SQLite database + a plain HTML/JS frontend.\r Replaces the spreadsheet version with a real cascading dropdown (pick a muscle group,\r only see exercises for that muscle) and a proper database instead of formulas.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AvinVK/gym-tracker-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/AvinVK/gym-tracker-app/issues"
+  },
+  "homepage": "https://github.com/AvinVK/gym-tracker-app#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.0"
+  }
+}

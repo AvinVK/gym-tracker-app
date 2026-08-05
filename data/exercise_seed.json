@@ -1,0 +1,4364 @@
+[
+  {
+    "target_muscle": "Chest",
+    "exercise": "Lower chest cable crossover",
+    "images": [
+      "/exercise-images/Low_Cable_Crossover/0.jpg",
+      "/exercise-images/Low_Cable_Crossover/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Pushups",
+    "images": [
+      "/exercise-images/Pushups/0.jpg",
+      "/exercise-images/Pushups/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "decline Pushups",
+    "images": [
+      "/exercise-images/Decline_Push-Up/0.jpg",
+      "/exercise-images/Decline_Push-Up/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Dumbell Shoulder Press",
+    "images": [
+      "/exercise-images/Dumbbell_Shoulder_Press/0.jpg",
+      "/exercise-images/Dumbbell_Shoulder_Press/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Machine Shoulder Press",
+    "images": [
+      "/exercise-images/Machine_Shoulder_Military_Press/0.jpg",
+      "/exercise-images/Machine_Shoulder_Military_Press/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Face Pulls",
+    "images": [
+      "/exercise-images/Face_Pull/0.jpg",
+      "/exercise-images/Face_Pull/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Tricep Pushdown",
+    "images": [
+      "/exercise-images/Triceps_Pushdown/0.jpg",
+      "/exercise-images/Triceps_Pushdown/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Overhead Triceps Press",
+    "images": [
+      "/exercise-images/Overhead_Triceps/0.jpg",
+      "/exercise-images/Overhead_Triceps/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Seated Cable Row",
+    "images": [
+      "/exercise-images/Seated_Cable_Rows/0.jpg",
+      "/exercise-images/Seated_Cable_Rows/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Sled Rowing",
+    "images": [
+      "/exercise-images/Sled_Row/0.jpg",
+      "/exercise-images/Sled_Row/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Pull ups",
+    "images": [
+      "/exercise-images/Pullups/0.jpg",
+      "/exercise-images/Pullups/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Romanian Deadlift",
+    "images": [
+      "/exercise-images/Romanian_Deadlift/0.jpg",
+      "/exercise-images/Romanian_Deadlift/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Leg Press",
+    "images": [
+      "/exercise-images/Leg_Press/0.jpg",
+      "/exercise-images/Leg_Press/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Leg Extensions",
+    "images": [
+      "/exercise-images/Leg_Extensions/0.jpg",
+      "/exercise-images/Leg_Extensions/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Hammer Curls",
+    "images": [
+      "/exercise-images/Hammer_Curls/0.jpg",
+      "/exercise-images/Hammer_Curls/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Preacher Curls",
+    "images": [
+      "/exercise-images/Preacher_Curl/0.jpg",
+      "/exercise-images/Preacher_Curl/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Crunches",
+    "images": [
+      "/exercise-images/Crunches/0.jpg",
+      "/exercise-images/Crunches/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Russian Twists",
+    "images": [
+      "/exercise-images/Russian_Twist/0.jpg",
+      "/exercise-images/Russian_Twist/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Dumbell Side bends",
+    "images": [
+      "/exercise-images/Dumbbell_Side_Bend/0.jpg",
+      "/exercise-images/Dumbbell_Side_Bend/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Plancks",
+    "images": [
+      "/exercise-images/Plank/0.jpg",
+      "/exercise-images/Plank/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Cable Crunches",
+    "images": [
+      "/exercise-images/Cable_Crunch/0.jpg",
+      "/exercise-images/Cable_Crunch/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Mountain Climbers",
+    "images": [
+      "/exercise-images/Mountain_Climbers/0.jpg",
+      "/exercise-images/Mountain_Climbers/1.jpg"
+    ],
+    "curated": true
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Rotation using plates",
+    "images": [],
+    "curated": true
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Tricep Dips",
+    "images": [],
+    "curated": true
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Skullcrushers",
+    "images": [],
+    "curated": true
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Overhead Cable Extension",
+    "images": [],
+    "curated": true
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Cable Kickback",
+    "images": [],
+    "curated": true
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Bulgarian Squats",
+    "images": [],
+    "curated": true
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Jump Squats",
+    "images": [],
+    "curated": true
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Box Jumps",
+    "images": [],
+    "curated": true
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Sled Pull Push",
+    "images": [],
+    "curated": true
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "21ones",
+    "images": [],
+    "curated": true
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Burpees",
+    "images": [],
+    "curated": true
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Stepper",
+    "images": [],
+    "curated": true
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Rope waves",
+    "images": [],
+    "curated": true
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Kettle Swings",
+    "images": [],
+    "curated": true
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Ball Slams",
+    "images": [],
+    "curated": true
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Knee Touches",
+    "images": [],
+    "curated": true
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "3/4 Sit-Up",
+    "images": [
+      "/exercise-images/3_4_Sit-Up/0.jpg",
+      "/exercise-images/3_4_Sit-Up/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Ab Crunch Machine",
+    "images": [
+      "/exercise-images/Ab_Crunch_Machine/0.jpg",
+      "/exercise-images/Ab_Crunch_Machine/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Ab Roller",
+    "images": [
+      "/exercise-images/Ab_Roller/0.jpg",
+      "/exercise-images/Ab_Roller/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Advanced Kettlebell Windmill",
+    "images": [
+      "/exercise-images/Advanced_Kettlebell_Windmill/0.jpg",
+      "/exercise-images/Advanced_Kettlebell_Windmill/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Air Bike",
+    "images": [
+      "/exercise-images/Air_Bike/0.jpg",
+      "/exercise-images/Air_Bike/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Alternate Hammer Curl",
+    "images": [
+      "/exercise-images/Alternate_Hammer_Curl/0.jpg",
+      "/exercise-images/Alternate_Hammer_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Alternate Heel Touchers",
+    "images": [
+      "/exercise-images/Alternate_Heel_Touchers/0.jpg",
+      "/exercise-images/Alternate_Heel_Touchers/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Alternate Incline Dumbbell Curl",
+    "images": [
+      "/exercise-images/Alternate_Incline_Dumbbell_Curl/0.jpg",
+      "/exercise-images/Alternate_Incline_Dumbbell_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Alternating Cable Shoulder Press",
+    "images": [
+      "/exercise-images/Alternating_Cable_Shoulder_Press/0.jpg",
+      "/exercise-images/Alternating_Cable_Shoulder_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Alternating Deltoid Raise",
+    "images": [
+      "/exercise-images/Alternating_Deltoid_Raise/0.jpg",
+      "/exercise-images/Alternating_Deltoid_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Alternating Kettlebell Press",
+    "images": [
+      "/exercise-images/Alternating_Kettlebell_Press/0.jpg",
+      "/exercise-images/Alternating_Kettlebell_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Alternating Kettlebell Row",
+    "images": [
+      "/exercise-images/Alternating_Kettlebell_Row/0.jpg",
+      "/exercise-images/Alternating_Kettlebell_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Alternating Renegade Row",
+    "images": [
+      "/exercise-images/Alternating_Renegade_Row/0.jpg",
+      "/exercise-images/Alternating_Renegade_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Anti-Gravity Press",
+    "images": [
+      "/exercise-images/Anti-Gravity_Press/0.jpg",
+      "/exercise-images/Anti-Gravity_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Arnold Dumbbell Press",
+    "images": [
+      "/exercise-images/Arnold_Dumbbell_Press/0.jpg",
+      "/exercise-images/Arnold_Dumbbell_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Around The Worlds",
+    "images": [
+      "/exercise-images/Around_The_Worlds/0.jpg",
+      "/exercise-images/Around_The_Worlds/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Backward Drag",
+    "images": [
+      "/exercise-images/Backward_Drag/0.jpg",
+      "/exercise-images/Backward_Drag/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Backward Medicine Ball Throw",
+    "images": [
+      "/exercise-images/Backward_Medicine_Ball_Throw/0.jpg",
+      "/exercise-images/Backward_Medicine_Ball_Throw/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Band Assisted Pull-Up",
+    "images": [
+      "/exercise-images/Band_Assisted_Pull-Up/0.jpg",
+      "/exercise-images/Band_Assisted_Pull-Up/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Band Hip Adductions",
+    "images": [
+      "/exercise-images/Band_Hip_Adductions/0.jpg",
+      "/exercise-images/Band_Hip_Adductions/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Band Pull Apart",
+    "images": [
+      "/exercise-images/Band_Pull_Apart/0.jpg",
+      "/exercise-images/Band_Pull_Apart/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Band Skull Crusher",
+    "images": [
+      "/exercise-images/Band_Skull_Crusher/0.jpg",
+      "/exercise-images/Band_Skull_Crusher/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Barbell Ab Rollout",
+    "images": [
+      "/exercise-images/Barbell_Ab_Rollout/0.jpg",
+      "/exercise-images/Barbell_Ab_Rollout/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Barbell Ab Rollout - On Knees",
+    "images": [
+      "/exercise-images/Barbell_Ab_Rollout_-_On_Knees/0.jpg",
+      "/exercise-images/Barbell_Ab_Rollout_-_On_Knees/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Barbell Bench Press - Medium Grip",
+    "images": [
+      "/exercise-images/Barbell_Bench_Press_-_Medium_Grip/0.jpg",
+      "/exercise-images/Barbell_Bench_Press_-_Medium_Grip/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Barbell Curl",
+    "images": [
+      "/exercise-images/Barbell_Curl/0.jpg",
+      "/exercise-images/Barbell_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Barbell Curls Lying Against An Incline",
+    "images": [
+      "/exercise-images/Barbell_Curls_Lying_Against_An_Incline/0.jpg",
+      "/exercise-images/Barbell_Curls_Lying_Against_An_Incline/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Barbell Deadlift",
+    "images": [
+      "/exercise-images/Barbell_Deadlift/0.jpg",
+      "/exercise-images/Barbell_Deadlift/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Barbell Full Squat",
+    "images": [
+      "/exercise-images/Barbell_Full_Squat/0.jpg",
+      "/exercise-images/Barbell_Full_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Barbell Glute Bridge",
+    "images": [
+      "/exercise-images/Barbell_Glute_Bridge/0.jpg",
+      "/exercise-images/Barbell_Glute_Bridge/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Barbell Guillotine Bench Press",
+    "images": [
+      "/exercise-images/Barbell_Guillotine_Bench_Press/0.jpg",
+      "/exercise-images/Barbell_Guillotine_Bench_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Barbell Hack Squat",
+    "images": [
+      "/exercise-images/Barbell_Hack_Squat/0.jpg",
+      "/exercise-images/Barbell_Hack_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Barbell Hip Thrust",
+    "images": [
+      "/exercise-images/Barbell_Hip_Thrust/0.jpg",
+      "/exercise-images/Barbell_Hip_Thrust/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Barbell Incline Bench Press - Medium Grip",
+    "images": [
+      "/exercise-images/Barbell_Incline_Bench_Press_-_Medium_Grip/0.jpg",
+      "/exercise-images/Barbell_Incline_Bench_Press_-_Medium_Grip/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Barbell Incline Shoulder Raise",
+    "images": [
+      "/exercise-images/Barbell_Incline_Shoulder_Raise/0.jpg",
+      "/exercise-images/Barbell_Incline_Shoulder_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Barbell Lunge",
+    "images": [
+      "/exercise-images/Barbell_Lunge/0.jpg",
+      "/exercise-images/Barbell_Lunge/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Barbell Rear Delt Row",
+    "images": [
+      "/exercise-images/Barbell_Rear_Delt_Row/0.jpg",
+      "/exercise-images/Barbell_Rear_Delt_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Barbell Seated Calf Raise",
+    "images": [
+      "/exercise-images/Barbell_Seated_Calf_Raise/0.jpg",
+      "/exercise-images/Barbell_Seated_Calf_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Barbell Shoulder Press",
+    "images": [
+      "/exercise-images/Barbell_Shoulder_Press/0.jpg",
+      "/exercise-images/Barbell_Shoulder_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Barbell Shrug",
+    "images": [
+      "/exercise-images/Barbell_Shrug/0.jpg",
+      "/exercise-images/Barbell_Shrug/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Barbell Shrug Behind The Back",
+    "images": [
+      "/exercise-images/Barbell_Shrug_Behind_The_Back/0.jpg",
+      "/exercise-images/Barbell_Shrug_Behind_The_Back/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Barbell Side Split Squat",
+    "images": [
+      "/exercise-images/Barbell_Side_Split_Squat/0.jpg",
+      "/exercise-images/Barbell_Side_Split_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Barbell Squat",
+    "images": [
+      "/exercise-images/Barbell_Squat/0.jpg",
+      "/exercise-images/Barbell_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Barbell Squat To A Bench",
+    "images": [
+      "/exercise-images/Barbell_Squat_To_A_Bench/0.jpg",
+      "/exercise-images/Barbell_Squat_To_A_Bench/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Barbell Step Ups",
+    "images": [
+      "/exercise-images/Barbell_Step_Ups/0.jpg",
+      "/exercise-images/Barbell_Step_Ups/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Barbell Walking Lunge",
+    "images": [
+      "/exercise-images/Barbell_Walking_Lunge/0.jpg",
+      "/exercise-images/Barbell_Walking_Lunge/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Battling Ropes",
+    "images": [
+      "/exercise-images/Battling_Ropes/0.jpg",
+      "/exercise-images/Battling_Ropes/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Bench Dips",
+    "images": [
+      "/exercise-images/Bench_Dips/0.jpg",
+      "/exercise-images/Bench_Dips/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Bench Jump",
+    "images": [
+      "/exercise-images/Bench_Jump/0.jpg",
+      "/exercise-images/Bench_Jump/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Bench Press - With Bands",
+    "images": [
+      "/exercise-images/Bench_Press_-_With_Bands/0.jpg",
+      "/exercise-images/Bench_Press_-_With_Bands/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Bench Sprint",
+    "images": [
+      "/exercise-images/Bench_Sprint/0.jpg",
+      "/exercise-images/Bench_Sprint/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Bent-Arm Barbell Pullover",
+    "images": [
+      "/exercise-images/Bent-Arm_Barbell_Pullover/0.jpg",
+      "/exercise-images/Bent-Arm_Barbell_Pullover/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Bent-Arm Dumbbell Pullover",
+    "images": [
+      "/exercise-images/Bent-Arm_Dumbbell_Pullover/0.jpg",
+      "/exercise-images/Bent-Arm_Dumbbell_Pullover/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Bent-Knee Hip Raise",
+    "images": [
+      "/exercise-images/Bent-Knee_Hip_Raise/0.jpg",
+      "/exercise-images/Bent-Knee_Hip_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Bent Over Barbell Row",
+    "images": [
+      "/exercise-images/Bent_Over_Barbell_Row/0.jpg",
+      "/exercise-images/Bent_Over_Barbell_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Bent Over Low-Pulley Side Lateral",
+    "images": [
+      "/exercise-images/Bent_Over_Low-Pulley_Side_Lateral/0.jpg",
+      "/exercise-images/Bent_Over_Low-Pulley_Side_Lateral/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Bent Over One-Arm Long Bar Row",
+    "images": [
+      "/exercise-images/Bent_Over_One-Arm_Long_Bar_Row/0.jpg",
+      "/exercise-images/Bent_Over_One-Arm_Long_Bar_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Bent Over Two-Arm Long Bar Row",
+    "images": [
+      "/exercise-images/Bent_Over_Two-Arm_Long_Bar_Row/0.jpg",
+      "/exercise-images/Bent_Over_Two-Arm_Long_Bar_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Bent Over Two-Dumbbell Row",
+    "images": [
+      "/exercise-images/Bent_Over_Two-Dumbbell_Row/0.jpg",
+      "/exercise-images/Bent_Over_Two-Dumbbell_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Bent Over Two-Dumbbell Row With Palms In",
+    "images": [
+      "/exercise-images/Bent_Over_Two-Dumbbell_Row_With_Palms_In/0.jpg",
+      "/exercise-images/Bent_Over_Two-Dumbbell_Row_With_Palms_In/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Bent Press",
+    "images": [
+      "/exercise-images/Bent_Press/0.jpg",
+      "/exercise-images/Bent_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Bicycling, Stationary",
+    "images": [
+      "/exercise-images/Bicycling_Stationary/0.jpg",
+      "/exercise-images/Bicycling_Stationary/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Body-Up",
+    "images": [
+      "/exercise-images/Body-Up/0.jpg",
+      "/exercise-images/Body-Up/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Body Tricep Press",
+    "images": [
+      "/exercise-images/Body_Tricep_Press/0.jpg",
+      "/exercise-images/Body_Tricep_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Bodyweight Flyes",
+    "images": [
+      "/exercise-images/Bodyweight_Flyes/0.jpg",
+      "/exercise-images/Bodyweight_Flyes/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Bodyweight Squat",
+    "images": [
+      "/exercise-images/Bodyweight_Squat/0.jpg",
+      "/exercise-images/Bodyweight_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Bodyweight Walking Lunge",
+    "images": [
+      "/exercise-images/Bodyweight_Walking_Lunge/0.jpg",
+      "/exercise-images/Bodyweight_Walking_Lunge/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Bottoms-Up Clean From The Hang Position",
+    "images": [
+      "/exercise-images/Bottoms-Up_Clean_From_The_Hang_Position/0.jpg",
+      "/exercise-images/Bottoms-Up_Clean_From_The_Hang_Position/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Bottoms Up",
+    "images": [
+      "/exercise-images/Bottoms_Up/0.jpg",
+      "/exercise-images/Bottoms_Up/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Box Jump (Multiple Response)",
+    "images": [
+      "/exercise-images/Box_Jump_Multiple_Response/0.jpg",
+      "/exercise-images/Box_Jump_Multiple_Response/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Box Skip",
+    "images": [
+      "/exercise-images/Box_Skip/0.jpg",
+      "/exercise-images/Box_Skip/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Box Squat",
+    "images": [
+      "/exercise-images/Box_Squat/0.jpg",
+      "/exercise-images/Box_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Bradford/Rocky Presses",
+    "images": [
+      "/exercise-images/Bradford_Rocky_Presses/0.jpg",
+      "/exercise-images/Bradford_Rocky_Presses/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Butt-Ups",
+    "images": [
+      "/exercise-images/Butt-Ups/0.jpg",
+      "/exercise-images/Butt-Ups/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Butt Lift (Bridge)",
+    "images": [
+      "/exercise-images/Butt_Lift_Bridge/0.jpg",
+      "/exercise-images/Butt_Lift_Bridge/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Butterfly",
+    "images": [
+      "/exercise-images/Butterfly/0.jpg",
+      "/exercise-images/Butterfly/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Cable Chest Press",
+    "images": [
+      "/exercise-images/Cable_Chest_Press/0.jpg",
+      "/exercise-images/Cable_Chest_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Cable Crossover",
+    "images": [
+      "/exercise-images/Cable_Crossover/0.jpg",
+      "/exercise-images/Cable_Crossover/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Cable Hammer Curls - Rope Attachment",
+    "images": [
+      "/exercise-images/Cable_Hammer_Curls_-_Rope_Attachment/0.jpg",
+      "/exercise-images/Cable_Hammer_Curls_-_Rope_Attachment/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Cable Hip Adduction",
+    "images": [
+      "/exercise-images/Cable_Hip_Adduction/0.jpg",
+      "/exercise-images/Cable_Hip_Adduction/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Cable Incline Pushdown",
+    "images": [
+      "/exercise-images/Cable_Incline_Pushdown/0.jpg",
+      "/exercise-images/Cable_Incline_Pushdown/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Cable Incline Triceps Extension",
+    "images": [
+      "/exercise-images/Cable_Incline_Triceps_Extension/0.jpg",
+      "/exercise-images/Cable_Incline_Triceps_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Cable Internal Rotation",
+    "images": [
+      "/exercise-images/Cable_Internal_Rotation/0.jpg",
+      "/exercise-images/Cable_Internal_Rotation/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Cable Iron Cross",
+    "images": [
+      "/exercise-images/Cable_Iron_Cross/0.jpg",
+      "/exercise-images/Cable_Iron_Cross/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Cable Lying Triceps Extension",
+    "images": [
+      "/exercise-images/Cable_Lying_Triceps_Extension/0.jpg",
+      "/exercise-images/Cable_Lying_Triceps_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Cable One Arm Tricep Extension",
+    "images": [
+      "/exercise-images/Cable_One_Arm_Tricep_Extension/0.jpg",
+      "/exercise-images/Cable_One_Arm_Tricep_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Cable Preacher Curl",
+    "images": [
+      "/exercise-images/Cable_Preacher_Curl/0.jpg",
+      "/exercise-images/Cable_Preacher_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Cable Rear Delt Fly",
+    "images": [
+      "/exercise-images/Cable_Rear_Delt_Fly/0.jpg",
+      "/exercise-images/Cable_Rear_Delt_Fly/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Cable Rope Overhead Triceps Extension",
+    "images": [
+      "/exercise-images/Cable_Rope_Overhead_Triceps_Extension/0.jpg",
+      "/exercise-images/Cable_Rope_Overhead_Triceps_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Cable Rope Rear-Delt Rows",
+    "images": [
+      "/exercise-images/Cable_Rope_Rear-Delt_Rows/0.jpg",
+      "/exercise-images/Cable_Rope_Rear-Delt_Rows/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Cable Seated Crunch",
+    "images": [
+      "/exercise-images/Cable_Seated_Crunch/0.jpg",
+      "/exercise-images/Cable_Seated_Crunch/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Cable Seated Lateral Raise",
+    "images": [
+      "/exercise-images/Cable_Seated_Lateral_Raise/0.jpg",
+      "/exercise-images/Cable_Seated_Lateral_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Cable Shrugs",
+    "images": [
+      "/exercise-images/Cable_Shrugs/0.jpg",
+      "/exercise-images/Cable_Shrugs/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Cable Wrist Curl",
+    "images": [
+      "/exercise-images/Cable_Wrist_Curl/0.jpg",
+      "/exercise-images/Cable_Wrist_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Calf-Machine Shoulder Shrug",
+    "images": [
+      "/exercise-images/Calf-Machine_Shoulder_Shrug/0.jpg",
+      "/exercise-images/Calf-Machine_Shoulder_Shrug/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Calf Press",
+    "images": [
+      "/exercise-images/Calf_Press/0.jpg",
+      "/exercise-images/Calf_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Calf Press On The Leg Press Machine",
+    "images": [
+      "/exercise-images/Calf_Press_On_The_Leg_Press_Machine/0.jpg",
+      "/exercise-images/Calf_Press_On_The_Leg_Press_Machine/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Calf Raise On A Dumbbell",
+    "images": [
+      "/exercise-images/Calf_Raise_On_A_Dumbbell/0.jpg",
+      "/exercise-images/Calf_Raise_On_A_Dumbbell/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Calf Raises - With Bands",
+    "images": [
+      "/exercise-images/Calf_Raises_-_With_Bands/0.jpg",
+      "/exercise-images/Calf_Raises_-_With_Bands/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Car Drivers",
+    "images": [
+      "/exercise-images/Car_Drivers/0.jpg",
+      "/exercise-images/Car_Drivers/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Catch and Overhead Throw",
+    "images": [
+      "/exercise-images/Catch_and_Overhead_Throw/0.jpg",
+      "/exercise-images/Catch_and_Overhead_Throw/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Chair Squat",
+    "images": [
+      "/exercise-images/Chair_Squat/0.jpg",
+      "/exercise-images/Chair_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Chin-Up",
+    "images": [
+      "/exercise-images/Chin-Up/0.jpg",
+      "/exercise-images/Chin-Up/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Clean Deadlift",
+    "images": [
+      "/exercise-images/Clean_Deadlift/0.jpg",
+      "/exercise-images/Clean_Deadlift/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Clean and Jerk",
+    "images": [
+      "/exercise-images/Clean_and_Jerk/0.jpg",
+      "/exercise-images/Clean_and_Jerk/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Clean and Press",
+    "images": [
+      "/exercise-images/Clean_and_Press/0.jpg",
+      "/exercise-images/Clean_and_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Close-Grip Barbell Bench Press",
+    "images": [
+      "/exercise-images/Close-Grip_Barbell_Bench_Press/0.jpg",
+      "/exercise-images/Close-Grip_Barbell_Bench_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Close-Grip Dumbbell Press",
+    "images": [
+      "/exercise-images/Close-Grip_Dumbbell_Press/0.jpg",
+      "/exercise-images/Close-Grip_Dumbbell_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Close-Grip EZ-Bar Press",
+    "images": [
+      "/exercise-images/Close-Grip_EZ-Bar_Press/0.jpg",
+      "/exercise-images/Close-Grip_EZ-Bar_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Close-Grip EZ Bar Curl",
+    "images": [
+      "/exercise-images/Close-Grip_EZ_Bar_Curl/0.jpg",
+      "/exercise-images/Close-Grip_EZ_Bar_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Close-Grip Front Lat Pulldown",
+    "images": [
+      "/exercise-images/Close-Grip_Front_Lat_Pulldown/0.jpg",
+      "/exercise-images/Close-Grip_Front_Lat_Pulldown/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Close-Grip Standing Barbell Curl",
+    "images": [
+      "/exercise-images/Close-Grip_Standing_Barbell_Curl/0.jpg",
+      "/exercise-images/Close-Grip_Standing_Barbell_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Cocoons",
+    "images": [
+      "/exercise-images/Cocoons/0.jpg",
+      "/exercise-images/Cocoons/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Concentration Curls",
+    "images": [
+      "/exercise-images/Concentration_Curls/0.jpg",
+      "/exercise-images/Concentration_Curls/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Cross-Body Crunch",
+    "images": [
+      "/exercise-images/Cross-Body_Crunch/0.jpg",
+      "/exercise-images/Cross-Body_Crunch/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Cross Body Hammer Curl",
+    "images": [
+      "/exercise-images/Cross_Body_Hammer_Curl/0.jpg",
+      "/exercise-images/Cross_Body_Hammer_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Crunch - Hands Overhead",
+    "images": [
+      "/exercise-images/Crunch_-_Hands_Overhead/0.jpg",
+      "/exercise-images/Crunch_-_Hands_Overhead/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Cuban Press",
+    "images": [
+      "/exercise-images/Cuban_Press/0.jpg",
+      "/exercise-images/Cuban_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Dancer's Stretch",
+    "images": [
+      "/exercise-images/Dancers_Stretch/0.jpg",
+      "/exercise-images/Dancers_Stretch/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Dead Bug",
+    "images": [
+      "/exercise-images/Dead_Bug/0.jpg",
+      "/exercise-images/Dead_Bug/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Deadlift with Bands",
+    "images": [
+      "/exercise-images/Deadlift_with_Bands/0.jpg",
+      "/exercise-images/Deadlift_with_Bands/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Decline Barbell Bench Press",
+    "images": [
+      "/exercise-images/Decline_Barbell_Bench_Press/0.jpg",
+      "/exercise-images/Decline_Barbell_Bench_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Decline Close-Grip Bench To Skull Crusher",
+    "images": [
+      "/exercise-images/Decline_Close-Grip_Bench_To_Skull_Crusher/0.jpg",
+      "/exercise-images/Decline_Close-Grip_Bench_To_Skull_Crusher/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Decline Crunch",
+    "images": [
+      "/exercise-images/Decline_Crunch/0.jpg",
+      "/exercise-images/Decline_Crunch/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Decline Dumbbell Bench Press",
+    "images": [
+      "/exercise-images/Decline_Dumbbell_Bench_Press/0.jpg",
+      "/exercise-images/Decline_Dumbbell_Bench_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Decline Dumbbell Flyes",
+    "images": [
+      "/exercise-images/Decline_Dumbbell_Flyes/0.jpg",
+      "/exercise-images/Decline_Dumbbell_Flyes/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Decline Dumbbell Triceps Extension",
+    "images": [
+      "/exercise-images/Decline_Dumbbell_Triceps_Extension/0.jpg",
+      "/exercise-images/Decline_Dumbbell_Triceps_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Decline EZ Bar Triceps Extension",
+    "images": [
+      "/exercise-images/Decline_EZ_Bar_Triceps_Extension/0.jpg",
+      "/exercise-images/Decline_EZ_Bar_Triceps_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Decline Oblique Crunch",
+    "images": [
+      "/exercise-images/Decline_Oblique_Crunch/0.jpg",
+      "/exercise-images/Decline_Oblique_Crunch/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Decline Reverse Crunch",
+    "images": [
+      "/exercise-images/Decline_Reverse_Crunch/0.jpg",
+      "/exercise-images/Decline_Reverse_Crunch/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Decline Smith Press",
+    "images": [
+      "/exercise-images/Decline_Smith_Press/0.jpg",
+      "/exercise-images/Decline_Smith_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Deficit Deadlift",
+    "images": [
+      "/exercise-images/Deficit_Deadlift/0.jpg",
+      "/exercise-images/Deficit_Deadlift/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Dip Machine",
+    "images": [
+      "/exercise-images/Dip_Machine/0.jpg",
+      "/exercise-images/Dip_Machine/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Dips - Chest Version",
+    "images": [
+      "/exercise-images/Dips_-_Chest_Version/0.jpg",
+      "/exercise-images/Dips_-_Chest_Version/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Dips - Triceps Version",
+    "images": [
+      "/exercise-images/Dips_-_Triceps_Version/0.jpg",
+      "/exercise-images/Dips_-_Triceps_Version/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Double Kettlebell Jerk",
+    "images": [
+      "/exercise-images/Double_Kettlebell_Jerk/0.jpg",
+      "/exercise-images/Double_Kettlebell_Jerk/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Double Kettlebell Push Press",
+    "images": [
+      "/exercise-images/Double_Kettlebell_Push_Press/0.jpg",
+      "/exercise-images/Double_Kettlebell_Push_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Double Kettlebell Snatch",
+    "images": [
+      "/exercise-images/Double_Kettlebell_Snatch/0.jpg",
+      "/exercise-images/Double_Kettlebell_Snatch/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Double Kettlebell Windmill",
+    "images": [
+      "/exercise-images/Double_Kettlebell_Windmill/0.jpg",
+      "/exercise-images/Double_Kettlebell_Windmill/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Drag Curl",
+    "images": [
+      "/exercise-images/Drag_Curl/0.jpg",
+      "/exercise-images/Drag_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Drop Push",
+    "images": [
+      "/exercise-images/Drop_Push/0.jpg",
+      "/exercise-images/Drop_Push/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Dumbbell Alternate Bicep Curl",
+    "images": [
+      "/exercise-images/Dumbbell_Alternate_Bicep_Curl/0.jpg",
+      "/exercise-images/Dumbbell_Alternate_Bicep_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Dumbbell Bench Press",
+    "images": [
+      "/exercise-images/Dumbbell_Bench_Press/0.jpg",
+      "/exercise-images/Dumbbell_Bench_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Dumbbell Bicep Curl",
+    "images": [
+      "/exercise-images/Dumbbell_Bicep_Curl/0.jpg",
+      "/exercise-images/Dumbbell_Bicep_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Dumbbell Flyes",
+    "images": [
+      "/exercise-images/Dumbbell_Flyes/0.jpg",
+      "/exercise-images/Dumbbell_Flyes/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Dumbbell Incline Row",
+    "images": [
+      "/exercise-images/Dumbbell_Incline_Row/0.jpg",
+      "/exercise-images/Dumbbell_Incline_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Dumbbell Incline Shoulder Raise",
+    "images": [
+      "/exercise-images/Dumbbell_Incline_Shoulder_Raise/0.jpg",
+      "/exercise-images/Dumbbell_Incline_Shoulder_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Dumbbell Lunges",
+    "images": [
+      "/exercise-images/Dumbbell_Lunges/0.jpg",
+      "/exercise-images/Dumbbell_Lunges/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Dumbbell Lying One-Arm Rear Lateral Raise",
+    "images": [
+      "/exercise-images/Dumbbell_Lying_One-Arm_Rear_Lateral_Raise/0.jpg",
+      "/exercise-images/Dumbbell_Lying_One-Arm_Rear_Lateral_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Dumbbell Lying Rear Lateral Raise",
+    "images": [
+      "/exercise-images/Dumbbell_Lying_Rear_Lateral_Raise/0.jpg",
+      "/exercise-images/Dumbbell_Lying_Rear_Lateral_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Dumbbell One-Arm Shoulder Press",
+    "images": [
+      "/exercise-images/Dumbbell_One-Arm_Shoulder_Press/0.jpg",
+      "/exercise-images/Dumbbell_One-Arm_Shoulder_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Dumbbell One-Arm Triceps Extension",
+    "images": [
+      "/exercise-images/Dumbbell_One-Arm_Triceps_Extension/0.jpg",
+      "/exercise-images/Dumbbell_One-Arm_Triceps_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Dumbbell One-Arm Upright Row",
+    "images": [
+      "/exercise-images/Dumbbell_One-Arm_Upright_Row/0.jpg",
+      "/exercise-images/Dumbbell_One-Arm_Upright_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Dumbbell Prone Incline Curl",
+    "images": [
+      "/exercise-images/Dumbbell_Prone_Incline_Curl/0.jpg",
+      "/exercise-images/Dumbbell_Prone_Incline_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Dumbbell Raise",
+    "images": [
+      "/exercise-images/Dumbbell_Raise/0.jpg",
+      "/exercise-images/Dumbbell_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Dumbbell Seated Box Jump",
+    "images": [
+      "/exercise-images/Dumbbell_Seated_Box_Jump/0.jpg",
+      "/exercise-images/Dumbbell_Seated_Box_Jump/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Dumbbell Seated One-Leg Calf Raise",
+    "images": [
+      "/exercise-images/Dumbbell_Seated_One-Leg_Calf_Raise/0.jpg",
+      "/exercise-images/Dumbbell_Seated_One-Leg_Calf_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Dumbbell Shrug",
+    "images": [
+      "/exercise-images/Dumbbell_Shrug/0.jpg",
+      "/exercise-images/Dumbbell_Shrug/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Dumbbell Squat",
+    "images": [
+      "/exercise-images/Dumbbell_Squat/0.jpg",
+      "/exercise-images/Dumbbell_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Dumbbell Squat To A Bench",
+    "images": [
+      "/exercise-images/Dumbbell_Squat_To_A_Bench/0.jpg",
+      "/exercise-images/Dumbbell_Squat_To_A_Bench/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Dumbbell Step Ups",
+    "images": [
+      "/exercise-images/Dumbbell_Step_Ups/0.jpg",
+      "/exercise-images/Dumbbell_Step_Ups/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Dumbbell Tricep Extension -Pronated Grip",
+    "images": [
+      "/exercise-images/Dumbbell_Tricep_Extension_-Pronated_Grip/0.jpg",
+      "/exercise-images/Dumbbell_Tricep_Extension_-Pronated_Grip/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "EZ-Bar Curl",
+    "images": [
+      "/exercise-images/EZ-Bar_Curl/0.jpg",
+      "/exercise-images/EZ-Bar_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "EZ-Bar Skullcrusher",
+    "images": [
+      "/exercise-images/EZ-Bar_Skullcrusher/0.jpg",
+      "/exercise-images/EZ-Bar_Skullcrusher/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Elbow to Knee",
+    "images": [
+      "/exercise-images/Elbow_to_Knee/0.jpg",
+      "/exercise-images/Elbow_to_Knee/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Elevated Back Lunge",
+    "images": [
+      "/exercise-images/Elevated_Back_Lunge/0.jpg",
+      "/exercise-images/Elevated_Back_Lunge/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Elevated Cable Rows",
+    "images": [
+      "/exercise-images/Elevated_Cable_Rows/0.jpg",
+      "/exercise-images/Elevated_Cable_Rows/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Elliptical Trainer",
+    "images": [
+      "/exercise-images/Elliptical_Trainer/0.jpg",
+      "/exercise-images/Elliptical_Trainer/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "External Rotation with Cable",
+    "images": [
+      "/exercise-images/External_Rotation_with_Cable/0.jpg",
+      "/exercise-images/External_Rotation_with_Cable/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Farmer's Walk",
+    "images": [
+      "/exercise-images/Farmers_Walk/0.jpg",
+      "/exercise-images/Farmers_Walk/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Finger Curls",
+    "images": [
+      "/exercise-images/Finger_Curls/0.jpg",
+      "/exercise-images/Finger_Curls/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Flat Bench Cable Flyes",
+    "images": [
+      "/exercise-images/Flat_Bench_Cable_Flyes/0.jpg",
+      "/exercise-images/Flat_Bench_Cable_Flyes/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Flat Bench Lying Leg Raise",
+    "images": [
+      "/exercise-images/Flat_Bench_Lying_Leg_Raise/0.jpg",
+      "/exercise-images/Flat_Bench_Lying_Leg_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Floor Glute-Ham Raise",
+    "images": [
+      "/exercise-images/Floor_Glute-Ham_Raise/0.jpg",
+      "/exercise-images/Floor_Glute-Ham_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Flutter Kicks",
+    "images": [
+      "/exercise-images/Flutter_Kicks/0.jpg",
+      "/exercise-images/Flutter_Kicks/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Freehand Jump Squat",
+    "images": [
+      "/exercise-images/Freehand_Jump_Squat/0.jpg",
+      "/exercise-images/Freehand_Jump_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Frog Sit-Ups",
+    "images": [
+      "/exercise-images/Frog_Sit-Ups/0.jpg",
+      "/exercise-images/Frog_Sit-Ups/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Front Barbell Squat",
+    "images": [
+      "/exercise-images/Front_Barbell_Squat/0.jpg",
+      "/exercise-images/Front_Barbell_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Front Barbell Squat To A Bench",
+    "images": [
+      "/exercise-images/Front_Barbell_Squat_To_A_Bench/0.jpg",
+      "/exercise-images/Front_Barbell_Squat_To_A_Bench/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Front Box Jump",
+    "images": [
+      "/exercise-images/Front_Box_Jump/0.jpg",
+      "/exercise-images/Front_Box_Jump/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Front Cable Raise",
+    "images": [
+      "/exercise-images/Front_Cable_Raise/0.jpg",
+      "/exercise-images/Front_Cable_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Front Cone Hops (or hurdle hops)",
+    "images": [
+      "/exercise-images/Front_Cone_Hops_or_hurdle_hops/0.jpg",
+      "/exercise-images/Front_Cone_Hops_or_hurdle_hops/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Front Dumbbell Raise",
+    "images": [
+      "/exercise-images/Front_Dumbbell_Raise/0.jpg",
+      "/exercise-images/Front_Dumbbell_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Front Incline Dumbbell Raise",
+    "images": [
+      "/exercise-images/Front_Incline_Dumbbell_Raise/0.jpg",
+      "/exercise-images/Front_Incline_Dumbbell_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Front Plate Raise",
+    "images": [
+      "/exercise-images/Front_Plate_Raise/0.jpg",
+      "/exercise-images/Front_Plate_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Front Squats With Two Kettlebells",
+    "images": [
+      "/exercise-images/Front_Squats_With_Two_Kettlebells/0.jpg",
+      "/exercise-images/Front_Squats_With_Two_Kettlebells/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Front Two-Dumbbell Raise",
+    "images": [
+      "/exercise-images/Front_Two-Dumbbell_Raise/0.jpg",
+      "/exercise-images/Front_Two-Dumbbell_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Full Range-Of-Motion Lat Pulldown",
+    "images": [
+      "/exercise-images/Full_Range-Of-Motion_Lat_Pulldown/0.jpg",
+      "/exercise-images/Full_Range-Of-Motion_Lat_Pulldown/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Gironda Sternum Chins",
+    "images": [
+      "/exercise-images/Gironda_Sternum_Chins/0.jpg",
+      "/exercise-images/Gironda_Sternum_Chins/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Glute Ham Raise",
+    "images": [
+      "/exercise-images/Glute_Ham_Raise/0.jpg",
+      "/exercise-images/Glute_Ham_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Glute Kickback",
+    "images": [
+      "/exercise-images/Glute_Kickback/0.jpg",
+      "/exercise-images/Glute_Kickback/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Goblet Squat",
+    "images": [
+      "/exercise-images/Goblet_Squat/0.jpg",
+      "/exercise-images/Goblet_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Hack Squat",
+    "images": [
+      "/exercise-images/Hack_Squat/0.jpg",
+      "/exercise-images/Hack_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Handstand Push-Ups",
+    "images": [
+      "/exercise-images/Handstand_Push-Ups/0.jpg",
+      "/exercise-images/Handstand_Push-Ups/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Hanging Leg Raise",
+    "images": [
+      "/exercise-images/Hanging_Leg_Raise/0.jpg",
+      "/exercise-images/Hanging_Leg_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Hanging Pike",
+    "images": [
+      "/exercise-images/Hanging_Pike/0.jpg",
+      "/exercise-images/Hanging_Pike/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Hip Extension with Bands",
+    "images": [
+      "/exercise-images/Hip_Extension_with_Bands/0.jpg",
+      "/exercise-images/Hip_Extension_with_Bands/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Hip Flexion with Band",
+    "images": [
+      "/exercise-images/Hip_Flexion_with_Band/0.jpg",
+      "/exercise-images/Hip_Flexion_with_Band/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Hurdle Hops",
+    "images": [
+      "/exercise-images/Hurdle_Hops/0.jpg",
+      "/exercise-images/Hurdle_Hops/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Hyperextensions (Back Extensions)",
+    "images": [
+      "/exercise-images/Hyperextensions_Back_Extensions/0.jpg",
+      "/exercise-images/Hyperextensions_Back_Extensions/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Hyperextensions With No Hyperextension Bench",
+    "images": [
+      "/exercise-images/Hyperextensions_With_No_Hyperextension_Bench/0.jpg",
+      "/exercise-images/Hyperextensions_With_No_Hyperextension_Bench/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Incline Barbell Triceps Extension",
+    "images": [
+      "/exercise-images/Incline_Barbell_Triceps_Extension/0.jpg",
+      "/exercise-images/Incline_Barbell_Triceps_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Incline Bench Pull",
+    "images": [
+      "/exercise-images/Incline_Bench_Pull/0.jpg",
+      "/exercise-images/Incline_Bench_Pull/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Incline Cable Chest Press",
+    "images": [
+      "/exercise-images/Incline_Cable_Chest_Press/0.jpg",
+      "/exercise-images/Incline_Cable_Chest_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Incline Cable Flye",
+    "images": [
+      "/exercise-images/Incline_Cable_Flye/0.jpg",
+      "/exercise-images/Incline_Cable_Flye/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Incline Dumbbell Curl",
+    "images": [
+      "/exercise-images/Incline_Dumbbell_Curl/0.jpg",
+      "/exercise-images/Incline_Dumbbell_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Incline Dumbbell Flyes",
+    "images": [
+      "/exercise-images/Incline_Dumbbell_Flyes/0.jpg",
+      "/exercise-images/Incline_Dumbbell_Flyes/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Incline Dumbbell Press",
+    "images": [
+      "/exercise-images/Incline_Dumbbell_Press/0.jpg",
+      "/exercise-images/Incline_Dumbbell_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Incline Push-Up",
+    "images": [
+      "/exercise-images/Incline_Push-Up/0.jpg",
+      "/exercise-images/Incline_Push-Up/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Incline Push-Up Close-Grip",
+    "images": [
+      "/exercise-images/Incline_Push-Up_Close-Grip/0.jpg",
+      "/exercise-images/Incline_Push-Up_Close-Grip/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Incline Push-Up Depth Jump",
+    "images": [
+      "/exercise-images/Incline_Push-Up_Depth_Jump/0.jpg",
+      "/exercise-images/Incline_Push-Up_Depth_Jump/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Incline Push-Up Medium",
+    "images": [
+      "/exercise-images/Incline_Push-Up_Medium/0.jpg",
+      "/exercise-images/Incline_Push-Up_Medium/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Internal Rotation with Band",
+    "images": [
+      "/exercise-images/Internal_Rotation_with_Band/0.jpg",
+      "/exercise-images/Internal_Rotation_with_Band/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Inverted Row",
+    "images": [
+      "/exercise-images/Inverted_Row/0.jpg",
+      "/exercise-images/Inverted_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Iron Cross",
+    "images": [
+      "/exercise-images/Iron_Cross/0.jpg",
+      "/exercise-images/Iron_Cross/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Jackknife Sit-Up",
+    "images": [
+      "/exercise-images/Jackknife_Sit-Up/0.jpg",
+      "/exercise-images/Jackknife_Sit-Up/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Jefferson Squats",
+    "images": [
+      "/exercise-images/Jefferson_Squats/0.jpg",
+      "/exercise-images/Jefferson_Squats/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Jerk Dip Squat",
+    "images": [
+      "/exercise-images/Jerk_Dip_Squat/0.jpg",
+      "/exercise-images/Jerk_Dip_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Jogging, Treadmill",
+    "images": [
+      "/exercise-images/Jogging_Treadmill/0.jpg",
+      "/exercise-images/Jogging_Treadmill/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Kettlebell Arnold Press",
+    "images": [
+      "/exercise-images/Kettlebell_Arnold_Press/0.jpg",
+      "/exercise-images/Kettlebell_Arnold_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Kettlebell Figure 8",
+    "images": [
+      "/exercise-images/Kettlebell_Figure_8/0.jpg",
+      "/exercise-images/Kettlebell_Figure_8/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Kettlebell Pass Between The Legs",
+    "images": [
+      "/exercise-images/Kettlebell_Pass_Between_The_Legs/0.jpg",
+      "/exercise-images/Kettlebell_Pass_Between_The_Legs/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Kettlebell Pirate Ships",
+    "images": [
+      "/exercise-images/Kettlebell_Pirate_Ships/0.jpg",
+      "/exercise-images/Kettlebell_Pirate_Ships/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Kettlebell Pistol Squat",
+    "images": [
+      "/exercise-images/Kettlebell_Pistol_Squat/0.jpg",
+      "/exercise-images/Kettlebell_Pistol_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Kettlebell Seesaw Press",
+    "images": [
+      "/exercise-images/Kettlebell_Seesaw_Press/0.jpg",
+      "/exercise-images/Kettlebell_Seesaw_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Kettlebell Sumo High Pull",
+    "images": [
+      "/exercise-images/Kettlebell_Sumo_High_Pull/0.jpg",
+      "/exercise-images/Kettlebell_Sumo_High_Pull/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Kettlebell Thruster",
+    "images": [
+      "/exercise-images/Kettlebell_Thruster/0.jpg",
+      "/exercise-images/Kettlebell_Thruster/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Kettlebell Windmill",
+    "images": [
+      "/exercise-images/Kettlebell_Windmill/0.jpg",
+      "/exercise-images/Kettlebell_Windmill/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Kipping Muscle Up",
+    "images": [
+      "/exercise-images/Kipping_Muscle_Up/0.jpg",
+      "/exercise-images/Kipping_Muscle_Up/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Knee Circles",
+    "images": [
+      "/exercise-images/Knee_Circles/0.jpg",
+      "/exercise-images/Knee_Circles/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Knee/Hip Raise On Parallel Bars",
+    "images": [
+      "/exercise-images/Knee_Hip_Raise_On_Parallel_Bars/0.jpg",
+      "/exercise-images/Knee_Hip_Raise_On_Parallel_Bars/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Kneeling Cable Crunch With Alternating Oblique Twists",
+    "images": [
+      "/exercise-images/Kneeling_Cable_Crunch_With_Alternating_Oblique_Twists/0.jpg",
+      "/exercise-images/Kneeling_Cable_Crunch_With_Alternating_Oblique_Twists/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Kneeling Cable Triceps Extension",
+    "images": [
+      "/exercise-images/Kneeling_Cable_Triceps_Extension/0.jpg",
+      "/exercise-images/Kneeling_Cable_Triceps_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Kneeling High Pulley Row",
+    "images": [
+      "/exercise-images/Kneeling_High_Pulley_Row/0.jpg",
+      "/exercise-images/Kneeling_High_Pulley_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Kneeling Single-Arm High Pulley Row",
+    "images": [
+      "/exercise-images/Kneeling_Single-Arm_High_Pulley_Row/0.jpg",
+      "/exercise-images/Kneeling_Single-Arm_High_Pulley_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Landmine 180's",
+    "images": [
+      "/exercise-images/Landmine_180s/0.jpg",
+      "/exercise-images/Landmine_180s/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Lateral Box Jump",
+    "images": [
+      "/exercise-images/Lateral_Box_Jump/0.jpg",
+      "/exercise-images/Lateral_Box_Jump/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Lateral Cone Hops",
+    "images": [
+      "/exercise-images/Lateral_Cone_Hops/0.jpg",
+      "/exercise-images/Lateral_Cone_Hops/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Lateral Raise - With Bands",
+    "images": [
+      "/exercise-images/Lateral_Raise_-_With_Bands/0.jpg",
+      "/exercise-images/Lateral_Raise_-_With_Bands/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Leverage Chest Press",
+    "images": [
+      "/exercise-images/Leverage_Chest_Press/0.jpg",
+      "/exercise-images/Leverage_Chest_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Leverage Decline Chest Press",
+    "images": [
+      "/exercise-images/Leverage_Decline_Chest_Press/0.jpg",
+      "/exercise-images/Leverage_Decline_Chest_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Leverage High Row",
+    "images": [
+      "/exercise-images/Leverage_High_Row/0.jpg",
+      "/exercise-images/Leverage_High_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Leverage Incline Chest Press",
+    "images": [
+      "/exercise-images/Leverage_Incline_Chest_Press/0.jpg",
+      "/exercise-images/Leverage_Incline_Chest_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Leverage Iso Row",
+    "images": [
+      "/exercise-images/Leverage_Iso_Row/0.jpg",
+      "/exercise-images/Leverage_Iso_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Leverage Shoulder Press",
+    "images": [
+      "/exercise-images/Leverage_Shoulder_Press/0.jpg",
+      "/exercise-images/Leverage_Shoulder_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Leverage Shrug",
+    "images": [
+      "/exercise-images/Leverage_Shrug/0.jpg",
+      "/exercise-images/Leverage_Shrug/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Linear Depth Jump",
+    "images": [
+      "/exercise-images/Linear_Depth_Jump/0.jpg",
+      "/exercise-images/Linear_Depth_Jump/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "London Bridges",
+    "images": [
+      "/exercise-images/London_Bridges/0.jpg",
+      "/exercise-images/London_Bridges/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Low Cable Triceps Extension",
+    "images": [
+      "/exercise-images/Low_Cable_Triceps_Extension/0.jpg",
+      "/exercise-images/Low_Cable_Triceps_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Low Pulley Row To Neck",
+    "images": [
+      "/exercise-images/Low_Pulley_Row_To_Neck/0.jpg",
+      "/exercise-images/Low_Pulley_Row_To_Neck/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Lunge Pass Through",
+    "images": [
+      "/exercise-images/Lunge_Pass_Through/0.jpg",
+      "/exercise-images/Lunge_Pass_Through/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Lunge Sprint",
+    "images": [
+      "/exercise-images/Lunge_Sprint/0.jpg",
+      "/exercise-images/Lunge_Sprint/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Lying Cambered Barbell Row",
+    "images": [
+      "/exercise-images/Lying_Cambered_Barbell_Row/0.jpg",
+      "/exercise-images/Lying_Cambered_Barbell_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Lying Close-Grip Barbell Triceps Extension Behind The Head",
+    "images": [
+      "/exercise-images/Lying_Close-Grip_Barbell_Triceps_Extension_Behind_The_Head/0.jpg",
+      "/exercise-images/Lying_Close-Grip_Barbell_Triceps_Extension_Behind_The_Head/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Lying Close-Grip Barbell Triceps Press To Chin",
+    "images": [
+      "/exercise-images/Lying_Close-Grip_Barbell_Triceps_Press_To_Chin/0.jpg",
+      "/exercise-images/Lying_Close-Grip_Barbell_Triceps_Press_To_Chin/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Lying Dumbbell Tricep Extension",
+    "images": [
+      "/exercise-images/Lying_Dumbbell_Tricep_Extension/0.jpg",
+      "/exercise-images/Lying_Dumbbell_Tricep_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Lying Leg Curls",
+    "images": [
+      "/exercise-images/Lying_Leg_Curls/0.jpg",
+      "/exercise-images/Lying_Leg_Curls/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Lying Machine Squat",
+    "images": [
+      "/exercise-images/Lying_Machine_Squat/0.jpg",
+      "/exercise-images/Lying_Machine_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Lying T-Bar Row",
+    "images": [
+      "/exercise-images/Lying_T-Bar_Row/0.jpg",
+      "/exercise-images/Lying_T-Bar_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Lying Triceps Press",
+    "images": [
+      "/exercise-images/Lying_Triceps_Press/0.jpg",
+      "/exercise-images/Lying_Triceps_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Machine Bench Press",
+    "images": [
+      "/exercise-images/Machine_Bench_Press/0.jpg",
+      "/exercise-images/Machine_Bench_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Machine Bicep Curl",
+    "images": [
+      "/exercise-images/Machine_Bicep_Curl/0.jpg",
+      "/exercise-images/Machine_Bicep_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Machine Preacher Curls",
+    "images": [
+      "/exercise-images/Machine_Preacher_Curls/0.jpg",
+      "/exercise-images/Machine_Preacher_Curls/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Machine Triceps Extension",
+    "images": [
+      "/exercise-images/Machine_Triceps_Extension/0.jpg",
+      "/exercise-images/Machine_Triceps_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Middle Back Shrug",
+    "images": [
+      "/exercise-images/Middle_Back_Shrug/0.jpg",
+      "/exercise-images/Middle_Back_Shrug/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Mixed Grip Chin",
+    "images": [
+      "/exercise-images/Mixed_Grip_Chin/0.jpg",
+      "/exercise-images/Mixed_Grip_Chin/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Muscle Up",
+    "images": [
+      "/exercise-images/Muscle_Up/0.jpg",
+      "/exercise-images/Muscle_Up/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Narrow Stance Hack Squats",
+    "images": [
+      "/exercise-images/Narrow_Stance_Hack_Squats/0.jpg",
+      "/exercise-images/Narrow_Stance_Hack_Squats/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Narrow Stance Leg Press",
+    "images": [
+      "/exercise-images/Narrow_Stance_Leg_Press/0.jpg",
+      "/exercise-images/Narrow_Stance_Leg_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Natural Glute Ham Raise",
+    "images": [
+      "/exercise-images/Natural_Glute_Ham_Raise/0.jpg",
+      "/exercise-images/Natural_Glute_Ham_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Oblique Crunches - On The Floor",
+    "images": [
+      "/exercise-images/Oblique_Crunches_-_On_The_Floor/0.jpg",
+      "/exercise-images/Oblique_Crunches_-_On_The_Floor/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Olympic Squat",
+    "images": [
+      "/exercise-images/Olympic_Squat/0.jpg",
+      "/exercise-images/Olympic_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "One-Arm Dumbbell Row",
+    "images": [
+      "/exercise-images/One-Arm_Dumbbell_Row/0.jpg",
+      "/exercise-images/One-Arm_Dumbbell_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "One-Arm High-Pulley Cable Side Bends",
+    "images": [
+      "/exercise-images/One-Arm_High-Pulley_Cable_Side_Bends/0.jpg",
+      "/exercise-images/One-Arm_High-Pulley_Cable_Side_Bends/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "One-Arm Incline Lateral Raise",
+    "images": [
+      "/exercise-images/One-Arm_Incline_Lateral_Raise/0.jpg",
+      "/exercise-images/One-Arm_Incline_Lateral_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "One-Arm Kettlebell Clean and Jerk",
+    "images": [
+      "/exercise-images/One-Arm_Kettlebell_Clean_and_Jerk/0.jpg",
+      "/exercise-images/One-Arm_Kettlebell_Clean_and_Jerk/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "One-Arm Kettlebell Jerk",
+    "images": [
+      "/exercise-images/One-Arm_Kettlebell_Jerk/0.jpg",
+      "/exercise-images/One-Arm_Kettlebell_Jerk/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "One-Arm Kettlebell Row",
+    "images": [
+      "/exercise-images/One-Arm_Kettlebell_Row/0.jpg",
+      "/exercise-images/One-Arm_Kettlebell_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "One-Arm Kettlebell Swings",
+    "images": [
+      "/exercise-images/One-Arm_Kettlebell_Swings/0.jpg",
+      "/exercise-images/One-Arm_Kettlebell_Swings/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "One-Arm Long Bar Row",
+    "images": [
+      "/exercise-images/One-Arm_Long_Bar_Row/0.jpg",
+      "/exercise-images/One-Arm_Long_Bar_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "One-Arm Medicine Ball Slam",
+    "images": [
+      "/exercise-images/One-Arm_Medicine_Ball_Slam/0.jpg",
+      "/exercise-images/One-Arm_Medicine_Ball_Slam/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "One-Arm Overhead Kettlebell Squats",
+    "images": [
+      "/exercise-images/One-Arm_Overhead_Kettlebell_Squats/0.jpg",
+      "/exercise-images/One-Arm_Overhead_Kettlebell_Squats/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "One-Arm Side Laterals",
+    "images": [
+      "/exercise-images/One-Arm_Side_Laterals/0.jpg",
+      "/exercise-images/One-Arm_Side_Laterals/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "One-Legged Cable Kickback",
+    "images": [
+      "/exercise-images/One-Legged_Cable_Kickback/0.jpg",
+      "/exercise-images/One-Legged_Cable_Kickback/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "One Arm Dumbbell Preacher Curl",
+    "images": [
+      "/exercise-images/One_Arm_Dumbbell_Preacher_Curl/0.jpg",
+      "/exercise-images/One_Arm_Dumbbell_Preacher_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "One Arm Lat Pulldown",
+    "images": [
+      "/exercise-images/One_Arm_Lat_Pulldown/0.jpg",
+      "/exercise-images/One_Arm_Lat_Pulldown/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "One Handed Hang",
+    "images": [
+      "/exercise-images/One_Handed_Hang/0.jpg",
+      "/exercise-images/One_Handed_Hang/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "One Leg Barbell Squat",
+    "images": [
+      "/exercise-images/One_Leg_Barbell_Squat/0.jpg",
+      "/exercise-images/One_Leg_Barbell_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Overhead Cable Curl",
+    "images": [
+      "/exercise-images/Overhead_Cable_Curl/0.jpg",
+      "/exercise-images/Overhead_Cable_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Overhead Slam",
+    "images": [
+      "/exercise-images/Overhead_Slam/0.jpg",
+      "/exercise-images/Overhead_Slam/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Palms-Down Dumbbell Wrist Curl Over A Bench",
+    "images": [
+      "/exercise-images/Palms-Down_Dumbbell_Wrist_Curl_Over_A_Bench/0.jpg",
+      "/exercise-images/Palms-Down_Dumbbell_Wrist_Curl_Over_A_Bench/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Palms-Down Wrist Curl Over A Bench",
+    "images": [
+      "/exercise-images/Palms-Down_Wrist_Curl_Over_A_Bench/0.jpg",
+      "/exercise-images/Palms-Down_Wrist_Curl_Over_A_Bench/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Palms-Up Barbell Wrist Curl Over A Bench",
+    "images": [
+      "/exercise-images/Palms-Up_Barbell_Wrist_Curl_Over_A_Bench/0.jpg",
+      "/exercise-images/Palms-Up_Barbell_Wrist_Curl_Over_A_Bench/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Palms-Up Dumbbell Wrist Curl Over A Bench",
+    "images": [
+      "/exercise-images/Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench/0.jpg",
+      "/exercise-images/Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Parallel Bar Dip",
+    "images": [
+      "/exercise-images/Parallel_Bar_Dip/0.jpg",
+      "/exercise-images/Parallel_Bar_Dip/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Pelvic Tilt Into Bridge",
+    "images": [
+      "/exercise-images/Pelvic_Tilt_Into_Bridge/0.jpg",
+      "/exercise-images/Pelvic_Tilt_Into_Bridge/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Plate Pinch",
+    "images": [
+      "/exercise-images/Plate_Pinch/0.jpg",
+      "/exercise-images/Plate_Pinch/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Plate Twist",
+    "images": [
+      "/exercise-images/Plate_Twist/0.jpg",
+      "/exercise-images/Plate_Twist/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Plie Dumbbell Squat",
+    "images": [
+      "/exercise-images/Plie_Dumbbell_Squat/0.jpg",
+      "/exercise-images/Plie_Dumbbell_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Plyo Push-up",
+    "images": [
+      "/exercise-images/Plyo_Push-up/0.jpg",
+      "/exercise-images/Plyo_Push-up/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Power Jerk",
+    "images": [
+      "/exercise-images/Power_Jerk/0.jpg",
+      "/exercise-images/Power_Jerk/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Power Snatch",
+    "images": [
+      "/exercise-images/Power_Snatch/0.jpg",
+      "/exercise-images/Power_Snatch/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Preacher Hammer Dumbbell Curl",
+    "images": [
+      "/exercise-images/Preacher_Hammer_Dumbbell_Curl/0.jpg",
+      "/exercise-images/Preacher_Hammer_Dumbbell_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Press Sit-Up",
+    "images": [
+      "/exercise-images/Press_Sit-Up/0.jpg",
+      "/exercise-images/Press_Sit-Up/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Prowler Sprint",
+    "images": [
+      "/exercise-images/Prowler_Sprint/0.jpg",
+      "/exercise-images/Prowler_Sprint/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Pull Through",
+    "images": [
+      "/exercise-images/Pull_Through/0.jpg",
+      "/exercise-images/Pull_Through/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Push-Ups - Close Triceps Position",
+    "images": [
+      "/exercise-images/Push-Ups_-_Close_Triceps_Position/0.jpg",
+      "/exercise-images/Push-Ups_-_Close_Triceps_Position/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Push-Ups With Feet Elevated",
+    "images": [
+      "/exercise-images/Push-Ups_With_Feet_Elevated/0.jpg",
+      "/exercise-images/Push-Ups_With_Feet_Elevated/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Push-Ups With Feet On An Exercise Ball",
+    "images": [
+      "/exercise-images/Push-Ups_With_Feet_On_An_Exercise_Ball/0.jpg",
+      "/exercise-images/Push-Ups_With_Feet_On_An_Exercise_Ball/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Push Up to Side Plank",
+    "images": [
+      "/exercise-images/Push_Up_to_Side_Plank/0.jpg",
+      "/exercise-images/Push_Up_to_Side_Plank/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Pushups (Close and Wide Hand Positions)",
+    "images": [
+      "/exercise-images/Pushups_Close_and_Wide_Hand_Positions/0.jpg",
+      "/exercise-images/Pushups_Close_and_Wide_Hand_Positions/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Rack Delivery",
+    "images": [
+      "/exercise-images/Rack_Delivery/0.jpg",
+      "/exercise-images/Rack_Delivery/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Rack Pulls",
+    "images": [
+      "/exercise-images/Rack_Pulls/0.jpg",
+      "/exercise-images/Rack_Pulls/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Recumbent Bike",
+    "images": [
+      "/exercise-images/Recumbent_Bike/0.jpg",
+      "/exercise-images/Recumbent_Bike/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Reverse Barbell Curl",
+    "images": [
+      "/exercise-images/Reverse_Barbell_Curl/0.jpg",
+      "/exercise-images/Reverse_Barbell_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Reverse Barbell Preacher Curls",
+    "images": [
+      "/exercise-images/Reverse_Barbell_Preacher_Curls/0.jpg",
+      "/exercise-images/Reverse_Barbell_Preacher_Curls/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Reverse Cable Curl",
+    "images": [
+      "/exercise-images/Reverse_Cable_Curl/0.jpg",
+      "/exercise-images/Reverse_Cable_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Reverse Crunch",
+    "images": [
+      "/exercise-images/Reverse_Crunch/0.jpg",
+      "/exercise-images/Reverse_Crunch/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Reverse Flyes",
+    "images": [
+      "/exercise-images/Reverse_Flyes/0.jpg",
+      "/exercise-images/Reverse_Flyes/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Reverse Flyes With External Rotation",
+    "images": [
+      "/exercise-images/Reverse_Flyes_With_External_Rotation/0.jpg",
+      "/exercise-images/Reverse_Flyes_With_External_Rotation/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Reverse Grip Bent-Over Rows",
+    "images": [
+      "/exercise-images/Reverse_Grip_Bent-Over_Rows/0.jpg",
+      "/exercise-images/Reverse_Grip_Bent-Over_Rows/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Reverse Grip Triceps Pushdown",
+    "images": [
+      "/exercise-images/Reverse_Grip_Triceps_Pushdown/0.jpg",
+      "/exercise-images/Reverse_Grip_Triceps_Pushdown/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Reverse Machine Flyes",
+    "images": [
+      "/exercise-images/Reverse_Machine_Flyes/0.jpg",
+      "/exercise-images/Reverse_Machine_Flyes/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Reverse Plate Curls",
+    "images": [
+      "/exercise-images/Reverse_Plate_Curls/0.jpg",
+      "/exercise-images/Reverse_Plate_Curls/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Ring Dips",
+    "images": [
+      "/exercise-images/Ring_Dips/0.jpg",
+      "/exercise-images/Ring_Dips/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Rocky Pull-Ups/Pulldowns",
+    "images": [
+      "/exercise-images/Rocky_Pull-Ups_Pulldowns/0.jpg",
+      "/exercise-images/Rocky_Pull-Ups_Pulldowns/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Rope Climb",
+    "images": [
+      "/exercise-images/Rope_Climb/0.jpg",
+      "/exercise-images/Rope_Climb/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Rope Crunch",
+    "images": [
+      "/exercise-images/Rope_Crunch/0.jpg",
+      "/exercise-images/Rope_Crunch/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Rope Jumping",
+    "images": [
+      "/exercise-images/Rope_Jumping/0.jpg",
+      "/exercise-images/Rope_Jumping/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Rope Straight-Arm Pulldown",
+    "images": [
+      "/exercise-images/Rope_Straight-Arm_Pulldown/0.jpg",
+      "/exercise-images/Rope_Straight-Arm_Pulldown/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Rowing, Stationary",
+    "images": [
+      "/exercise-images/Rowing_Stationary/0.jpg",
+      "/exercise-images/Rowing_Stationary/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Running, Treadmill",
+    "images": [
+      "/exercise-images/Running_Treadmill/0.jpg",
+      "/exercise-images/Running_Treadmill/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Scapular Pull-Up",
+    "images": [
+      "/exercise-images/Scapular_Pull-Up/0.jpg",
+      "/exercise-images/Scapular_Pull-Up/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Scissor Kick",
+    "images": [
+      "/exercise-images/Scissor_Kick/0.jpg",
+      "/exercise-images/Scissor_Kick/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Seated Barbell Military Press",
+    "images": [
+      "/exercise-images/Seated_Barbell_Military_Press/0.jpg",
+      "/exercise-images/Seated_Barbell_Military_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Seated Bent-Over One-Arm Dumbbell Triceps Extension",
+    "images": [
+      "/exercise-images/Seated_Bent-Over_One-Arm_Dumbbell_Triceps_Extension/0.jpg",
+      "/exercise-images/Seated_Bent-Over_One-Arm_Dumbbell_Triceps_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Seated Bent-Over Rear Delt Raise",
+    "images": [
+      "/exercise-images/Seated_Bent-Over_Rear_Delt_Raise/0.jpg",
+      "/exercise-images/Seated_Bent-Over_Rear_Delt_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Seated Bent-Over Two-Arm Dumbbell Triceps Extension",
+    "images": [
+      "/exercise-images/Seated_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension/0.jpg",
+      "/exercise-images/Seated_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Seated Cable Shoulder Press",
+    "images": [
+      "/exercise-images/Seated_Cable_Shoulder_Press/0.jpg",
+      "/exercise-images/Seated_Cable_Shoulder_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Seated Calf Raise",
+    "images": [
+      "/exercise-images/Seated_Calf_Raise/0.jpg",
+      "/exercise-images/Seated_Calf_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Seated Dumbbell Curl",
+    "images": [
+      "/exercise-images/Seated_Dumbbell_Curl/0.jpg",
+      "/exercise-images/Seated_Dumbbell_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Seated Dumbbell Press",
+    "images": [
+      "/exercise-images/Seated_Dumbbell_Press/0.jpg",
+      "/exercise-images/Seated_Dumbbell_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Seated Good Mornings",
+    "images": [
+      "/exercise-images/Seated_Good_Mornings/0.jpg",
+      "/exercise-images/Seated_Good_Mornings/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Seated Leg Curl",
+    "images": [
+      "/exercise-images/Seated_Leg_Curl/0.jpg",
+      "/exercise-images/Seated_Leg_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Seated Leg Tucks",
+    "images": [
+      "/exercise-images/Seated_Leg_Tucks/0.jpg",
+      "/exercise-images/Seated_Leg_Tucks/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Seated One-arm Cable Pulley Rows",
+    "images": [
+      "/exercise-images/Seated_One-arm_Cable_Pulley_Rows/0.jpg",
+      "/exercise-images/Seated_One-arm_Cable_Pulley_Rows/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Seated Side Lateral Raise",
+    "images": [
+      "/exercise-images/Seated_Side_Lateral_Raise/0.jpg",
+      "/exercise-images/Seated_Side_Lateral_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Seated Triceps Press",
+    "images": [
+      "/exercise-images/Seated_Triceps_Press/0.jpg",
+      "/exercise-images/Seated_Triceps_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Shotgun Row",
+    "images": [
+      "/exercise-images/Shotgun_Row/0.jpg",
+      "/exercise-images/Shotgun_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Side Bridge",
+    "images": [
+      "/exercise-images/Side_Bridge/0.jpg",
+      "/exercise-images/Side_Bridge/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Side Lateral Raise",
+    "images": [
+      "/exercise-images/Side_Lateral_Raise/0.jpg",
+      "/exercise-images/Side_Lateral_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Side Laterals to Front Raise",
+    "images": [
+      "/exercise-images/Side_Laterals_to_Front_Raise/0.jpg",
+      "/exercise-images/Side_Laterals_to_Front_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Side To Side Chins",
+    "images": [
+      "/exercise-images/Side_To_Side_Chins/0.jpg",
+      "/exercise-images/Side_To_Side_Chins/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Single-Arm Cable Crossover",
+    "images": [
+      "/exercise-images/Single-Arm_Cable_Crossover/0.jpg",
+      "/exercise-images/Single-Arm_Cable_Crossover/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Single-Arm Linear Jammer",
+    "images": [
+      "/exercise-images/Single-Arm_Linear_Jammer/0.jpg",
+      "/exercise-images/Single-Arm_Linear_Jammer/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Single-Arm Push-Up",
+    "images": [
+      "/exercise-images/Single-Arm_Push-Up/0.jpg",
+      "/exercise-images/Single-Arm_Push-Up/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Single-Leg Leg Extension",
+    "images": [
+      "/exercise-images/Single-Leg_Leg_Extension/0.jpg",
+      "/exercise-images/Single-Leg_Leg_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Single Dumbbell Raise",
+    "images": [
+      "/exercise-images/Single_Dumbbell_Raise/0.jpg",
+      "/exercise-images/Single_Dumbbell_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Sit-Up",
+    "images": [
+      "/exercise-images/Sit-Up/0.jpg",
+      "/exercise-images/Sit-Up/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Sled Push",
+    "images": [
+      "/exercise-images/Sled_Push/0.jpg",
+      "/exercise-images/Sled_Push/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Sledgehammer Swings",
+    "images": [
+      "/exercise-images/Sledgehammer_Swings/0.jpg",
+      "/exercise-images/Sledgehammer_Swings/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Smith Machine Behind the Back Shrug",
+    "images": [
+      "/exercise-images/Smith_Machine_Behind_the_Back_Shrug/0.jpg",
+      "/exercise-images/Smith_Machine_Behind_the_Back_Shrug/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Smith Machine Bench Press",
+    "images": [
+      "/exercise-images/Smith_Machine_Bench_Press/0.jpg",
+      "/exercise-images/Smith_Machine_Bench_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Smith Machine Bent Over Row",
+    "images": [
+      "/exercise-images/Smith_Machine_Bent_Over_Row/0.jpg",
+      "/exercise-images/Smith_Machine_Bent_Over_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Smith Machine Calf Raise",
+    "images": [
+      "/exercise-images/Smith_Machine_Calf_Raise/0.jpg",
+      "/exercise-images/Smith_Machine_Calf_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Smith Machine Close-Grip Bench Press",
+    "images": [
+      "/exercise-images/Smith_Machine_Close-Grip_Bench_Press/0.jpg",
+      "/exercise-images/Smith_Machine_Close-Grip_Bench_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Smith Machine Decline Press",
+    "images": [
+      "/exercise-images/Smith_Machine_Decline_Press/0.jpg",
+      "/exercise-images/Smith_Machine_Decline_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Smith Machine Hip Raise",
+    "images": [
+      "/exercise-images/Smith_Machine_Hip_Raise/0.jpg",
+      "/exercise-images/Smith_Machine_Hip_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Smith Machine Incline Bench Press",
+    "images": [
+      "/exercise-images/Smith_Machine_Incline_Bench_Press/0.jpg",
+      "/exercise-images/Smith_Machine_Incline_Bench_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Smith Machine One-Arm Upright Row",
+    "images": [
+      "/exercise-images/Smith_Machine_One-Arm_Upright_Row/0.jpg",
+      "/exercise-images/Smith_Machine_One-Arm_Upright_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Smith Machine Overhead Shoulder Press",
+    "images": [
+      "/exercise-images/Smith_Machine_Overhead_Shoulder_Press/0.jpg",
+      "/exercise-images/Smith_Machine_Overhead_Shoulder_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Smith Machine Pistol Squat",
+    "images": [
+      "/exercise-images/Smith_Machine_Pistol_Squat/0.jpg",
+      "/exercise-images/Smith_Machine_Pistol_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Smith Machine Squat",
+    "images": [
+      "/exercise-images/Smith_Machine_Squat/0.jpg",
+      "/exercise-images/Smith_Machine_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Smith Machine Stiff-Legged Deadlift",
+    "images": [
+      "/exercise-images/Smith_Machine_Stiff-Legged_Deadlift/0.jpg",
+      "/exercise-images/Smith_Machine_Stiff-Legged_Deadlift/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Smith Machine Upright Row",
+    "images": [
+      "/exercise-images/Smith_Machine_Upright_Row/0.jpg",
+      "/exercise-images/Smith_Machine_Upright_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Smith Single-Leg Split Squat",
+    "images": [
+      "/exercise-images/Smith_Single-Leg_Split_Squat/0.jpg",
+      "/exercise-images/Smith_Single-Leg_Split_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Snatch Shrug",
+    "images": [
+      "/exercise-images/Snatch_Shrug/0.jpg",
+      "/exercise-images/Snatch_Shrug/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Speed Band Overhead Triceps",
+    "images": [
+      "/exercise-images/Speed_Band_Overhead_Triceps/0.jpg",
+      "/exercise-images/Speed_Band_Overhead_Triceps/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Spider Curl",
+    "images": [
+      "/exercise-images/Spider_Curl/0.jpg",
+      "/exercise-images/Spider_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Split Jump",
+    "images": [
+      "/exercise-images/Split_Jump/0.jpg",
+      "/exercise-images/Split_Jump/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Split Squat with Dumbbells",
+    "images": [
+      "/exercise-images/Split_Squat_with_Dumbbells/0.jpg",
+      "/exercise-images/Split_Squat_with_Dumbbells/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Split Squats",
+    "images": [
+      "/exercise-images/Split_Squats/0.jpg",
+      "/exercise-images/Split_Squats/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Squats - With Bands",
+    "images": [
+      "/exercise-images/Squats_-_With_Bands/0.jpg",
+      "/exercise-images/Squats_-_With_Bands/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Stairmaster",
+    "images": [
+      "/exercise-images/Stairmaster/0.jpg",
+      "/exercise-images/Stairmaster/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Standing Alternating Dumbbell Press",
+    "images": [
+      "/exercise-images/Standing_Alternating_Dumbbell_Press/0.jpg",
+      "/exercise-images/Standing_Alternating_Dumbbell_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Standing Barbell Calf Raise",
+    "images": [
+      "/exercise-images/Standing_Barbell_Calf_Raise/0.jpg",
+      "/exercise-images/Standing_Barbell_Calf_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Standing Bent-Over One-Arm Dumbbell Triceps Extension",
+    "images": [
+      "/exercise-images/Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension/0.jpg",
+      "/exercise-images/Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Standing Bent-Over Two-Arm Dumbbell Triceps Extension",
+    "images": [
+      "/exercise-images/Standing_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension/0.jpg",
+      "/exercise-images/Standing_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Standing Biceps Cable Curl",
+    "images": [
+      "/exercise-images/Standing_Biceps_Cable_Curl/0.jpg",
+      "/exercise-images/Standing_Biceps_Cable_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Standing Bradford Press",
+    "images": [
+      "/exercise-images/Standing_Bradford_Press/0.jpg",
+      "/exercise-images/Standing_Bradford_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Standing Cable Chest Press",
+    "images": [
+      "/exercise-images/Standing_Cable_Chest_Press/0.jpg",
+      "/exercise-images/Standing_Cable_Chest_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Standing Calf Raises",
+    "images": [
+      "/exercise-images/Standing_Calf_Raises/0.jpg",
+      "/exercise-images/Standing_Calf_Raises/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Standing Dumbbell Calf Raise",
+    "images": [
+      "/exercise-images/Standing_Dumbbell_Calf_Raise/0.jpg",
+      "/exercise-images/Standing_Dumbbell_Calf_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Standing Dumbbell Press",
+    "images": [
+      "/exercise-images/Standing_Dumbbell_Press/0.jpg",
+      "/exercise-images/Standing_Dumbbell_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Standing Dumbbell Straight-Arm Front Delt Raise Above Head",
+    "images": [
+      "/exercise-images/Standing_Dumbbell_Straight-Arm_Front_Delt_Raise_Above_Head/0.jpg",
+      "/exercise-images/Standing_Dumbbell_Straight-Arm_Front_Delt_Raise_Above_Head/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Standing Dumbbell Triceps Extension",
+    "images": [
+      "/exercise-images/Standing_Dumbbell_Triceps_Extension/0.jpg",
+      "/exercise-images/Standing_Dumbbell_Triceps_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Standing Dumbbell Upright Row",
+    "images": [
+      "/exercise-images/Standing_Dumbbell_Upright_Row/0.jpg",
+      "/exercise-images/Standing_Dumbbell_Upright_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Standing Front Barbell Raise Over Head",
+    "images": [
+      "/exercise-images/Standing_Front_Barbell_Raise_Over_Head/0.jpg",
+      "/exercise-images/Standing_Front_Barbell_Raise_Over_Head/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Standing Leg Curl",
+    "images": [
+      "/exercise-images/Standing_Leg_Curl/0.jpg",
+      "/exercise-images/Standing_Leg_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Standing Low-Pulley Deltoid Raise",
+    "images": [
+      "/exercise-images/Standing_Low-Pulley_Deltoid_Raise/0.jpg",
+      "/exercise-images/Standing_Low-Pulley_Deltoid_Raise/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Standing Low-Pulley One-Arm Triceps Extension",
+    "images": [
+      "/exercise-images/Standing_Low-Pulley_One-Arm_Triceps_Extension/0.jpg",
+      "/exercise-images/Standing_Low-Pulley_One-Arm_Triceps_Extension/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Standing Military Press",
+    "images": [
+      "/exercise-images/Standing_Military_Press/0.jpg",
+      "/exercise-images/Standing_Military_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Standing One-Arm Cable Curl",
+    "images": [
+      "/exercise-images/Standing_One-Arm_Cable_Curl/0.jpg",
+      "/exercise-images/Standing_One-Arm_Cable_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Standing One-Arm Dumbbell Curl Over Incline Bench",
+    "images": [
+      "/exercise-images/Standing_One-Arm_Dumbbell_Curl_Over_Incline_Bench/0.jpg",
+      "/exercise-images/Standing_One-Arm_Dumbbell_Curl_Over_Incline_Bench/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Standing Palms-Up Barbell Behind The Back Wrist Curl",
+    "images": [
+      "/exercise-images/Standing_Palms-Up_Barbell_Behind_The_Back_Wrist_Curl/0.jpg",
+      "/exercise-images/Standing_Palms-Up_Barbell_Behind_The_Back_Wrist_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Standing Two-Arm Overhead Throw",
+    "images": [
+      "/exercise-images/Standing_Two-Arm_Overhead_Throw/0.jpg",
+      "/exercise-images/Standing_Two-Arm_Overhead_Throw/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Step Mill",
+    "images": [
+      "/exercise-images/Step_Mill/0.jpg",
+      "/exercise-images/Step_Mill/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Stiff-Legged Barbell Deadlift",
+    "images": [
+      "/exercise-images/Stiff-Legged_Barbell_Deadlift/0.jpg",
+      "/exercise-images/Stiff-Legged_Barbell_Deadlift/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Stiff-Legged Dumbbell Deadlift",
+    "images": [
+      "/exercise-images/Stiff-Legged_Dumbbell_Deadlift/0.jpg",
+      "/exercise-images/Stiff-Legged_Dumbbell_Deadlift/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Straight-Arm Dumbbell Pullover",
+    "images": [
+      "/exercise-images/Straight-Arm_Dumbbell_Pullover/0.jpg",
+      "/exercise-images/Straight-Arm_Dumbbell_Pullover/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Straight-Arm Pulldown",
+    "images": [
+      "/exercise-images/Straight-Arm_Pulldown/0.jpg",
+      "/exercise-images/Straight-Arm_Pulldown/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Straight Raises on Incline Bench",
+    "images": [
+      "/exercise-images/Straight_Raises_on_Incline_Bench/0.jpg",
+      "/exercise-images/Straight_Raises_on_Incline_Bench/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Sumo Deadlift",
+    "images": [
+      "/exercise-images/Sumo_Deadlift/0.jpg",
+      "/exercise-images/Sumo_Deadlift/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Superman",
+    "images": [
+      "/exercise-images/Superman/0.jpg",
+      "/exercise-images/Superman/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Suspended Push-Up",
+    "images": [
+      "/exercise-images/Suspended_Push-Up/0.jpg",
+      "/exercise-images/Suspended_Push-Up/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Suspended Row",
+    "images": [
+      "/exercise-images/Suspended_Row/0.jpg",
+      "/exercise-images/Suspended_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Suspended Split Squat",
+    "images": [
+      "/exercise-images/Suspended_Split_Squat/0.jpg",
+      "/exercise-images/Suspended_Split_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Svend Press",
+    "images": [
+      "/exercise-images/Svend_Press/0.jpg",
+      "/exercise-images/Svend_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "T-Bar Row with Handle",
+    "images": [
+      "/exercise-images/T-Bar_Row_with_Handle/0.jpg",
+      "/exercise-images/T-Bar_Row_with_Handle/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Thigh Abductor",
+    "images": [
+      "/exercise-images/Thigh_Abductor/0.jpg",
+      "/exercise-images/Thigh_Abductor/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Toe Touchers",
+    "images": [
+      "/exercise-images/Toe_Touchers/0.jpg",
+      "/exercise-images/Toe_Touchers/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Trap Bar Deadlift",
+    "images": [
+      "/exercise-images/Trap_Bar_Deadlift/0.jpg",
+      "/exercise-images/Trap_Bar_Deadlift/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Tricep Dumbbell Kickback",
+    "images": [
+      "/exercise-images/Tricep_Dumbbell_Kickback/0.jpg",
+      "/exercise-images/Tricep_Dumbbell_Kickback/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Triceps Pushdown - Rope Attachment",
+    "images": [
+      "/exercise-images/Triceps_Pushdown_-_Rope_Attachment/0.jpg",
+      "/exercise-images/Triceps_Pushdown_-_Rope_Attachment/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Triceps Pushdown - V-Bar Attachment",
+    "images": [
+      "/exercise-images/Triceps_Pushdown_-_V-Bar_Attachment/0.jpg",
+      "/exercise-images/Triceps_Pushdown_-_V-Bar_Attachment/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Two-Arm Dumbbell Preacher Curl",
+    "images": [
+      "/exercise-images/Two-Arm_Dumbbell_Preacher_Curl/0.jpg",
+      "/exercise-images/Two-Arm_Dumbbell_Preacher_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Two-Arm Kettlebell Row",
+    "images": [
+      "/exercise-images/Two-Arm_Kettlebell_Row/0.jpg",
+      "/exercise-images/Two-Arm_Kettlebell_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Underhand Cable Pulldowns",
+    "images": [
+      "/exercise-images/Underhand_Cable_Pulldowns/0.jpg",
+      "/exercise-images/Underhand_Cable_Pulldowns/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Shoulders",
+    "exercise": "Upright Barbell Row",
+    "images": [
+      "/exercise-images/Upright_Barbell_Row/0.jpg",
+      "/exercise-images/Upright_Barbell_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Upright Cable Row",
+    "images": [
+      "/exercise-images/Upright_Cable_Row/0.jpg",
+      "/exercise-images/Upright_Cable_Row/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Upright Row - With Bands",
+    "images": [
+      "/exercise-images/Upright_Row_-_With_Bands/0.jpg",
+      "/exercise-images/Upright_Row_-_With_Bands/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "V-Bar Pulldown",
+    "images": [
+      "/exercise-images/V-Bar_Pulldown/0.jpg",
+      "/exercise-images/V-Bar_Pulldown/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "V-Bar Pullup",
+    "images": [
+      "/exercise-images/V-Bar_Pullup/0.jpg",
+      "/exercise-images/V-Bar_Pullup/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Vertical Swing",
+    "images": [
+      "/exercise-images/Vertical_Swing/0.jpg",
+      "/exercise-images/Vertical_Swing/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Cardio",
+    "exercise": "Walking, Treadmill",
+    "images": [
+      "/exercise-images/Walking_Treadmill/0.jpg",
+      "/exercise-images/Walking_Treadmill/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Triceps",
+    "exercise": "Weighted Bench Dip",
+    "images": [
+      "/exercise-images/Weighted_Bench_Dip/0.jpg",
+      "/exercise-images/Weighted_Bench_Dip/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Weighted Crunches",
+    "images": [
+      "/exercise-images/Weighted_Crunches/0.jpg",
+      "/exercise-images/Weighted_Crunches/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Weighted Jump Squat",
+    "images": [
+      "/exercise-images/Weighted_Jump_Squat/0.jpg",
+      "/exercise-images/Weighted_Jump_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Weighted Pull Ups",
+    "images": [
+      "/exercise-images/Weighted_Pull_Ups/0.jpg",
+      "/exercise-images/Weighted_Pull_Ups/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Weighted Sissy Squat",
+    "images": [
+      "/exercise-images/Weighted_Sissy_Squat/0.jpg",
+      "/exercise-images/Weighted_Sissy_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Weighted Sit-Ups - With Bands",
+    "images": [
+      "/exercise-images/Weighted_Sit-Ups_-_With_Bands/0.jpg",
+      "/exercise-images/Weighted_Sit-Ups_-_With_Bands/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "Weighted Squat",
+    "images": [
+      "/exercise-images/Weighted_Squat/0.jpg",
+      "/exercise-images/Weighted_Squat/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Wide-Grip Barbell Bench Press",
+    "images": [
+      "/exercise-images/Wide-Grip_Barbell_Bench_Press/0.jpg",
+      "/exercise-images/Wide-Grip_Barbell_Bench_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Wide-Grip Decline Barbell Bench Press",
+    "images": [
+      "/exercise-images/Wide-Grip_Decline_Barbell_Bench_Press/0.jpg",
+      "/exercise-images/Wide-Grip_Decline_Barbell_Bench_Press/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Chest",
+    "exercise": "Wide-Grip Decline Barbell Pullover",
+    "images": [
+      "/exercise-images/Wide-Grip_Decline_Barbell_Pullover/0.jpg",
+      "/exercise-images/Wide-Grip_Decline_Barbell_Pullover/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Wide-Grip Lat Pulldown",
+    "images": [
+      "/exercise-images/Wide-Grip_Lat_Pulldown/0.jpg",
+      "/exercise-images/Wide-Grip_Lat_Pulldown/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Wide-Grip Pulldown Behind The Neck",
+    "images": [
+      "/exercise-images/Wide-Grip_Pulldown_Behind_The_Neck/0.jpg",
+      "/exercise-images/Wide-Grip_Pulldown_Behind_The_Neck/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Back",
+    "exercise": "Wide-Grip Rear Pull-Up",
+    "images": [
+      "/exercise-images/Wide-Grip_Rear_Pull-Up/0.jpg",
+      "/exercise-images/Wide-Grip_Rear_Pull-Up/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Abs",
+    "exercise": "Wind Sprints",
+    "images": [
+      "/exercise-images/Wind_Sprints/0.jpg",
+      "/exercise-images/Wind_Sprints/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Legs",
+    "exercise": "World's Greatest Stretch",
+    "images": [
+      "/exercise-images/Worlds_Greatest_Stretch/0.jpg",
+      "/exercise-images/Worlds_Greatest_Stretch/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Zottman Curl",
+    "images": [
+      "/exercise-images/Zottman_Curl/0.jpg",
+      "/exercise-images/Zottman_Curl/1.jpg"
+    ],
+    "curated": false
+  },
+  {
+    "target_muscle": "Biceps",
+    "exercise": "Zottman Preacher Curl",
+    "images": [
+      "/exercise-images/Zottman_Preacher_Curl/0.jpg",
+      "/exercise-images/Zottman_Preacher_Curl/1.jpg"
+    ],
+    "curated": false
+  }
+]
