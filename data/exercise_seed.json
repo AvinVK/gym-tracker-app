@@ -198,54 +198,6 @@
     "curated": true
   },
   {
-    "target_muscle": "Chest",
-    "exercise": "Bench Press",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Incline Press",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Decline Press",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Pec Deck Fly",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Upper chest cable crossover",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Lateral Raises",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Front Raises",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Arnold Press",
-    "images": [],
-    "curated": true
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "Rotation using plates",
     "images": [],
@@ -276,90 +228,6 @@
     "curated": true
   },
   {
-    "target_muscle": "Back",
-    "exercise": "Deadlift",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Lat pulldown",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Close grip pulldown",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Normal grip pulldown",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Close grip machine pulldown",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Single hand rowing",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Barbell / Dumbbell Row",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Single arm pulldown",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Cable Pulldown",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Machine Rowing",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Squats",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Walking Lunges",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Leg Curl",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Calf Raises",
-    "images": [],
-    "curated": true
-  },
-  {
     "target_muscle": "Legs",
     "exercise": "Bulgarian Squats",
     "images": [],
@@ -384,80 +252,8 @@
     "curated": true
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Hip Thrusts",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Bicep Curls",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Wall supported Curls",
-    "images": [],
-    "curated": true
-  },
-  {
     "target_muscle": "Biceps",
     "exercise": "21ones",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Decline Bench Curls",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Cable Curls",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Abs Machine",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Leg raises",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Decline Sit ups",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Standing Crunches",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Knee Raises",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Cardio",
-    "exercise": "Treadmill Walk",
-    "images": [],
-    "curated": true
-  },
-  {
-    "target_muscle": "Cardio",
-    "exercise": "Step Machine",
     "images": [],
     "curated": true
   },
@@ -498,26 +294,11 @@
     "curated": true
   },
   {
-    "target_muscle": "Cardio",
-    "exercise": "Skipping",
-    "images": [],
-    "curated": true
-  },
-  {
     "target_muscle": "Abs",
     "exercise": "3/4 Sit-Up",
     "images": [
       "/exercise-images/3_4_Sit-Up/0.jpg",
       "/exercise-images/3_4_Sit-Up/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "90/90 Hamstring",
-    "images": [
-      "/exercise-images/90_90_Hamstring/0.jpg",
-      "/exercise-images/90_90_Hamstring/1.jpg"
     ],
     "curated": false
   },
@@ -540,24 +321,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Adductor",
-    "images": [
-      "/exercise-images/Adductor/0.jpg",
-      "/exercise-images/Adductor/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Adductor/Groin",
-    "images": [
-      "/exercise-images/Adductor_Groin/0.jpg",
-      "/exercise-images/Adductor_Groin/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Abs",
     "exercise": "Advanced Kettlebell Windmill",
     "images": [
@@ -572,15 +335,6 @@
     "images": [
       "/exercise-images/Air_Bike/0.jpg",
       "/exercise-images/Air_Bike/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "All Fours Quad Stretch",
-    "images": [
-      "/exercise-images/All_Fours_Quad_Stretch/0.jpg",
-      "/exercise-images/All_Fours_Quad_Stretch/1.jpg"
     ],
     "curated": false
   },
@@ -612,15 +366,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Alternate Leg Diagonal Bound",
-    "images": [
-      "/exercise-images/Alternate_Leg_Diagonal_Bound/0.jpg",
-      "/exercise-images/Alternate_Leg_Diagonal_Bound/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "Alternating Cable Shoulder Press",
     "images": [
@@ -635,24 +380,6 @@
     "images": [
       "/exercise-images/Alternating_Deltoid_Raise/0.jpg",
       "/exercise-images/Alternating_Deltoid_Raise/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Alternating Floor Press",
-    "images": [
-      "/exercise-images/Alternating_Floor_Press/0.jpg",
-      "/exercise-images/Alternating_Floor_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Alternating Hang Clean",
-    "images": [
-      "/exercise-images/Alternating_Hang_Clean/0.jpg",
-      "/exercise-images/Alternating_Hang_Clean/1.jpg"
     ],
     "curated": false
   },
@@ -684,47 +411,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Ankle Circles",
-    "images": [
-      "/exercise-images/Ankle_Circles/0.jpg",
-      "/exercise-images/Ankle_Circles/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Ankle On The Knee",
-    "images": [
-      "/exercise-images/Ankle_On_The_Knee/0.jpg",
-      "/exercise-images/Ankle_On_The_Knee/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Anterior Tibialis-SMR",
-    "images": [
-      "/exercise-images/Anterior_Tibialis-SMR/0.jpg",
-      "/exercise-images/Anterior_Tibialis-SMR/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "Anti-Gravity Press",
     "images": [
       "/exercise-images/Anti-Gravity_Press/0.jpg",
       "/exercise-images/Anti-Gravity_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Arm Circles",
-    "images": [
-      "/exercise-images/Arm_Circles/0.jpg",
-      "/exercise-images/Arm_Circles/1.jpg"
     ],
     "curated": false
   },
@@ -747,42 +438,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Back",
-    "exercise": "Atlas Stone Trainer",
-    "images": [
-      "/exercise-images/Atlas_Stone_Trainer/0.jpg",
-      "/exercise-images/Atlas_Stone_Trainer/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Atlas Stones",
-    "images": [
-      "/exercise-images/Atlas_Stones/0.jpg",
-      "/exercise-images/Atlas_Stones/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Axle Deadlift",
-    "images": [
-      "/exercise-images/Axle_Deadlift/0.jpg",
-      "/exercise-images/Axle_Deadlift/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Back Flyes - With Bands",
-    "images": [
-      "/exercise-images/Back_Flyes_-_With_Bands/0.jpg",
-      "/exercise-images/Back_Flyes_-_With_Bands/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Legs",
     "exercise": "Backward Drag",
     "images": [
@@ -801,47 +456,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Balance Board",
-    "images": [
-      "/exercise-images/Balance_Board/0.jpg",
-      "/exercise-images/Balance_Board/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Ball Leg Curl",
-    "images": [
-      "/exercise-images/Ball_Leg_Curl/0.jpg",
-      "/exercise-images/Ball_Leg_Curl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Back",
     "exercise": "Band Assisted Pull-Up",
     "images": [
       "/exercise-images/Band_Assisted_Pull-Up/0.jpg",
       "/exercise-images/Band_Assisted_Pull-Up/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Band Good Morning",
-    "images": [
-      "/exercise-images/Band_Good_Morning/0.jpg",
-      "/exercise-images/Band_Good_Morning/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Band Good Morning (Pull Through)",
-    "images": [
-      "/exercise-images/Band_Good_Morning_Pull_Through/0.jpg",
-      "/exercise-images/Band_Good_Morning_Pull_Through/1.jpg"
     ],
     "curated": false
   },
@@ -1008,15 +627,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Abs",
-    "exercise": "Barbell Rollout from Bench",
-    "images": [
-      "/exercise-images/Barbell_Rollout_from_Bench/0.jpg",
-      "/exercise-images/Barbell_Rollout_from_Bench/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Legs",
     "exercise": "Barbell Seated Calf Raise",
     "images": [
@@ -1049,15 +659,6 @@
     "images": [
       "/exercise-images/Barbell_Shrug_Behind_The_Back/0.jpg",
       "/exercise-images/Barbell_Shrug_Behind_The_Back/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Barbell Side Bend",
-    "images": [
-      "/exercise-images/Barbell_Side_Bend/0.jpg",
-      "/exercise-images/Barbell_Side_Bend/1.jpg"
     ],
     "curated": false
   },
@@ -1116,24 +717,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Bear Crawl Sled Drags",
-    "images": [
-      "/exercise-images/Bear_Crawl_Sled_Drags/0.jpg",
-      "/exercise-images/Bear_Crawl_Sled_Drags/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Behind Head Chest Stretch",
-    "images": [
-      "/exercise-images/Behind_Head_Chest_Stretch/0.jpg",
-      "/exercise-images/Behind_Head_Chest_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Triceps",
     "exercise": "Bench Dips",
     "images": [
@@ -1152,29 +735,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Triceps",
-    "exercise": "Bench Press - Powerlifting",
-    "images": [
-      "/exercise-images/Bench_Press_-_Powerlifting/0.jpg",
-      "/exercise-images/Bench_Press_-_Powerlifting/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Chest",
     "exercise": "Bench Press - With Bands",
     "images": [
       "/exercise-images/Bench_Press_-_With_Bands/0.jpg",
       "/exercise-images/Bench_Press_-_With_Bands/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Triceps",
-    "exercise": "Bench Press with Chains",
-    "images": [
-      "/exercise-images/Bench_Press_with_Chains/0.jpg",
-      "/exercise-images/Bench_Press_with_Chains/1.jpg"
     ],
     "curated": false
   },
@@ -1220,15 +785,6 @@
     "images": [
       "/exercise-images/Bent_Over_Barbell_Row/0.jpg",
       "/exercise-images/Bent_Over_Barbell_Row/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Bent Over Dumbbell Rear Delt Raise With Head On Bench",
-    "images": [
-      "/exercise-images/Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench/0.jpg",
-      "/exercise-images/Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench/1.jpg"
     ],
     "curated": false
   },
@@ -1288,28 +844,10 @@
   },
   {
     "target_muscle": "Cardio",
-    "exercise": "Bicycling",
-    "images": [
-      "/exercise-images/Bicycling/0.jpg",
-      "/exercise-images/Bicycling/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Cardio",
     "exercise": "Bicycling, Stationary",
     "images": [
       "/exercise-images/Bicycling_Stationary/0.jpg",
       "/exercise-images/Bicycling_Stationary/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Triceps",
-    "exercise": "Board Press",
-    "images": [
-      "/exercise-images/Board_Press/0.jpg",
-      "/exercise-images/Board_Press/1.jpg"
     ],
     "curated": false
   },
@@ -1341,15 +879,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Back",
-    "exercise": "Bodyweight Mid Row",
-    "images": [
-      "/exercise-images/Bodyweight_Mid_Row/0.jpg",
-      "/exercise-images/Bodyweight_Mid_Row/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Legs",
     "exercise": "Bodyweight Squat",
     "images": [
@@ -1364,15 +893,6 @@
     "images": [
       "/exercise-images/Bodyweight_Walking_Lunge/0.jpg",
       "/exercise-images/Bodyweight_Walking_Lunge/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Bosu Ball Cable Crunch With Side Bends",
-    "images": [
-      "/exercise-images/Bosu_Ball_Cable_Crunch_With_Side_Bends/0.jpg",
-      "/exercise-images/Bosu_Ball_Cable_Crunch_With_Side_Bends/1.jpg"
     ],
     "curated": false
   },
@@ -1418,33 +938,6 @@
     "images": [
       "/exercise-images/Box_Squat/0.jpg",
       "/exercise-images/Box_Squat/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Box Squat with Bands",
-    "images": [
-      "/exercise-images/Box_Squat_with_Bands/0.jpg",
-      "/exercise-images/Box_Squat_with_Bands/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Box Squat with Chains",
-    "images": [
-      "/exercise-images/Box_Squat_with_Chains/0.jpg",
-      "/exercise-images/Box_Squat_with_Chains/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Brachialis-SMR",
-    "images": [
-      "/exercise-images/Brachialis-SMR/0.jpg",
-      "/exercise-images/Brachialis-SMR/1.jpg"
     ],
     "curated": false
   },
@@ -1503,15 +996,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Cable Deadlifts",
-    "images": [
-      "/exercise-images/Cable_Deadlifts/0.jpg",
-      "/exercise-images/Cable_Deadlifts/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Biceps",
     "exercise": "Cable Hammer Curls - Rope Attachment",
     "images": [
@@ -1566,15 +1050,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Abs",
-    "exercise": "Cable Judo Flip",
-    "images": [
-      "/exercise-images/Cable_Judo_Flip/0.jpg",
-      "/exercise-images/Cable_Judo_Flip/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Triceps",
     "exercise": "Cable Lying Triceps Extension",
     "images": [
@@ -1611,15 +1086,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Abs",
-    "exercise": "Cable Reverse Crunch",
-    "images": [
-      "/exercise-images/Cable_Reverse_Crunch/0.jpg",
-      "/exercise-images/Cable_Reverse_Crunch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Triceps",
     "exercise": "Cable Rope Overhead Triceps Extension",
     "images": [
@@ -1639,15 +1105,6 @@
   },
   {
     "target_muscle": "Abs",
-    "exercise": "Cable Russian Twists",
-    "images": [
-      "/exercise-images/Cable_Russian_Twists/0.jpg",
-      "/exercise-images/Cable_Russian_Twists/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
     "exercise": "Cable Seated Crunch",
     "images": [
       "/exercise-images/Cable_Seated_Crunch/0.jpg",
@@ -1661,15 +1118,6 @@
     "images": [
       "/exercise-images/Cable_Seated_Lateral_Raise/0.jpg",
       "/exercise-images/Cable_Seated_Lateral_Raise/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Cable Shoulder Press",
-    "images": [
-      "/exercise-images/Cable_Shoulder_Press/0.jpg",
-      "/exercise-images/Cable_Shoulder_Press/1.jpg"
     ],
     "curated": false
   },
@@ -1737,65 +1185,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Calf Stretch Elbows Against Wall",
-    "images": [
-      "/exercise-images/Calf_Stretch_Elbows_Against_Wall/0.jpg",
-      "/exercise-images/Calf_Stretch_Elbows_Against_Wall/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Calf Stretch Hands Against Wall",
-    "images": [
-      "/exercise-images/Calf_Stretch_Hands_Against_Wall/0.jpg",
-      "/exercise-images/Calf_Stretch_Hands_Against_Wall/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Calves-SMR",
-    "images": [
-      "/exercise-images/Calves-SMR/0.jpg",
-      "/exercise-images/Calves-SMR/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Car Deadlift",
-    "images": [
-      "/exercise-images/Car_Deadlift/0.jpg",
-      "/exercise-images/Car_Deadlift/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "Car Drivers",
     "images": [
       "/exercise-images/Car_Drivers/0.jpg",
       "/exercise-images/Car_Drivers/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Carioca Quick Step",
-    "images": [
-      "/exercise-images/Carioca_Quick_Step/0.jpg",
-      "/exercise-images/Carioca_Quick_Step/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Cat Stretch",
-    "images": [
-      "/exercise-images/Cat_Stretch/0.jpg",
-      "/exercise-images/Cat_Stretch/1.jpg"
     ],
     "curated": false
   },
@@ -1809,119 +1203,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Triceps",
-    "exercise": "Chain Handle Extension",
-    "images": [
-      "/exercise-images/Chain_Handle_Extension/0.jpg",
-      "/exercise-images/Chain_Handle_Extension/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Chain Press",
-    "images": [
-      "/exercise-images/Chain_Press/0.jpg",
-      "/exercise-images/Chain_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Chair Leg Extended Stretch",
-    "images": [
-      "/exercise-images/Chair_Leg_Extended_Stretch/0.jpg",
-      "/exercise-images/Chair_Leg_Extended_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Chair Lower Back Stretch",
-    "images": [
-      "/exercise-images/Chair_Lower_Back_Stretch/0.jpg",
-      "/exercise-images/Chair_Lower_Back_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Legs",
     "exercise": "Chair Squat",
     "images": [
       "/exercise-images/Chair_Squat/0.jpg",
       "/exercise-images/Chair_Squat/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Chair Upper Body Stretch",
-    "images": [
-      "/exercise-images/Chair_Upper_Body_Stretch/0.jpg",
-      "/exercise-images/Chair_Upper_Body_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Chest And Front Of Shoulder Stretch",
-    "images": [
-      "/exercise-images/Chest_And_Front_Of_Shoulder_Stretch/0.jpg",
-      "/exercise-images/Chest_And_Front_Of_Shoulder_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Chest Push from 3 point stance",
-    "images": [
-      "/exercise-images/Chest_Push_from_3_point_stance/0.jpg",
-      "/exercise-images/Chest_Push_from_3_point_stance/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Chest Push (multiple response)",
-    "images": [
-      "/exercise-images/Chest_Push_multiple_response/0.jpg",
-      "/exercise-images/Chest_Push_multiple_response/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Chest Push (single response)",
-    "images": [
-      "/exercise-images/Chest_Push_single_response/0.jpg",
-      "/exercise-images/Chest_Push_single_response/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Chest Push with Run Release",
-    "images": [
-      "/exercise-images/Chest_Push_with_Run_Release/0.jpg",
-      "/exercise-images/Chest_Push_with_Run_Release/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Chest Stretch on Stability Ball",
-    "images": [
-      "/exercise-images/Chest_Stretch_on_Stability_Ball/0.jpg",
-      "/exercise-images/Chest_Stretch_on_Stability_Ball/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Child's Pose",
-    "images": [
-      "/exercise-images/Childs_Pose/0.jpg",
-      "/exercise-images/Childs_Pose/1.jpg"
     ],
     "curated": false
   },
@@ -1935,56 +1221,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Shoulders",
-    "exercise": "Chin To Chest Stretch",
-    "images": [
-      "/exercise-images/Chin_To_Chest_Stretch/0.jpg",
-      "/exercise-images/Chin_To_Chest_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Circus Bell",
-    "images": [
-      "/exercise-images/Circus_Bell/0.jpg",
-      "/exercise-images/Circus_Bell/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Clean",
-    "images": [
-      "/exercise-images/Clean/0.jpg",
-      "/exercise-images/Clean/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Legs",
     "exercise": "Clean Deadlift",
     "images": [
       "/exercise-images/Clean_Deadlift/0.jpg",
       "/exercise-images/Clean_Deadlift/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Clean Pull",
-    "images": [
-      "/exercise-images/Clean_Pull/0.jpg",
-      "/exercise-images/Clean_Pull/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Clean Shrug",
-    "images": [
-      "/exercise-images/Clean_Shrug/0.jpg",
-      "/exercise-images/Clean_Shrug/1.jpg"
     ],
     "curated": false
   },
@@ -2007,24 +1248,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Clean from Blocks",
-    "images": [
-      "/exercise-images/Clean_from_Blocks/0.jpg",
-      "/exercise-images/Clean_from_Blocks/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Clock Push-Up",
-    "images": [
-      "/exercise-images/Clock_Push-Up/0.jpg",
-      "/exercise-images/Clock_Push-Up/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Triceps",
     "exercise": "Close-Grip Barbell Bench Press",
     "images": [
@@ -2039,15 +1262,6 @@
     "images": [
       "/exercise-images/Close-Grip_Dumbbell_Press/0.jpg",
       "/exercise-images/Close-Grip_Dumbbell_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Close-Grip EZ-Bar Curl with Band",
-    "images": [
-      "/exercise-images/Close-Grip_EZ-Bar_Curl_with_Band/0.jpg",
-      "/exercise-images/Close-Grip_EZ-Bar_Curl_with_Band/1.jpg"
     ],
     "curated": false
   },
@@ -2079,15 +1293,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Triceps",
-    "exercise": "Close-Grip Push-Up off of a Dumbbell",
-    "images": [
-      "/exercise-images/Close-Grip_Push-Up_off_of_a_Dumbbell/0.jpg",
-      "/exercise-images/Close-Grip_Push-Up_off_of_a_Dumbbell/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Biceps",
     "exercise": "Close-Grip Standing Barbell Curl",
     "images": [
@@ -2102,15 +1307,6 @@
     "images": [
       "/exercise-images/Cocoons/0.jpg",
       "/exercise-images/Cocoons/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Conan's Wheel",
-    "images": [
-      "/exercise-images/Conans_Wheel/0.jpg",
-      "/exercise-images/Conans_Wheel/1.jpg"
     ],
     "curated": false
   },
@@ -2142,47 +1338,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Chest",
-    "exercise": "Cross Over - With Bands",
-    "images": [
-      "/exercise-images/Cross_Over_-_With_Bands/0.jpg",
-      "/exercise-images/Cross_Over_-_With_Bands/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Crossover Reverse Lunge",
-    "images": [
-      "/exercise-images/Crossover_Reverse_Lunge/0.jpg",
-      "/exercise-images/Crossover_Reverse_Lunge/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Crucifix",
-    "images": [
-      "/exercise-images/Crucifix/0.jpg",
-      "/exercise-images/Crucifix/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Abs",
     "exercise": "Crunch - Hands Overhead",
     "images": [
       "/exercise-images/Crunch_-_Hands_Overhead/0.jpg",
       "/exercise-images/Crunch_-_Hands_Overhead/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Crunch - Legs On Exercise Ball",
-    "images": [
-      "/exercise-images/Crunch_-_Legs_On_Exercise_Ball/0.jpg",
-      "/exercise-images/Crunch_-_Legs_On_Exercise_Ball/1.jpg"
     ],
     "curated": false
   },
@@ -2219,15 +1379,6 @@
     "images": [
       "/exercise-images/Deadlift_with_Bands/0.jpg",
       "/exercise-images/Deadlift_with_Bands/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Deadlift with Chains",
-    "images": [
-      "/exercise-images/Deadlift_with_Chains/0.jpg",
-      "/exercise-images/Deadlift_with_Chains/1.jpg"
     ],
     "curated": false
   },
@@ -2331,15 +1482,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Depth Jump Leap",
-    "images": [
-      "/exercise-images/Depth_Jump_Leap/0.jpg",
-      "/exercise-images/Depth_Jump_Leap/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Triceps",
     "exercise": "Dip Machine",
     "images": [
@@ -2363,24 +1505,6 @@
     "images": [
       "/exercise-images/Dips_-_Triceps_Version/0.jpg",
       "/exercise-images/Dips_-_Triceps_Version/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Donkey Calf Raises",
-    "images": [
-      "/exercise-images/Donkey_Calf_Raises/0.jpg",
-      "/exercise-images/Donkey_Calf_Raises/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Double Kettlebell Alternating Hang Clean",
-    "images": [
-      "/exercise-images/Double_Kettlebell_Alternating_Hang_Clean/0.jpg",
-      "/exercise-images/Double_Kettlebell_Alternating_Hang_Clean/1.jpg"
     ],
     "curated": false
   },
@@ -2421,24 +1545,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Double Leg Butt Kick",
-    "images": [
-      "/exercise-images/Double_Leg_Butt_Kick/0.jpg",
-      "/exercise-images/Double_Leg_Butt_Kick/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Downward Facing Balance",
-    "images": [
-      "/exercise-images/Downward_Facing_Balance/0.jpg",
-      "/exercise-images/Downward_Facing_Balance/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Biceps",
     "exercise": "Drag Curl",
     "images": [
@@ -2475,38 +1581,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Chest",
-    "exercise": "Dumbbell Bench Press with Neutral Grip",
-    "images": [
-      "/exercise-images/Dumbbell_Bench_Press_with_Neutral_Grip/0.jpg",
-      "/exercise-images/Dumbbell_Bench_Press_with_Neutral_Grip/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Biceps",
     "exercise": "Dumbbell Bicep Curl",
     "images": [
       "/exercise-images/Dumbbell_Bicep_Curl/0.jpg",
       "/exercise-images/Dumbbell_Bicep_Curl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Dumbbell Clean",
-    "images": [
-      "/exercise-images/Dumbbell_Clean/0.jpg",
-      "/exercise-images/Dumbbell_Clean/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Triceps",
-    "exercise": "Dumbbell Floor Press",
-    "images": [
-      "/exercise-images/Dumbbell_Floor_Press/0.jpg",
-      "/exercise-images/Dumbbell_Floor_Press/1.jpg"
     ],
     "curated": false
   },
@@ -2556,29 +1635,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Biceps",
-    "exercise": "Dumbbell Lying Pronation",
-    "images": [
-      "/exercise-images/Dumbbell_Lying_Pronation/0.jpg",
-      "/exercise-images/Dumbbell_Lying_Pronation/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "Dumbbell Lying Rear Lateral Raise",
     "images": [
       "/exercise-images/Dumbbell_Lying_Rear_Lateral_Raise/0.jpg",
       "/exercise-images/Dumbbell_Lying_Rear_Lateral_Raise/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Dumbbell Lying Supination",
-    "images": [
-      "/exercise-images/Dumbbell_Lying_Supination/0.jpg",
-      "/exercise-images/Dumbbell_Lying_Supination/1.jpg"
     ],
     "curated": false
   },
@@ -2624,24 +1685,6 @@
     "images": [
       "/exercise-images/Dumbbell_Raise/0.jpg",
       "/exercise-images/Dumbbell_Raise/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Dumbbell Rear Lunge",
-    "images": [
-      "/exercise-images/Dumbbell_Rear_Lunge/0.jpg",
-      "/exercise-images/Dumbbell_Rear_Lunge/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Dumbbell Scaption",
-    "images": [
-      "/exercise-images/Dumbbell_Scaption/0.jpg",
-      "/exercise-images/Dumbbell_Scaption/1.jpg"
     ],
     "curated": false
   },
@@ -2709,24 +1752,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Back",
-    "exercise": "Dynamic Back Stretch",
-    "images": [
-      "/exercise-images/Dynamic_Back_Stretch/0.jpg",
-      "/exercise-images/Dynamic_Back_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Dynamic Chest Stretch",
-    "images": [
-      "/exercise-images/Dynamic_Chest_Stretch/0.jpg",
-      "/exercise-images/Dynamic_Chest_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Biceps",
     "exercise": "EZ-Bar Curl",
     "images": [
@@ -2745,29 +1770,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Shoulders",
-    "exercise": "Elbow Circles",
-    "images": [
-      "/exercise-images/Elbow_Circles/0.jpg",
-      "/exercise-images/Elbow_Circles/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Abs",
     "exercise": "Elbow to Knee",
     "images": [
       "/exercise-images/Elbow_to_Knee/0.jpg",
       "/exercise-images/Elbow_to_Knee/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Elbows Back",
-    "images": [
-      "/exercise-images/Elbows_Back/0.jpg",
-      "/exercise-images/Elbows_Back/1.jpg"
     ],
     "curated": false
   },
@@ -2799,51 +1806,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Abs",
-    "exercise": "Exercise Ball Crunch",
-    "images": [
-      "/exercise-images/Exercise_Ball_Crunch/0.jpg",
-      "/exercise-images/Exercise_Ball_Crunch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Exercise Ball Pull-In",
-    "images": [
-      "/exercise-images/Exercise_Ball_Pull-In/0.jpg",
-      "/exercise-images/Exercise_Ball_Pull-In/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Extended Range One-Arm Kettlebell Floor Press",
-    "images": [
-      "/exercise-images/Extended_Range_One-Arm_Kettlebell_Floor_Press/0.jpg",
-      "/exercise-images/Extended_Range_One-Arm_Kettlebell_Floor_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "External Rotation",
-    "images": [
-      "/exercise-images/External_Rotation/0.jpg",
-      "/exercise-images/External_Rotation/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "External Rotation with Band",
-    "images": [
-      "/exercise-images/External_Rotation_with_Band/0.jpg",
-      "/exercise-images/External_Rotation_with_Band/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "External Rotation with Cable",
     "images": [
@@ -2858,15 +1820,6 @@
     "images": [
       "/exercise-images/Farmers_Walk/0.jpg",
       "/exercise-images/Farmers_Walk/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Fast Skipping",
-    "images": [
-      "/exercise-images/Fast_Skipping/0.jpg",
-      "/exercise-images/Fast_Skipping/1.jpg"
     ],
     "curated": false
   },
@@ -2890,28 +1843,10 @@
   },
   {
     "target_muscle": "Abs",
-    "exercise": "Flat Bench Leg Pull-In",
-    "images": [
-      "/exercise-images/Flat_Bench_Leg_Pull-In/0.jpg",
-      "/exercise-images/Flat_Bench_Leg_Pull-In/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
     "exercise": "Flat Bench Lying Leg Raise",
     "images": [
       "/exercise-images/Flat_Bench_Lying_Leg_Raise/0.jpg",
       "/exercise-images/Flat_Bench_Lying_Leg_Raise/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Flexor Incline Dumbbell Curls",
-    "images": [
-      "/exercise-images/Flexor_Incline_Dumbbell_Curls/0.jpg",
-      "/exercise-images/Flexor_Incline_Dumbbell_Curls/1.jpg"
     ],
     "curated": false
   },
@@ -2921,24 +1856,6 @@
     "images": [
       "/exercise-images/Floor_Glute-Ham_Raise/0.jpg",
       "/exercise-images/Floor_Glute-Ham_Raise/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Triceps",
-    "exercise": "Floor Press",
-    "images": [
-      "/exercise-images/Floor_Press/0.jpg",
-      "/exercise-images/Floor_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Triceps",
-    "exercise": "Floor Press with Chains",
-    "images": [
-      "/exercise-images/Floor_Press_with_Chains/0.jpg",
-      "/exercise-images/Floor_Press_with_Chains/1.jpg"
     ],
     "curated": false
   },
@@ -2953,46 +1870,10 @@
   },
   {
     "target_muscle": "Legs",
-    "exercise": "Foot-SMR",
-    "images": [
-      "/exercise-images/Foot-SMR/0.jpg",
-      "/exercise-images/Foot-SMR/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Forward Drag with Press",
-    "images": [
-      "/exercise-images/Forward_Drag_with_Press/0.jpg",
-      "/exercise-images/Forward_Drag_with_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Frankenstein Squat",
-    "images": [
-      "/exercise-images/Frankenstein_Squat/0.jpg",
-      "/exercise-images/Frankenstein_Squat/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
     "exercise": "Freehand Jump Squat",
     "images": [
       "/exercise-images/Freehand_Jump_Squat/0.jpg",
       "/exercise-images/Freehand_Jump_Squat/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Frog Hops",
-    "images": [
-      "/exercise-images/Frog_Hops/0.jpg",
-      "/exercise-images/Frog_Hops/1.jpg"
     ],
     "curated": false
   },
@@ -3069,38 +1950,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Front Leg Raises",
-    "images": [
-      "/exercise-images/Front_Leg_Raises/0.jpg",
-      "/exercise-images/Front_Leg_Raises/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "Front Plate Raise",
     "images": [
       "/exercise-images/Front_Plate_Raise/0.jpg",
       "/exercise-images/Front_Plate_Raise/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Front Raise And Pullover",
-    "images": [
-      "/exercise-images/Front_Raise_And_Pullover/0.jpg",
-      "/exercise-images/Front_Raise_And_Pullover/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Front Squat (Clean Grip)",
-    "images": [
-      "/exercise-images/Front_Squat_Clean_Grip/0.jpg",
-      "/exercise-images/Front_Squat_Clean_Grip/1.jpg"
     ],
     "curated": false
   },
@@ -3169,82 +2023,10 @@
   },
   {
     "target_muscle": "Legs",
-    "exercise": "Good Morning",
-    "images": [
-      "/exercise-images/Good_Morning/0.jpg",
-      "/exercise-images/Good_Morning/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Good Morning off Pins",
-    "images": [
-      "/exercise-images/Good_Morning_off_Pins/0.jpg",
-      "/exercise-images/Good_Morning_off_Pins/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Gorilla Chin/Crunch",
-    "images": [
-      "/exercise-images/Gorilla_Chin_Crunch/0.jpg",
-      "/exercise-images/Gorilla_Chin_Crunch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Groin and Back Stretch",
-    "images": [
-      "/exercise-images/Groin_and_Back_Stretch/0.jpg",
-      "/exercise-images/Groin_and_Back_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Groiners",
-    "images": [
-      "/exercise-images/Groiners/0.jpg",
-      "/exercise-images/Groiners/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
     "exercise": "Hack Squat",
     "images": [
       "/exercise-images/Hack_Squat/0.jpg",
       "/exercise-images/Hack_Squat/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Hammer Grip Incline DB Bench Press",
-    "images": [
-      "/exercise-images/Hammer_Grip_Incline_DB_Bench_Press/0.jpg",
-      "/exercise-images/Hammer_Grip_Incline_DB_Bench_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Hamstring-SMR",
-    "images": [
-      "/exercise-images/Hamstring-SMR/0.jpg",
-      "/exercise-images/Hamstring-SMR/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Hamstring Stretch",
-    "images": [
-      "/exercise-images/Hamstring_Stretch/0.jpg",
-      "/exercise-images/Hamstring_Stretch/1.jpg"
     ],
     "curated": false
   },
@@ -3254,51 +2036,6 @@
     "images": [
       "/exercise-images/Handstand_Push-Ups/0.jpg",
       "/exercise-images/Handstand_Push-Ups/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Hang Clean",
-    "images": [
-      "/exercise-images/Hang_Clean/0.jpg",
-      "/exercise-images/Hang_Clean/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Hang Clean - Below the Knees",
-    "images": [
-      "/exercise-images/Hang_Clean_-_Below_the_Knees/0.jpg",
-      "/exercise-images/Hang_Clean_-_Below_the_Knees/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Hang Snatch",
-    "images": [
-      "/exercise-images/Hang_Snatch/0.jpg",
-      "/exercise-images/Hang_Snatch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Hang Snatch - Below Knees",
-    "images": [
-      "/exercise-images/Hang_Snatch_-_Below_Knees/0.jpg",
-      "/exercise-images/Hang_Snatch_-_Below_Knees/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Hanging Bar Good Morning",
-    "images": [
-      "/exercise-images/Hanging_Bar_Good_Morning/0.jpg",
-      "/exercise-images/Hanging_Bar_Good_Morning/1.jpg"
     ],
     "curated": false
   },
@@ -3322,42 +2059,6 @@
   },
   {
     "target_muscle": "Legs",
-    "exercise": "Heaving Snatch Balance",
-    "images": [
-      "/exercise-images/Heaving_Snatch_Balance/0.jpg",
-      "/exercise-images/Heaving_Snatch_Balance/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Heavy Bag Thrust",
-    "images": [
-      "/exercise-images/Heavy_Bag_Thrust/0.jpg",
-      "/exercise-images/Heavy_Bag_Thrust/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "High Cable Curls",
-    "images": [
-      "/exercise-images/High_Cable_Curls/0.jpg",
-      "/exercise-images/High_Cable_Curls/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Hip Circles (prone)",
-    "images": [
-      "/exercise-images/Hip_Circles_prone/0.jpg",
-      "/exercise-images/Hip_Circles_prone/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
     "exercise": "Hip Extension with Bands",
     "images": [
       "/exercise-images/Hip_Extension_with_Bands/0.jpg",
@@ -3371,33 +2072,6 @@
     "images": [
       "/exercise-images/Hip_Flexion_with_Band/0.jpg",
       "/exercise-images/Hip_Flexion_with_Band/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Hip Lift with Band",
-    "images": [
-      "/exercise-images/Hip_Lift_with_Band/0.jpg",
-      "/exercise-images/Hip_Lift_with_Band/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Hug A Ball",
-    "images": [
-      "/exercise-images/Hug_A_Ball/0.jpg",
-      "/exercise-images/Hug_A_Ball/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Hug Knees To Chest",
-    "images": [
-      "/exercise-images/Hug_Knees_To_Chest/0.jpg",
-      "/exercise-images/Hug_Knees_To_Chest/1.jpg"
     ],
     "curated": false
   },
@@ -3425,33 +2099,6 @@
     "images": [
       "/exercise-images/Hyperextensions_With_No_Hyperextension_Bench/0.jpg",
       "/exercise-images/Hyperextensions_With_No_Hyperextension_Bench/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "IT Band and Glute Stretch",
-    "images": [
-      "/exercise-images/IT_Band_and_Glute_Stretch/0.jpg",
-      "/exercise-images/IT_Band_and_Glute_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Iliotibial Tract-SMR",
-    "images": [
-      "/exercise-images/Iliotibial_Tract-SMR/0.jpg",
-      "/exercise-images/Iliotibial_Tract-SMR/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Inchworm",
-    "images": [
-      "/exercise-images/Inchworm/0.jpg",
-      "/exercise-images/Inchworm/1.jpg"
     ],
     "curated": false
   },
@@ -3492,15 +2139,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Chest",
-    "exercise": "Incline Dumbbell Bench With Palms Facing In",
-    "images": [
-      "/exercise-images/Incline_Dumbbell_Bench_With_Palms_Facing_In/0.jpg",
-      "/exercise-images/Incline_Dumbbell_Bench_With_Palms_Facing_In/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Biceps",
     "exercise": "Incline Dumbbell Curl",
     "images": [
@@ -3520,37 +2158,10 @@
   },
   {
     "target_muscle": "Chest",
-    "exercise": "Incline Dumbbell Flyes - With A Twist",
-    "images": [
-      "/exercise-images/Incline_Dumbbell_Flyes_-_With_A_Twist/0.jpg",
-      "/exercise-images/Incline_Dumbbell_Flyes_-_With_A_Twist/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
     "exercise": "Incline Dumbbell Press",
     "images": [
       "/exercise-images/Incline_Dumbbell_Press/0.jpg",
       "/exercise-images/Incline_Dumbbell_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Incline Hammer Curls",
-    "images": [
-      "/exercise-images/Incline_Hammer_Curls/0.jpg",
-      "/exercise-images/Incline_Hammer_Curls/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Incline Inner Biceps Curl",
-    "images": [
-      "/exercise-images/Incline_Inner_Biceps_Curl/0.jpg",
-      "/exercise-images/Incline_Inner_Biceps_Curl/1.jpg"
     ],
     "curated": false
   },
@@ -3591,42 +2202,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Chest",
-    "exercise": "Incline Push-Up Reverse Grip",
-    "images": [
-      "/exercise-images/Incline_Push-Up_Reverse_Grip/0.jpg",
-      "/exercise-images/Incline_Push-Up_Reverse_Grip/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Incline Push-Up Wide",
-    "images": [
-      "/exercise-images/Incline_Push-Up_Wide/0.jpg",
-      "/exercise-images/Incline_Push-Up_Wide/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Intermediate Groin Stretch",
-    "images": [
-      "/exercise-images/Intermediate_Groin_Stretch/0.jpg",
-      "/exercise-images/Intermediate_Groin_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Intermediate Hip Flexor and Quad Stretch",
-    "images": [
-      "/exercise-images/Intermediate_Hip_Flexor_and_Quad_Stretch/0.jpg",
-      "/exercise-images/Intermediate_Hip_Flexor_and_Quad_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "Internal Rotation with Band",
     "images": [
@@ -3645,74 +2220,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Back",
-    "exercise": "Inverted Row with Straps",
-    "images": [
-      "/exercise-images/Inverted_Row_with_Straps/0.jpg",
-      "/exercise-images/Inverted_Row_with_Straps/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "Iron Cross",
     "images": [
       "/exercise-images/Iron_Cross/0.jpg",
       "/exercise-images/Iron_Cross/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Iron Crosses (stretch)",
-    "images": [
-      "/exercise-images/Iron_Crosses_stretch/0.jpg",
-      "/exercise-images/Iron_Crosses_stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Isometric Chest Squeezes",
-    "images": [
-      "/exercise-images/Isometric_Chest_Squeezes/0.jpg",
-      "/exercise-images/Isometric_Chest_Squeezes/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Isometric Neck Exercise - Front And Back",
-    "images": [
-      "/exercise-images/Isometric_Neck_Exercise_-_Front_And_Back/0.jpg",
-      "/exercise-images/Isometric_Neck_Exercise_-_Front_And_Back/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Isometric Neck Exercise - Sides",
-    "images": [
-      "/exercise-images/Isometric_Neck_Exercise_-_Sides/0.jpg",
-      "/exercise-images/Isometric_Neck_Exercise_-_Sides/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Isometric Wipers",
-    "images": [
-      "/exercise-images/Isometric_Wipers/0.jpg",
-      "/exercise-images/Isometric_Wipers/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Triceps",
-    "exercise": "JM Press",
-    "images": [
-      "/exercise-images/JM_Press/0.jpg",
-      "/exercise-images/JM_Press/1.jpg"
     ],
     "curated": false
   },
@@ -3726,29 +2238,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Abs",
-    "exercise": "Janda Sit-Up",
-    "images": [
-      "/exercise-images/Janda_Sit-Up/0.jpg",
-      "/exercise-images/Janda_Sit-Up/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Legs",
     "exercise": "Jefferson Squats",
     "images": [
       "/exercise-images/Jefferson_Squats/0.jpg",
       "/exercise-images/Jefferson_Squats/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Jerk Balance",
-    "images": [
-      "/exercise-images/Jerk_Balance/0.jpg",
-      "/exercise-images/Jerk_Balance/1.jpg"
     ],
     "curated": false
   },
@@ -3771,15 +2265,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Back",
-    "exercise": "Keg Load",
-    "images": [
-      "/exercise-images/Keg_Load/0.jpg",
-      "/exercise-images/Keg_Load/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "Kettlebell Arnold Press",
     "images": [
@@ -3789,38 +2274,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Kettlebell Dead Clean",
-    "images": [
-      "/exercise-images/Kettlebell_Dead_Clean/0.jpg",
-      "/exercise-images/Kettlebell_Dead_Clean/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Abs",
     "exercise": "Kettlebell Figure 8",
     "images": [
       "/exercise-images/Kettlebell_Figure_8/0.jpg",
       "/exercise-images/Kettlebell_Figure_8/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Kettlebell Hang Clean",
-    "images": [
-      "/exercise-images/Kettlebell_Hang_Clean/0.jpg",
-      "/exercise-images/Kettlebell_Hang_Clean/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Kettlebell One-Legged Deadlift",
-    "images": [
-      "/exercise-images/Kettlebell_One-Legged_Deadlift/0.jpg",
-      "/exercise-images/Kettlebell_One-Legged_Deadlift/1.jpg"
     ],
     "curated": false
   },
@@ -3853,15 +2311,6 @@
   },
   {
     "target_muscle": "Shoulders",
-    "exercise": "Kettlebell Seated Press",
-    "images": [
-      "/exercise-images/Kettlebell_Seated_Press/0.jpg",
-      "/exercise-images/Kettlebell_Seated_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
     "exercise": "Kettlebell Seesaw Press",
     "images": [
       "/exercise-images/Kettlebell_Seesaw_Press/0.jpg",
@@ -3888,24 +2337,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Shoulders",
-    "exercise": "Kettlebell Turkish Get-Up (Lunge style)",
-    "images": [
-      "/exercise-images/Kettlebell_Turkish_Get-Up_Lunge_style/0.jpg",
-      "/exercise-images/Kettlebell_Turkish_Get-Up_Lunge_style/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Kettlebell Turkish Get-Up (Squat style)",
-    "images": [
-      "/exercise-images/Kettlebell_Turkish_Get-Up_Squat_style/0.jpg",
-      "/exercise-images/Kettlebell_Turkish_Get-Up_Squat_style/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Abs",
     "exercise": "Kettlebell Windmill",
     "images": [
@@ -3920,15 +2351,6 @@
     "images": [
       "/exercise-images/Kipping_Muscle_Up/0.jpg",
       "/exercise-images/Kipping_Muscle_Up/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Knee Across The Body",
-    "images": [
-      "/exercise-images/Knee_Across_The_Body/0.jpg",
-      "/exercise-images/Knee_Across_The_Body/1.jpg"
     ],
     "curated": false
   },
@@ -3951,24 +2373,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Knee Tuck Jump",
-    "images": [
-      "/exercise-images/Knee_Tuck_Jump/0.jpg",
-      "/exercise-images/Knee_Tuck_Jump/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Kneeling Arm Drill",
-    "images": [
-      "/exercise-images/Kneeling_Arm_Drill/0.jpg",
-      "/exercise-images/Kneeling_Arm_Drill/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Abs",
     "exercise": "Kneeling Cable Crunch With Alternating Oblique Twists",
     "images": [
@@ -3987,38 +2391,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Biceps",
-    "exercise": "Kneeling Forearm Stretch",
-    "images": [
-      "/exercise-images/Kneeling_Forearm_Stretch/0.jpg",
-      "/exercise-images/Kneeling_Forearm_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Back",
     "exercise": "Kneeling High Pulley Row",
     "images": [
       "/exercise-images/Kneeling_High_Pulley_Row/0.jpg",
       "/exercise-images/Kneeling_High_Pulley_Row/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Kneeling Hip Flexor",
-    "images": [
-      "/exercise-images/Kneeling_Hip_Flexor/0.jpg",
-      "/exercise-images/Kneeling_Hip_Flexor/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Kneeling Jump Squat",
-    "images": [
-      "/exercise-images/Kneeling_Jump_Squat/0.jpg",
-      "/exercise-images/Kneeling_Jump_Squat/1.jpg"
     ],
     "curated": false
   },
@@ -4032,38 +2409,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Kneeling Squat",
-    "images": [
-      "/exercise-images/Kneeling_Squat/0.jpg",
-      "/exercise-images/Kneeling_Squat/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Abs",
     "exercise": "Landmine 180's",
     "images": [
       "/exercise-images/Landmine_180s/0.jpg",
       "/exercise-images/Landmine_180s/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Landmine Linear Jammer",
-    "images": [
-      "/exercise-images/Landmine_Linear_Jammer/0.jpg",
-      "/exercise-images/Landmine_Linear_Jammer/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Lateral Bound",
-    "images": [
-      "/exercise-images/Lateral_Bound/0.jpg",
-      "/exercise-images/Lateral_Bound/1.jpg"
     ],
     "curated": false
   },
@@ -4095,65 +2445,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Back",
-    "exercise": "Latissimus Dorsi-SMR",
-    "images": [
-      "/exercise-images/Latissimus_Dorsi-SMR/0.jpg",
-      "/exercise-images/Latissimus_Dorsi-SMR/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Leg-Over Floor Press",
-    "images": [
-      "/exercise-images/Leg-Over_Floor_Press/0.jpg",
-      "/exercise-images/Leg-Over_Floor_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Leg-Up Hamstring Stretch",
-    "images": [
-      "/exercise-images/Leg-Up_Hamstring_Stretch/0.jpg",
-      "/exercise-images/Leg-Up_Hamstring_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Leg Lift",
-    "images": [
-      "/exercise-images/Leg_Lift/0.jpg",
-      "/exercise-images/Leg_Lift/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Leg Pull-In",
-    "images": [
-      "/exercise-images/Leg_Pull-In/0.jpg",
-      "/exercise-images/Leg_Pull-In/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Chest",
     "exercise": "Leverage Chest Press",
     "images": [
       "/exercise-images/Leverage_Chest_Press/0.jpg",
       "/exercise-images/Leverage_Chest_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Leverage Deadlift",
-    "images": [
-      "/exercise-images/Leverage_Deadlift/0.jpg",
-      "/exercise-images/Leverage_Deadlift/1.jpg"
     ],
     "curated": false
   },
@@ -4213,37 +2509,10 @@
   },
   {
     "target_muscle": "Legs",
-    "exercise": "Linear 3-Part Start Technique",
-    "images": [
-      "/exercise-images/Linear_3-Part_Start_Technique/0.jpg",
-      "/exercise-images/Linear_3-Part_Start_Technique/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Linear Acceleration Wall Drill",
-    "images": [
-      "/exercise-images/Linear_Acceleration_Wall_Drill/0.jpg",
-      "/exercise-images/Linear_Acceleration_Wall_Drill/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
     "exercise": "Linear Depth Jump",
     "images": [
       "/exercise-images/Linear_Depth_Jump/0.jpg",
       "/exercise-images/Linear_Depth_Jump/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Log Lift",
-    "images": [
-      "/exercise-images/Log_Lift/0.jpg",
-      "/exercise-images/Log_Lift/1.jpg"
     ],
     "curated": false
   },
@@ -4253,15 +2522,6 @@
     "images": [
       "/exercise-images/London_Bridges/0.jpg",
       "/exercise-images/London_Bridges/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Looking At Ceiling",
-    "images": [
-      "/exercise-images/Looking_At_Ceiling/0.jpg",
-      "/exercise-images/Looking_At_Ceiling/1.jpg"
     ],
     "curated": false
   },
@@ -4284,24 +2544,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Back",
-    "exercise": "Lower Back-SMR",
-    "images": [
-      "/exercise-images/Lower_Back-SMR/0.jpg",
-      "/exercise-images/Lower_Back-SMR/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Lower Back Curl",
-    "images": [
-      "/exercise-images/Lower_Back_Curl/0.jpg",
-      "/exercise-images/Lower_Back_Curl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Legs",
     "exercise": "Lunge Pass Through",
     "images": [
@@ -4320,38 +2562,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Lying Bent Leg Groin",
-    "images": [
-      "/exercise-images/Lying_Bent_Leg_Groin/0.jpg",
-      "/exercise-images/Lying_Bent_Leg_Groin/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Lying Cable Curl",
-    "images": [
-      "/exercise-images/Lying_Cable_Curl/0.jpg",
-      "/exercise-images/Lying_Cable_Curl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Back",
     "exercise": "Lying Cambered Barbell Row",
     "images": [
       "/exercise-images/Lying_Cambered_Barbell_Row/0.jpg",
       "/exercise-images/Lying_Cambered_Barbell_Row/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Lying Close-Grip Bar Curl On High Pulley",
-    "images": [
-      "/exercise-images/Lying_Close-Grip_Bar_Curl_On_High_Pulley/0.jpg",
-      "/exercise-images/Lying_Close-Grip_Bar_Curl_On_High_Pulley/1.jpg"
     ],
     "curated": false
   },
@@ -4374,65 +2589,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Lying Crossover",
-    "images": [
-      "/exercise-images/Lying_Crossover/0.jpg",
-      "/exercise-images/Lying_Crossover/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Triceps",
     "exercise": "Lying Dumbbell Tricep Extension",
     "images": [
       "/exercise-images/Lying_Dumbbell_Tricep_Extension/0.jpg",
       "/exercise-images/Lying_Dumbbell_Tricep_Extension/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Lying Face Down Plate Neck Resistance",
-    "images": [
-      "/exercise-images/Lying_Face_Down_Plate_Neck_Resistance/0.jpg",
-      "/exercise-images/Lying_Face_Down_Plate_Neck_Resistance/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Lying Face Up Plate Neck Resistance",
-    "images": [
-      "/exercise-images/Lying_Face_Up_Plate_Neck_Resistance/0.jpg",
-      "/exercise-images/Lying_Face_Up_Plate_Neck_Resistance/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Lying Glute",
-    "images": [
-      "/exercise-images/Lying_Glute/0.jpg",
-      "/exercise-images/Lying_Glute/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Lying Hamstring",
-    "images": [
-      "/exercise-images/Lying_Hamstring/0.jpg",
-      "/exercise-images/Lying_Hamstring/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Lying High Bench Barbell Curl",
-    "images": [
-      "/exercise-images/Lying_High_Bench_Barbell_Curl/0.jpg",
-      "/exercise-images/Lying_High_Bench_Barbell_Curl/1.jpg"
     ],
     "curated": false
   },
@@ -4451,42 +2612,6 @@
     "images": [
       "/exercise-images/Lying_Machine_Squat/0.jpg",
       "/exercise-images/Lying_Machine_Squat/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Lying One-Arm Lateral Raise",
-    "images": [
-      "/exercise-images/Lying_One-Arm_Lateral_Raise/0.jpg",
-      "/exercise-images/Lying_One-Arm_Lateral_Raise/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Lying Prone Quadriceps",
-    "images": [
-      "/exercise-images/Lying_Prone_Quadriceps/0.jpg",
-      "/exercise-images/Lying_Prone_Quadriceps/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Lying Rear Delt Raise",
-    "images": [
-      "/exercise-images/Lying_Rear_Delt_Raise/0.jpg",
-      "/exercise-images/Lying_Rear_Delt_Raise/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Lying Supine Dumbbell Curl",
-    "images": [
-      "/exercise-images/Lying_Supine_Dumbbell_Curl/0.jpg",
-      "/exercise-images/Lying_Supine_Dumbbell_Curl/1.jpg"
     ],
     "curated": false
   },
@@ -4545,33 +2670,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Chest",
-    "exercise": "Medicine Ball Chest Pass",
-    "images": [
-      "/exercise-images/Medicine_Ball_Chest_Pass/0.jpg",
-      "/exercise-images/Medicine_Ball_Chest_Pass/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Medicine Ball Full Twist",
-    "images": [
-      "/exercise-images/Medicine_Ball_Full_Twist/0.jpg",
-      "/exercise-images/Medicine_Ball_Full_Twist/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Medicine Ball Scoop Throw",
-    "images": [
-      "/exercise-images/Medicine_Ball_Scoop_Throw/0.jpg",
-      "/exercise-images/Medicine_Ball_Scoop_Throw/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Back",
     "exercise": "Middle Back Shrug",
     "images": [
@@ -4582,46 +2680,10 @@
   },
   {
     "target_muscle": "Back",
-    "exercise": "Middle Back Stretch",
-    "images": [
-      "/exercise-images/Middle_Back_Stretch/0.jpg",
-      "/exercise-images/Middle_Back_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
     "exercise": "Mixed Grip Chin",
     "images": [
       "/exercise-images/Mixed_Grip_Chin/0.jpg",
       "/exercise-images/Mixed_Grip_Chin/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Monster Walk",
-    "images": [
-      "/exercise-images/Monster_Walk/0.jpg",
-      "/exercise-images/Monster_Walk/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Moving Claw Series",
-    "images": [
-      "/exercise-images/Moving_Claw_Series/0.jpg",
-      "/exercise-images/Moving_Claw_Series/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Muscle Snatch",
-    "images": [
-      "/exercise-images/Muscle_Snatch/0.jpg",
-      "/exercise-images/Muscle_Snatch/1.jpg"
     ],
     "curated": false
   },
@@ -4654,46 +2716,10 @@
   },
   {
     "target_muscle": "Legs",
-    "exercise": "Narrow Stance Squats",
-    "images": [
-      "/exercise-images/Narrow_Stance_Squats/0.jpg",
-      "/exercise-images/Narrow_Stance_Squats/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
     "exercise": "Natural Glute Ham Raise",
     "images": [
       "/exercise-images/Natural_Glute_Ham_Raise/0.jpg",
       "/exercise-images/Natural_Glute_Ham_Raise/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Neck-SMR",
-    "images": [
-      "/exercise-images/Neck-SMR/0.jpg",
-      "/exercise-images/Neck-SMR/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Neck Press",
-    "images": [
-      "/exercise-images/Neck_Press/0.jpg",
-      "/exercise-images/Neck_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Oblique Crunches",
-    "images": [
-      "/exercise-images/Oblique_Crunches/0.jpg",
-      "/exercise-images/Oblique_Crunches/1.jpg"
     ],
     "curated": false
   },
@@ -4716,38 +2742,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "On-Your-Back Quad Stretch",
-    "images": [
-      "/exercise-images/On-Your-Back_Quad_Stretch/0.jpg",
-      "/exercise-images/On-Your-Back_Quad_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "On Your Side Quad Stretch",
-    "images": [
-      "/exercise-images/On_Your_Side_Quad_Stretch/0.jpg",
-      "/exercise-images/On_Your_Side_Quad_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Back",
     "exercise": "One-Arm Dumbbell Row",
     "images": [
       "/exercise-images/One-Arm_Dumbbell_Row/0.jpg",
       "/exercise-images/One-Arm_Dumbbell_Row/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "One-Arm Flat Bench Dumbbell Flye",
-    "images": [
-      "/exercise-images/One-Arm_Flat_Bench_Dumbbell_Flye/0.jpg",
-      "/exercise-images/One-Arm_Flat_Bench_Dumbbell_Flye/1.jpg"
     ],
     "curated": false
   },
@@ -4770,29 +2769,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "One-Arm Kettlebell Clean",
-    "images": [
-      "/exercise-images/One-Arm_Kettlebell_Clean/0.jpg",
-      "/exercise-images/One-Arm_Kettlebell_Clean/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "One-Arm Kettlebell Clean and Jerk",
     "images": [
       "/exercise-images/One-Arm_Kettlebell_Clean_and_Jerk/0.jpg",
       "/exercise-images/One-Arm_Kettlebell_Clean_and_Jerk/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "One-Arm Kettlebell Floor Press",
-    "images": [
-      "/exercise-images/One-Arm_Kettlebell_Floor_Press/0.jpg",
-      "/exercise-images/One-Arm_Kettlebell_Floor_Press/1.jpg"
     ],
     "curated": false
   },
@@ -4806,65 +2787,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Shoulders",
-    "exercise": "One-Arm Kettlebell Military Press To The Side",
-    "images": [
-      "/exercise-images/One-Arm_Kettlebell_Military_Press_To_The_Side/0.jpg",
-      "/exercise-images/One-Arm_Kettlebell_Military_Press_To_The_Side/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "One-Arm Kettlebell Para Press",
-    "images": [
-      "/exercise-images/One-Arm_Kettlebell_Para_Press/0.jpg",
-      "/exercise-images/One-Arm_Kettlebell_Para_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "One-Arm Kettlebell Push Press",
-    "images": [
-      "/exercise-images/One-Arm_Kettlebell_Push_Press/0.jpg",
-      "/exercise-images/One-Arm_Kettlebell_Push_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Back",
     "exercise": "One-Arm Kettlebell Row",
     "images": [
       "/exercise-images/One-Arm_Kettlebell_Row/0.jpg",
       "/exercise-images/One-Arm_Kettlebell_Row/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "One-Arm Kettlebell Snatch",
-    "images": [
-      "/exercise-images/One-Arm_Kettlebell_Snatch/0.jpg",
-      "/exercise-images/One-Arm_Kettlebell_Snatch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "One-Arm Kettlebell Split Jerk",
-    "images": [
-      "/exercise-images/One-Arm_Kettlebell_Split_Jerk/0.jpg",
-      "/exercise-images/One-Arm_Kettlebell_Split_Jerk/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "One-Arm Kettlebell Split Snatch",
-    "images": [
-      "/exercise-images/One-Arm_Kettlebell_Split_Snatch/0.jpg",
-      "/exercise-images/One-Arm_Kettlebell_Split_Snatch/1.jpg"
     ],
     "curated": false
   },
@@ -4897,28 +2824,10 @@
   },
   {
     "target_muscle": "Legs",
-    "exercise": "One-Arm Open Palm Kettlebell Clean",
-    "images": [
-      "/exercise-images/One-Arm_Open_Palm_Kettlebell_Clean/0.jpg",
-      "/exercise-images/One-Arm_Open_Palm_Kettlebell_Clean/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
     "exercise": "One-Arm Overhead Kettlebell Squats",
     "images": [
       "/exercise-images/One-Arm_Overhead_Kettlebell_Squats/0.jpg",
       "/exercise-images/One-Arm_Overhead_Kettlebell_Squats/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "One-Arm Side Deadlift",
-    "images": [
-      "/exercise-images/One-Arm_Side_Deadlift/0.jpg",
-      "/exercise-images/One-Arm_Side_Deadlift/1.jpg"
     ],
     "curated": false
   },
@@ -4941,33 +2850,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Back",
-    "exercise": "One Arm Against Wall",
-    "images": [
-      "/exercise-images/One_Arm_Against_Wall/0.jpg",
-      "/exercise-images/One_Arm_Against_Wall/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "One Arm Chin-Up",
-    "images": [
-      "/exercise-images/One_Arm_Chin-Up/0.jpg",
-      "/exercise-images/One_Arm_Chin-Up/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "One Arm Dumbbell Bench Press",
-    "images": [
-      "/exercise-images/One_Arm_Dumbbell_Bench_Press/0.jpg",
-      "/exercise-images/One_Arm_Dumbbell_Bench_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Biceps",
     "exercise": "One Arm Dumbbell Preacher Curl",
     "images": [
@@ -4977,47 +2859,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Triceps",
-    "exercise": "One Arm Floor Press",
-    "images": [
-      "/exercise-images/One_Arm_Floor_Press/0.jpg",
-      "/exercise-images/One_Arm_Floor_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Back",
     "exercise": "One Arm Lat Pulldown",
     "images": [
       "/exercise-images/One_Arm_Lat_Pulldown/0.jpg",
       "/exercise-images/One_Arm_Lat_Pulldown/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Triceps",
-    "exercise": "One Arm Pronated Dumbbell Triceps Extension",
-    "images": [
-      "/exercise-images/One_Arm_Pronated_Dumbbell_Triceps_Extension/0.jpg",
-      "/exercise-images/One_Arm_Pronated_Dumbbell_Triceps_Extension/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Triceps",
-    "exercise": "One Arm Supinated Dumbbell Triceps Extension",
-    "images": [
-      "/exercise-images/One_Arm_Supinated_Dumbbell_Triceps_Extension/0.jpg",
-      "/exercise-images/One_Arm_Supinated_Dumbbell_Triceps_Extension/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "One Half Locust",
-    "images": [
-      "/exercise-images/One_Half_Locust/0.jpg",
-      "/exercise-images/One_Half_Locust/1.jpg"
     ],
     "curated": false
   },
@@ -5032,37 +2878,10 @@
   },
   {
     "target_muscle": "Legs",
-    "exercise": "One Knee To Chest",
-    "images": [
-      "/exercise-images/One_Knee_To_Chest/0.jpg",
-      "/exercise-images/One_Knee_To_Chest/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
     "exercise": "One Leg Barbell Squat",
     "images": [
       "/exercise-images/One_Leg_Barbell_Squat/0.jpg",
       "/exercise-images/One_Leg_Barbell_Squat/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Open Palm Kettlebell Clean",
-    "images": [
-      "/exercise-images/Open_Palm_Kettlebell_Clean/0.jpg",
-      "/exercise-images/Open_Palm_Kettlebell_Clean/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Otis-Up",
-    "images": [
-      "/exercise-images/Otis-Up/0.jpg",
-      "/exercise-images/Otis-Up/1.jpg"
     ],
     "curated": false
   },
@@ -5077,55 +2896,10 @@
   },
   {
     "target_muscle": "Back",
-    "exercise": "Overhead Lat",
-    "images": [
-      "/exercise-images/Overhead_Lat/0.jpg",
-      "/exercise-images/Overhead_Lat/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
     "exercise": "Overhead Slam",
     "images": [
       "/exercise-images/Overhead_Slam/0.jpg",
       "/exercise-images/Overhead_Slam/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Overhead Squat",
-    "images": [
-      "/exercise-images/Overhead_Squat/0.jpg",
-      "/exercise-images/Overhead_Squat/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Overhead Stretch",
-    "images": [
-      "/exercise-images/Overhead_Stretch/0.jpg",
-      "/exercise-images/Overhead_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Pallof Press",
-    "images": [
-      "/exercise-images/Pallof_Press/0.jpg",
-      "/exercise-images/Pallof_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Pallof Press With Rotation",
-    "images": [
-      "/exercise-images/Pallof_Press_With_Rotation/0.jpg",
-      "/exercise-images/Pallof_Press_With_Rotation/1.jpg"
     ],
     "curated": false
   },
@@ -5184,51 +2958,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Peroneals-SMR",
-    "images": [
-      "/exercise-images/Peroneals-SMR/0.jpg",
-      "/exercise-images/Peroneals-SMR/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Peroneals Stretch",
-    "images": [
-      "/exercise-images/Peroneals_Stretch/0.jpg",
-      "/exercise-images/Peroneals_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Physioball Hip Bridge",
-    "images": [
-      "/exercise-images/Physioball_Hip_Bridge/0.jpg",
-      "/exercise-images/Physioball_Hip_Bridge/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Triceps",
-    "exercise": "Pin Presses",
-    "images": [
-      "/exercise-images/Pin_Presses/0.jpg",
-      "/exercise-images/Pin_Presses/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Piriformis-SMR",
-    "images": [
-      "/exercise-images/Piriformis-SMR/0.jpg",
-      "/exercise-images/Piriformis-SMR/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Biceps",
     "exercise": "Plate Pinch",
     "images": [
@@ -5248,28 +2977,10 @@
   },
   {
     "target_muscle": "Legs",
-    "exercise": "Platform Hamstring Slides",
-    "images": [
-      "/exercise-images/Platform_Hamstring_Slides/0.jpg",
-      "/exercise-images/Platform_Hamstring_Slides/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
     "exercise": "Plie Dumbbell Squat",
     "images": [
       "/exercise-images/Plie_Dumbbell_Squat/0.jpg",
       "/exercise-images/Plie_Dumbbell_Squat/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Plyo Kettlebell Pushups",
-    "images": [
-      "/exercise-images/Plyo_Kettlebell_Pushups/0.jpg",
-      "/exercise-images/Plyo_Kettlebell_Pushups/1.jpg"
     ],
     "curated": false
   },
@@ -5284,46 +2995,10 @@
   },
   {
     "target_muscle": "Legs",
-    "exercise": "Posterior Tibialis Stretch",
-    "images": [
-      "/exercise-images/Posterior_Tibialis_Stretch/0.jpg",
-      "/exercise-images/Posterior_Tibialis_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Power Clean",
-    "images": [
-      "/exercise-images/Power_Clean/0.jpg",
-      "/exercise-images/Power_Clean/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Power Clean from Blocks",
-    "images": [
-      "/exercise-images/Power_Clean_from_Blocks/0.jpg",
-      "/exercise-images/Power_Clean_from_Blocks/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
     "exercise": "Power Jerk",
     "images": [
       "/exercise-images/Power_Jerk/0.jpg",
       "/exercise-images/Power_Jerk/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Power Partials",
-    "images": [
-      "/exercise-images/Power_Partials/0.jpg",
-      "/exercise-images/Power_Partials/1.jpg"
     ],
     "curated": false
   },
@@ -5333,24 +3008,6 @@
     "images": [
       "/exercise-images/Power_Snatch/0.jpg",
       "/exercise-images/Power_Snatch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Power Snatch from Blocks",
-    "images": [
-      "/exercise-images/Power_Snatch_from_Blocks/0.jpg",
-      "/exercise-images/Power_Snatch_from_Blocks/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Power Stairs",
-    "images": [
-      "/exercise-images/Power_Stairs/0.jpg",
-      "/exercise-images/Power_Stairs/1.jpg"
     ],
     "curated": false
   },
@@ -5373,15 +3030,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Prone Manual Hamstring",
-    "images": [
-      "/exercise-images/Prone_Manual_Hamstring/0.jpg",
-      "/exercise-images/Prone_Manual_Hamstring/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Cardio",
     "exercise": "Prowler Sprint",
     "images": [
@@ -5396,15 +3044,6 @@
     "images": [
       "/exercise-images/Pull_Through/0.jpg",
       "/exercise-images/Pull_Through/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Chest",
-    "exercise": "Push-Up Wide",
-    "images": [
-      "/exercise-images/Push-Up_Wide/0.jpg",
-      "/exercise-images/Push-Up_Wide/1.jpg"
     ],
     "curated": false
   },
@@ -5436,24 +3075,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Shoulders",
-    "exercise": "Push Press",
-    "images": [
-      "/exercise-images/Push_Press/0.jpg",
-      "/exercise-images/Push_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Push Press - Behind the Neck",
-    "images": [
-      "/exercise-images/Push_Press_-_Behind_the_Neck/0.jpg",
-      "/exercise-images/Push_Press_-_Behind_the_Neck/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Chest",
     "exercise": "Push Up to Side Plank",
     "images": [
@@ -5472,56 +3093,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Back",
-    "exercise": "Pyramid",
-    "images": [
-      "/exercise-images/Pyramid/0.jpg",
-      "/exercise-images/Pyramid/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Quad Stretch",
-    "images": [
-      "/exercise-images/Quad_Stretch/0.jpg",
-      "/exercise-images/Quad_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Quadriceps-SMR",
-    "images": [
-      "/exercise-images/Quadriceps-SMR/0.jpg",
-      "/exercise-images/Quadriceps-SMR/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Quick Leap",
-    "images": [
-      "/exercise-images/Quick_Leap/0.jpg",
-      "/exercise-images/Quick_Leap/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "Rack Delivery",
     "images": [
       "/exercise-images/Rack_Delivery/0.jpg",
       "/exercise-images/Rack_Delivery/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Rack Pull with Bands",
-    "images": [
-      "/exercise-images/Rack_Pull_with_Bands/0.jpg",
-      "/exercise-images/Rack_Pull_with_Bands/1.jpg"
     ],
     "curated": false
   },
@@ -5535,74 +3111,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Rear Leg Raises",
-    "images": [
-      "/exercise-images/Rear_Leg_Raises/0.jpg",
-      "/exercise-images/Rear_Leg_Raises/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Cardio",
     "exercise": "Recumbent Bike",
     "images": [
       "/exercise-images/Recumbent_Bike/0.jpg",
       "/exercise-images/Recumbent_Bike/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Return Push from Stance",
-    "images": [
-      "/exercise-images/Return_Push_from_Stance/0.jpg",
-      "/exercise-images/Return_Push_from_Stance/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Triceps",
-    "exercise": "Reverse Band Bench Press",
-    "images": [
-      "/exercise-images/Reverse_Band_Bench_Press/0.jpg",
-      "/exercise-images/Reverse_Band_Bench_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Reverse Band Box Squat",
-    "images": [
-      "/exercise-images/Reverse_Band_Box_Squat/0.jpg",
-      "/exercise-images/Reverse_Band_Box_Squat/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Reverse Band Deadlift",
-    "images": [
-      "/exercise-images/Reverse_Band_Deadlift/0.jpg",
-      "/exercise-images/Reverse_Band_Deadlift/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Reverse Band Power Squat",
-    "images": [
-      "/exercise-images/Reverse_Band_Power_Squat/0.jpg",
-      "/exercise-images/Reverse_Band_Power_Squat/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Reverse Band Sumo Deadlift",
-    "images": [
-      "/exercise-images/Reverse_Band_Sumo_Deadlift/0.jpg",
-      "/exercise-images/Reverse_Band_Sumo_Deadlift/1.jpg"
     ],
     "curated": false
   },
@@ -5679,15 +3192,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Reverse Hyperextension",
-    "images": [
-      "/exercise-images/Reverse_Hyperextension/0.jpg",
-      "/exercise-images/Reverse_Hyperextension/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "Reverse Machine Flyes",
     "images": [
@@ -5707,64 +3211,10 @@
   },
   {
     "target_muscle": "Triceps",
-    "exercise": "Reverse Triceps Bench Press",
-    "images": [
-      "/exercise-images/Reverse_Triceps_Bench_Press/0.jpg",
-      "/exercise-images/Reverse_Triceps_Bench_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Rhomboids-SMR",
-    "images": [
-      "/exercise-images/Rhomboids-SMR/0.jpg",
-      "/exercise-images/Rhomboids-SMR/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Rickshaw Carry",
-    "images": [
-      "/exercise-images/Rickshaw_Carry/0.jpg",
-      "/exercise-images/Rickshaw_Carry/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Rickshaw Deadlift",
-    "images": [
-      "/exercise-images/Rickshaw_Deadlift/0.jpg",
-      "/exercise-images/Rickshaw_Deadlift/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Triceps",
     "exercise": "Ring Dips",
     "images": [
       "/exercise-images/Ring_Dips/0.jpg",
       "/exercise-images/Ring_Dips/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Rocket Jump",
-    "images": [
-      "/exercise-images/Rocket_Jump/0.jpg",
-      "/exercise-images/Rocket_Jump/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Rocking Standing Calf Raise",
-    "images": [
-      "/exercise-images/Rocking_Standing_Calf_Raise/0.jpg",
-      "/exercise-images/Rocking_Standing_Calf_Raise/1.jpg"
     ],
     "curated": false
   },
@@ -5774,15 +3224,6 @@
     "images": [
       "/exercise-images/Rocky_Pull-Ups_Pulldowns/0.jpg",
       "/exercise-images/Rocky_Pull-Ups_Pulldowns/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Romanian Deadlift from Deficit",
-    "images": [
-      "/exercise-images/Romanian_Deadlift_from_Deficit/0.jpg",
-      "/exercise-images/Romanian_Deadlift_from_Deficit/1.jpg"
     ],
     "curated": false
   },
@@ -5823,15 +3264,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Shoulders",
-    "exercise": "Round The World Shoulder Stretch",
-    "images": [
-      "/exercise-images/Round_The_World_Shoulder_Stretch/0.jpg",
-      "/exercise-images/Round_The_World_Shoulder_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Cardio",
     "exercise": "Rowing, Stationary",
     "images": [
@@ -5841,29 +3273,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Runner's Stretch",
-    "images": [
-      "/exercise-images/Runners_Stretch/0.jpg",
-      "/exercise-images/Runners_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Cardio",
     "exercise": "Running, Treadmill",
     "images": [
       "/exercise-images/Running_Treadmill/0.jpg",
       "/exercise-images/Running_Treadmill/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Sandbag Load",
-    "images": [
-      "/exercise-images/Sandbag_Load/0.jpg",
-      "/exercise-images/Sandbag_Load/1.jpg"
     ],
     "curated": false
   },
@@ -5886,38 +3300,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Scissors Jump",
-    "images": [
-      "/exercise-images/Scissors_Jump/0.jpg",
-      "/exercise-images/Scissors_Jump/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Seated Band Hamstring Curl",
-    "images": [
-      "/exercise-images/Seated_Band_Hamstring_Curl/0.jpg",
-      "/exercise-images/Seated_Band_Hamstring_Curl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "Seated Barbell Military Press",
     "images": [
       "/exercise-images/Seated_Barbell_Military_Press/0.jpg",
       "/exercise-images/Seated_Barbell_Military_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Seated Barbell Twist",
-    "images": [
-      "/exercise-images/Seated_Barbell_Twist/0.jpg",
-      "/exercise-images/Seated_Barbell_Twist/1.jpg"
     ],
     "curated": false
   },
@@ -5949,15 +3336,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Biceps",
-    "exercise": "Seated Biceps",
-    "images": [
-      "/exercise-images/Seated_Biceps/0.jpg",
-      "/exercise-images/Seated_Biceps/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "Seated Cable Shoulder Press",
     "images": [
@@ -5976,56 +3354,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Seated Calf Stretch",
-    "images": [
-      "/exercise-images/Seated_Calf_Stretch/0.jpg",
-      "/exercise-images/Seated_Calf_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Seated Close-Grip Concentration Barbell Curl",
-    "images": [
-      "/exercise-images/Seated_Close-Grip_Concentration_Barbell_Curl/0.jpg",
-      "/exercise-images/Seated_Close-Grip_Concentration_Barbell_Curl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Biceps",
     "exercise": "Seated Dumbbell Curl",
     "images": [
       "/exercise-images/Seated_Dumbbell_Curl/0.jpg",
       "/exercise-images/Seated_Dumbbell_Curl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Seated Dumbbell Inner Biceps Curl",
-    "images": [
-      "/exercise-images/Seated_Dumbbell_Inner_Biceps_Curl/0.jpg",
-      "/exercise-images/Seated_Dumbbell_Inner_Biceps_Curl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Seated Dumbbell Palms-Down Wrist Curl",
-    "images": [
-      "/exercise-images/Seated_Dumbbell_Palms-Down_Wrist_Curl/0.jpg",
-      "/exercise-images/Seated_Dumbbell_Palms-Down_Wrist_Curl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Seated Dumbbell Palms-Up Wrist Curl",
-    "images": [
-      "/exercise-images/Seated_Dumbbell_Palms-Up_Wrist_Curl/0.jpg",
-      "/exercise-images/Seated_Dumbbell_Palms-Up_Wrist_Curl/1.jpg"
     ],
     "curated": false
   },
@@ -6039,74 +3372,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Abs",
-    "exercise": "Seated Flat Bench Leg Pull-In",
-    "images": [
-      "/exercise-images/Seated_Flat_Bench_Leg_Pull-In/0.jpg",
-      "/exercise-images/Seated_Flat_Bench_Leg_Pull-In/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Seated Floor Hamstring Stretch",
-    "images": [
-      "/exercise-images/Seated_Floor_Hamstring_Stretch/0.jpg",
-      "/exercise-images/Seated_Floor_Hamstring_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Seated Front Deltoid",
-    "images": [
-      "/exercise-images/Seated_Front_Deltoid/0.jpg",
-      "/exercise-images/Seated_Front_Deltoid/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Seated Glute",
-    "images": [
-      "/exercise-images/Seated_Glute/0.jpg",
-      "/exercise-images/Seated_Glute/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Back",
     "exercise": "Seated Good Mornings",
     "images": [
       "/exercise-images/Seated_Good_Mornings/0.jpg",
       "/exercise-images/Seated_Good_Mornings/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Seated Hamstring",
-    "images": [
-      "/exercise-images/Seated_Hamstring/0.jpg",
-      "/exercise-images/Seated_Hamstring/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Seated Hamstring and Calf Stretch",
-    "images": [
-      "/exercise-images/Seated_Hamstring_and_Calf_Stretch/0.jpg",
-      "/exercise-images/Seated_Hamstring_and_Calf_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Seated Head Harness Neck Resistance",
-    "images": [
-      "/exercise-images/Seated_Head_Harness_Neck_Resistance/0.jpg",
-      "/exercise-images/Seated_Head_Harness_Neck_Resistance/1.jpg"
     ],
     "curated": false
   },
@@ -6129,56 +3399,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Biceps",
-    "exercise": "Seated One-Arm Dumbbell Palms-Down Wrist Curl",
-    "images": [
-      "/exercise-images/Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl/0.jpg",
-      "/exercise-images/Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Seated One-Arm Dumbbell Palms-Up Wrist Curl",
-    "images": [
-      "/exercise-images/Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl/0.jpg",
-      "/exercise-images/Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Back",
     "exercise": "Seated One-arm Cable Pulley Rows",
     "images": [
       "/exercise-images/Seated_One-arm_Cable_Pulley_Rows/0.jpg",
       "/exercise-images/Seated_One-arm_Cable_Pulley_Rows/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Seated Overhead Stretch",
-    "images": [
-      "/exercise-images/Seated_Overhead_Stretch/0.jpg",
-      "/exercise-images/Seated_Overhead_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Seated Palm-Up Barbell Wrist Curl",
-    "images": [
-      "/exercise-images/Seated_Palm-Up_Barbell_Wrist_Curl/0.jpg",
-      "/exercise-images/Seated_Palm-Up_Barbell_Wrist_Curl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Seated Palms-Down Barbell Wrist Curl",
-    "images": [
-      "/exercise-images/Seated_Palms-Down_Barbell_Wrist_Curl/0.jpg",
-      "/exercise-images/Seated_Palms-Down_Barbell_Wrist_Curl/1.jpg"
     ],
     "curated": false
   },
@@ -6201,24 +3426,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Biceps",
-    "exercise": "Seated Two-Arm Palms-Up Low-Pulley Wrist Curl",
-    "images": [
-      "/exercise-images/Seated_Two-Arm_Palms-Up_Low-Pulley_Wrist_Curl/0.jpg",
-      "/exercise-images/Seated_Two-Arm_Palms-Up_Low-Pulley_Wrist_Curl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "See-Saw Press (Alternating Side Press)",
-    "images": [
-      "/exercise-images/See-Saw_Press_Alternating_Side_Press/0.jpg",
-      "/exercise-images/See-Saw_Press_Alternating_Side_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Back",
     "exercise": "Shotgun Row",
     "images": [
@@ -6228,74 +3435,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Shoulders",
-    "exercise": "Shoulder Circles",
-    "images": [
-      "/exercise-images/Shoulder_Circles/0.jpg",
-      "/exercise-images/Shoulder_Circles/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Shoulder Press - With Bands",
-    "images": [
-      "/exercise-images/Shoulder_Press_-_With_Bands/0.jpg",
-      "/exercise-images/Shoulder_Press_-_With_Bands/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Shoulder Raise",
-    "images": [
-      "/exercise-images/Shoulder_Raise/0.jpg",
-      "/exercise-images/Shoulder_Raise/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Shoulder Stretch",
-    "images": [
-      "/exercise-images/Shoulder_Stretch/0.jpg",
-      "/exercise-images/Shoulder_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Side-Lying Floor Stretch",
-    "images": [
-      "/exercise-images/Side-Lying_Floor_Stretch/0.jpg",
-      "/exercise-images/Side-Lying_Floor_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Abs",
     "exercise": "Side Bridge",
     "images": [
       "/exercise-images/Side_Bridge/0.jpg",
       "/exercise-images/Side_Bridge/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Side Hop-Sprint",
-    "images": [
-      "/exercise-images/Side_Hop-Sprint/0.jpg",
-      "/exercise-images/Side_Hop-Sprint/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Side Jackknife",
-    "images": [
-      "/exercise-images/Side_Jackknife/0.jpg",
-      "/exercise-images/Side_Jackknife/1.jpg"
     ],
     "curated": false
   },
@@ -6318,65 +3462,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Side Leg Raises",
-    "images": [
-      "/exercise-images/Side_Leg_Raises/0.jpg",
-      "/exercise-images/Side_Leg_Raises/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Side Lying Groin Stretch",
-    "images": [
-      "/exercise-images/Side_Lying_Groin_Stretch/0.jpg",
-      "/exercise-images/Side_Lying_Groin_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Side Neck Stretch",
-    "images": [
-      "/exercise-images/Side_Neck_Stretch/0.jpg",
-      "/exercise-images/Side_Neck_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Side Standing Long Jump",
-    "images": [
-      "/exercise-images/Side_Standing_Long_Jump/0.jpg",
-      "/exercise-images/Side_Standing_Long_Jump/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Back",
     "exercise": "Side To Side Chins",
     "images": [
       "/exercise-images/Side_To_Side_Chins/0.jpg",
       "/exercise-images/Side_To_Side_Chins/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Side Wrist Pull",
-    "images": [
-      "/exercise-images/Side_Wrist_Pull/0.jpg",
-      "/exercise-images/Side_Wrist_Pull/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Side to Side Box Shuffle",
-    "images": [
-      "/exercise-images/Side_to_Side_Box_Shuffle/0.jpg",
-      "/exercise-images/Side_to_Side_Box_Shuffle/1.jpg"
     ],
     "curated": false
   },
@@ -6409,55 +3499,10 @@
   },
   {
     "target_muscle": "Legs",
-    "exercise": "Single-Cone Sprint Drill",
-    "images": [
-      "/exercise-images/Single-Cone_Sprint_Drill/0.jpg",
-      "/exercise-images/Single-Cone_Sprint_Drill/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Single-Leg High Box Squat",
-    "images": [
-      "/exercise-images/Single-Leg_High_Box_Squat/0.jpg",
-      "/exercise-images/Single-Leg_High_Box_Squat/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Single-Leg Hop Progression",
-    "images": [
-      "/exercise-images/Single-Leg_Hop_Progression/0.jpg",
-      "/exercise-images/Single-Leg_Hop_Progression/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Single-Leg Lateral Hop",
-    "images": [
-      "/exercise-images/Single-Leg_Lateral_Hop/0.jpg",
-      "/exercise-images/Single-Leg_Lateral_Hop/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
     "exercise": "Single-Leg Leg Extension",
     "images": [
       "/exercise-images/Single-Leg_Leg_Extension/0.jpg",
       "/exercise-images/Single-Leg_Leg_Extension/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Single-Leg Stride Jump",
-    "images": [
-      "/exercise-images/Single-Leg_Stride_Jump/0.jpg",
-      "/exercise-images/Single-Leg_Stride_Jump/1.jpg"
     ],
     "curated": false
   },
@@ -6467,33 +3512,6 @@
     "images": [
       "/exercise-images/Single_Dumbbell_Raise/0.jpg",
       "/exercise-images/Single_Dumbbell_Raise/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Single Leg Butt Kick",
-    "images": [
-      "/exercise-images/Single_Leg_Butt_Kick/0.jpg",
-      "/exercise-images/Single_Leg_Butt_Kick/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Single Leg Glute Bridge",
-    "images": [
-      "/exercise-images/Single_Leg_Glute_Bridge/0.jpg",
-      "/exercise-images/Single_Leg_Glute_Bridge/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Single Leg Push-off",
-    "images": [
-      "/exercise-images/Single_Leg_Push-off/0.jpg",
-      "/exercise-images/Single_Leg_Push-off/1.jpg"
     ],
     "curated": false
   },
@@ -6508,64 +3526,10 @@
   },
   {
     "target_muscle": "Legs",
-    "exercise": "Sit Squats",
-    "images": [
-      "/exercise-images/Sit_Squats/0.jpg",
-      "/exercise-images/Sit_Squats/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Cardio",
-    "exercise": "Skating",
-    "images": [
-      "/exercise-images/Skating/0.jpg",
-      "/exercise-images/Skating/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Sled Drag - Harness",
-    "images": [
-      "/exercise-images/Sled_Drag_-_Harness/0.jpg",
-      "/exercise-images/Sled_Drag_-_Harness/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Sled Overhead Backward Walk",
-    "images": [
-      "/exercise-images/Sled_Overhead_Backward_Walk/0.jpg",
-      "/exercise-images/Sled_Overhead_Backward_Walk/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Triceps",
-    "exercise": "Sled Overhead Triceps Extension",
-    "images": [
-      "/exercise-images/Sled_Overhead_Triceps_Extension/0.jpg",
-      "/exercise-images/Sled_Overhead_Triceps_Extension/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
     "exercise": "Sled Push",
     "images": [
       "/exercise-images/Sled_Push/0.jpg",
       "/exercise-images/Sled_Push/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Sled Reverse Flye",
-    "images": [
-      "/exercise-images/Sled_Reverse_Flye/0.jpg",
-      "/exercise-images/Sled_Reverse_Flye/1.jpg"
     ],
     "curated": false
   },
@@ -6575,15 +3539,6 @@
     "images": [
       "/exercise-images/Sledgehammer_Swings/0.jpg",
       "/exercise-images/Sledgehammer_Swings/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Smith Incline Shoulder Raise",
-    "images": [
-      "/exercise-images/Smith_Incline_Shoulder_Raise/0.jpg",
-      "/exercise-images/Smith_Incline_Shoulder_Raise/1.jpg"
     ],
     "curated": false
   },
@@ -6642,15 +3597,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Smith Machine Hang Power Clean",
-    "images": [
-      "/exercise-images/Smith_Machine_Hang_Power_Clean/0.jpg",
-      "/exercise-images/Smith_Machine_Hang_Power_Clean/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Abs",
     "exercise": "Smith Machine Hip Raise",
     "images": [
@@ -6665,15 +3611,6 @@
     "images": [
       "/exercise-images/Smith_Machine_Incline_Bench_Press/0.jpg",
       "/exercise-images/Smith_Machine_Incline_Bench_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Smith Machine Leg Press",
-    "images": [
-      "/exercise-images/Smith_Machine_Leg_Press/0.jpg",
-      "/exercise-images/Smith_Machine_Leg_Press/1.jpg"
     ],
     "curated": false
   },
@@ -6701,15 +3638,6 @@
     "images": [
       "/exercise-images/Smith_Machine_Pistol_Squat/0.jpg",
       "/exercise-images/Smith_Machine_Pistol_Squat/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Smith Machine Reverse Calf Raises",
-    "images": [
-      "/exercise-images/Smith_Machine_Reverse_Calf_Raises/0.jpg",
-      "/exercise-images/Smith_Machine_Reverse_Calf_Raises/1.jpg"
     ],
     "curated": false
   },
@@ -6750,56 +3678,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Snatch",
-    "images": [
-      "/exercise-images/Snatch/0.jpg",
-      "/exercise-images/Snatch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Snatch Balance",
-    "images": [
-      "/exercise-images/Snatch_Balance/0.jpg",
-      "/exercise-images/Snatch_Balance/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Snatch Deadlift",
-    "images": [
-      "/exercise-images/Snatch_Deadlift/0.jpg",
-      "/exercise-images/Snatch_Deadlift/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Snatch Pull",
-    "images": [
-      "/exercise-images/Snatch_Pull/0.jpg",
-      "/exercise-images/Snatch_Pull/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Back",
     "exercise": "Snatch Shrug",
     "images": [
       "/exercise-images/Snatch_Shrug/0.jpg",
       "/exercise-images/Snatch_Shrug/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Snatch from Blocks",
-    "images": [
-      "/exercise-images/Snatch_from_Blocks/0.jpg",
-      "/exercise-images/Snatch_from_Blocks/1.jpg"
     ],
     "curated": false
   },
@@ -6813,42 +3696,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Speed Box Squat",
-    "images": [
-      "/exercise-images/Speed_Box_Squat/0.jpg",
-      "/exercise-images/Speed_Box_Squat/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Speed Squats",
-    "images": [
-      "/exercise-images/Speed_Squats/0.jpg",
-      "/exercise-images/Speed_Squats/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Spell Caster",
-    "images": [
-      "/exercise-images/Spell_Caster/0.jpg",
-      "/exercise-images/Spell_Caster/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Spider Crawl",
-    "images": [
-      "/exercise-images/Spider_Crawl/0.jpg",
-      "/exercise-images/Spider_Crawl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Biceps",
     "exercise": "Spider Curl",
     "images": [
@@ -6858,47 +3705,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Back",
-    "exercise": "Spinal Stretch",
-    "images": [
-      "/exercise-images/Spinal_Stretch/0.jpg",
-      "/exercise-images/Spinal_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Split Clean",
-    "images": [
-      "/exercise-images/Split_Clean/0.jpg",
-      "/exercise-images/Split_Clean/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Split Jerk",
-    "images": [
-      "/exercise-images/Split_Jerk/0.jpg",
-      "/exercise-images/Split_Jerk/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Legs",
     "exercise": "Split Jump",
     "images": [
       "/exercise-images/Split_Jump/0.jpg",
       "/exercise-images/Split_Jump/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Split Snatch",
-    "images": [
-      "/exercise-images/Split_Snatch/0.jpg",
-      "/exercise-images/Split_Snatch/1.jpg"
     ],
     "curated": false
   },
@@ -6917,42 +3728,6 @@
     "images": [
       "/exercise-images/Split_Squats/0.jpg",
       "/exercise-images/Split_Squats/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Squat Jerk",
-    "images": [
-      "/exercise-images/Squat_Jerk/0.jpg",
-      "/exercise-images/Squat_Jerk/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Squat with Bands",
-    "images": [
-      "/exercise-images/Squat_with_Bands/0.jpg",
-      "/exercise-images/Squat_with_Bands/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Squat with Chains",
-    "images": [
-      "/exercise-images/Squat_with_Chains/0.jpg",
-      "/exercise-images/Squat_with_Chains/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Squat with Plate Movers",
-    "images": [
-      "/exercise-images/Squat_with_Plate_Movers/0.jpg",
-      "/exercise-images/Squat_with_Plate_Movers/1.jpg"
     ],
     "curated": false
   },
@@ -6993,15 +3768,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Shoulders",
-    "exercise": "Standing Barbell Press Behind Neck",
-    "images": [
-      "/exercise-images/Standing_Barbell_Press_Behind_Neck/0.jpg",
-      "/exercise-images/Standing_Barbell_Press_Behind_Neck/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Triceps",
     "exercise": "Standing Bent-Over One-Arm Dumbbell Triceps Extension",
     "images": [
@@ -7029,15 +3795,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Biceps",
-    "exercise": "Standing Biceps Stretch",
-    "images": [
-      "/exercise-images/Standing_Biceps_Stretch/0.jpg",
-      "/exercise-images/Standing_Biceps_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "Standing Bradford Press",
     "images": [
@@ -7056,38 +3813,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Abs",
-    "exercise": "Standing Cable Lift",
-    "images": [
-      "/exercise-images/Standing_Cable_Lift/0.jpg",
-      "/exercise-images/Standing_Cable_Lift/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Standing Cable Wood Chop",
-    "images": [
-      "/exercise-images/Standing_Cable_Wood_Chop/0.jpg",
-      "/exercise-images/Standing_Cable_Wood_Chop/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Legs",
     "exercise": "Standing Calf Raises",
     "images": [
       "/exercise-images/Standing_Calf_Raises/0.jpg",
       "/exercise-images/Standing_Calf_Raises/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Standing Concentration Curl",
-    "images": [
-      "/exercise-images/Standing_Concentration_Curl/0.jpg",
-      "/exercise-images/Standing_Concentration_Curl/1.jpg"
     ],
     "curated": false
   },
@@ -7106,15 +3836,6 @@
     "images": [
       "/exercise-images/Standing_Dumbbell_Press/0.jpg",
       "/exercise-images/Standing_Dumbbell_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Standing Dumbbell Reverse Curl",
-    "images": [
-      "/exercise-images/Standing_Dumbbell_Reverse_Curl/0.jpg",
-      "/exercise-images/Standing_Dumbbell_Reverse_Curl/1.jpg"
     ],
     "curated": false
   },
@@ -7146,15 +3867,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Standing Elevated Quad Stretch",
-    "images": [
-      "/exercise-images/Standing_Elevated_Quad_Stretch/0.jpg",
-      "/exercise-images/Standing_Elevated_Quad_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "Standing Front Barbell Raise Over Head",
     "images": [
@@ -7165,73 +3877,10 @@
   },
   {
     "target_muscle": "Legs",
-    "exercise": "Standing Gastrocnemius Calf Stretch",
-    "images": [
-      "/exercise-images/Standing_Gastrocnemius_Calf_Stretch/0.jpg",
-      "/exercise-images/Standing_Gastrocnemius_Calf_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Standing Hamstring and Calf Stretch",
-    "images": [
-      "/exercise-images/Standing_Hamstring_and_Calf_Stretch/0.jpg",
-      "/exercise-images/Standing_Hamstring_and_Calf_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Standing Hip Circles",
-    "images": [
-      "/exercise-images/Standing_Hip_Circles/0.jpg",
-      "/exercise-images/Standing_Hip_Circles/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Standing Hip Flexors",
-    "images": [
-      "/exercise-images/Standing_Hip_Flexors/0.jpg",
-      "/exercise-images/Standing_Hip_Flexors/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Standing Inner-Biceps Curl",
-    "images": [
-      "/exercise-images/Standing_Inner-Biceps_Curl/0.jpg",
-      "/exercise-images/Standing_Inner-Biceps_Curl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Standing Lateral Stretch",
-    "images": [
-      "/exercise-images/Standing_Lateral_Stretch/0.jpg",
-      "/exercise-images/Standing_Lateral_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
     "exercise": "Standing Leg Curl",
     "images": [
       "/exercise-images/Standing_Leg_Curl/0.jpg",
       "/exercise-images/Standing_Leg_Curl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Standing Long Jump",
-    "images": [
-      "/exercise-images/Standing_Long_Jump/0.jpg",
-      "/exercise-images/Standing_Long_Jump/1.jpg"
     ],
     "curated": false
   },
@@ -7264,15 +3913,6 @@
   },
   {
     "target_muscle": "Biceps",
-    "exercise": "Standing Olympic Plate Hand Squeeze",
-    "images": [
-      "/exercise-images/Standing_Olympic_Plate_Hand_Squeeze/0.jpg",
-      "/exercise-images/Standing_Olympic_Plate_Hand_Squeeze/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
     "exercise": "Standing One-Arm Cable Curl",
     "images": [
       "/exercise-images/Standing_One-Arm_Cable_Curl/0.jpg",
@@ -7290,42 +3930,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Triceps",
-    "exercise": "Standing One-Arm Dumbbell Triceps Extension",
-    "images": [
-      "/exercise-images/Standing_One-Arm_Dumbbell_Triceps_Extension/0.jpg",
-      "/exercise-images/Standing_One-Arm_Dumbbell_Triceps_Extension/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Triceps",
-    "exercise": "Standing Overhead Barbell Triceps Extension",
-    "images": [
-      "/exercise-images/Standing_Overhead_Barbell_Triceps_Extension/0.jpg",
-      "/exercise-images/Standing_Overhead_Barbell_Triceps_Extension/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Standing Palm-In One-Arm Dumbbell Press",
-    "images": [
-      "/exercise-images/Standing_Palm-In_One-Arm_Dumbbell_Press/0.jpg",
-      "/exercise-images/Standing_Palm-In_One-Arm_Dumbbell_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Standing Palms-In Dumbbell Press",
-    "images": [
-      "/exercise-images/Standing_Palms-In_Dumbbell_Press/0.jpg",
-      "/exercise-images/Standing_Palms-In_Dumbbell_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Biceps",
     "exercise": "Standing Palms-Up Barbell Behind The Back Wrist Curl",
     "images": [
@@ -7335,74 +3939,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Back",
-    "exercise": "Standing Pelvic Tilt",
-    "images": [
-      "/exercise-images/Standing_Pelvic_Tilt/0.jpg",
-      "/exercise-images/Standing_Pelvic_Tilt/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Standing Rope Crunch",
-    "images": [
-      "/exercise-images/Standing_Rope_Crunch/0.jpg",
-      "/exercise-images/Standing_Rope_Crunch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Standing Soleus And Achilles Stretch",
-    "images": [
-      "/exercise-images/Standing_Soleus_And_Achilles_Stretch/0.jpg",
-      "/exercise-images/Standing_Soleus_And_Achilles_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Standing Toe Touches",
-    "images": [
-      "/exercise-images/Standing_Toe_Touches/0.jpg",
-      "/exercise-images/Standing_Toe_Touches/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Triceps",
-    "exercise": "Standing Towel Triceps Extension",
-    "images": [
-      "/exercise-images/Standing_Towel_Triceps_Extension/0.jpg",
-      "/exercise-images/Standing_Towel_Triceps_Extension/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "Standing Two-Arm Overhead Throw",
     "images": [
       "/exercise-images/Standing_Two-Arm_Overhead_Throw/0.jpg",
       "/exercise-images/Standing_Two-Arm_Overhead_Throw/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Star Jump",
-    "images": [
-      "/exercise-images/Star_Jump/0.jpg",
-      "/exercise-images/Star_Jump/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Step-up with Knee Raise",
-    "images": [
-      "/exercise-images/Step-up_with_Knee_Raise/0.jpg",
-      "/exercise-images/Step-up_with_Knee_Raise/1.jpg"
     ],
     "curated": false
   },
@@ -7434,24 +3975,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Back",
-    "exercise": "Stiff Leg Barbell Good Morning",
-    "images": [
-      "/exercise-images/Stiff_Leg_Barbell_Good_Morning/0.jpg",
-      "/exercise-images/Stiff_Leg_Barbell_Good_Morning/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Stomach Vacuum",
-    "images": [
-      "/exercise-images/Stomach_Vacuum/0.jpg",
-      "/exercise-images/Stomach_Vacuum/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Chest",
     "exercise": "Straight-Arm Dumbbell Pullover",
     "images": [
@@ -7470,29 +3993,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Back",
-    "exercise": "Straight Bar Bench Mid Rows",
-    "images": [
-      "/exercise-images/Straight_Bar_Bench_Mid_Rows/0.jpg",
-      "/exercise-images/Straight_Bar_Bench_Mid_Rows/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Shoulders",
     "exercise": "Straight Raises on Incline Bench",
     "images": [
       "/exercise-images/Straight_Raises_on_Incline_Bench/0.jpg",
       "/exercise-images/Straight_Raises_on_Incline_Bench/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Stride Jump Crossover",
-    "images": [
-      "/exercise-images/Stride_Jump_Crossover/0.jpg",
-      "/exercise-images/Stride_Jump_Crossover/1.jpg"
     ],
     "curated": false
   },
@@ -7506,24 +4011,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Sumo Deadlift with Bands",
-    "images": [
-      "/exercise-images/Sumo_Deadlift_with_Bands/0.jpg",
-      "/exercise-images/Sumo_Deadlift_with_Bands/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Sumo Deadlift with Chains",
-    "images": [
-      "/exercise-images/Sumo_Deadlift_with_Chains/0.jpg",
-      "/exercise-images/Sumo_Deadlift_with_Chains/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Back",
     "exercise": "Superman",
     "images": [
@@ -7533,56 +4020,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Triceps",
-    "exercise": "Supine Chest Throw",
-    "images": [
-      "/exercise-images/Supine_Chest_Throw/0.jpg",
-      "/exercise-images/Supine_Chest_Throw/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Supine One-Arm Overhead Throw",
-    "images": [
-      "/exercise-images/Supine_One-Arm_Overhead_Throw/0.jpg",
-      "/exercise-images/Supine_One-Arm_Overhead_Throw/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Supine Two-Arm Overhead Throw",
-    "images": [
-      "/exercise-images/Supine_Two-Arm_Overhead_Throw/0.jpg",
-      "/exercise-images/Supine_Two-Arm_Overhead_Throw/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Suspended Fallout",
-    "images": [
-      "/exercise-images/Suspended_Fallout/0.jpg",
-      "/exercise-images/Suspended_Fallout/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Chest",
     "exercise": "Suspended Push-Up",
     "images": [
       "/exercise-images/Suspended_Push-Up/0.jpg",
       "/exercise-images/Suspended_Push-Up/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Suspended Reverse Crunch",
-    "images": [
-      "/exercise-images/Suspended_Reverse_Crunch/0.jpg",
-      "/exercise-images/Suspended_Reverse_Crunch/1.jpg"
     ],
     "curated": false
   },
@@ -7623,24 +4065,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Triceps",
-    "exercise": "Tate Press",
-    "images": [
-      "/exercise-images/Tate_Press/0.jpg",
-      "/exercise-images/Tate_Press/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "The Straddle",
-    "images": [
-      "/exercise-images/The_Straddle/0.jpg",
-      "/exercise-images/The_Straddle/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Legs",
     "exercise": "Thigh Abductor",
     "images": [
@@ -7650,47 +4074,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Legs",
-    "exercise": "Thigh Adductor",
-    "images": [
-      "/exercise-images/Thigh_Adductor/0.jpg",
-      "/exercise-images/Thigh_Adductor/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Tire Flip",
-    "images": [
-      "/exercise-images/Tire_Flip/0.jpg",
-      "/exercise-images/Tire_Flip/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Abs",
     "exercise": "Toe Touchers",
     "images": [
       "/exercise-images/Toe_Touchers/0.jpg",
       "/exercise-images/Toe_Touchers/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Torso Rotation",
-    "images": [
-      "/exercise-images/Torso_Rotation/0.jpg",
-      "/exercise-images/Torso_Rotation/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Cardio",
-    "exercise": "Trail Running/Walking",
-    "images": [
-      "/exercise-images/Trail_Running_Walking/0.jpg",
-      "/exercise-images/Trail_Running_Walking/1.jpg"
     ],
     "curated": false
   },
@@ -7714,24 +4102,6 @@
   },
   {
     "target_muscle": "Triceps",
-    "exercise": "Tricep Side Stretch",
-    "images": [
-      "/exercise-images/Tricep_Side_Stretch/0.jpg",
-      "/exercise-images/Tricep_Side_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Triceps",
-    "exercise": "Triceps Overhead Extension with Rope",
-    "images": [
-      "/exercise-images/Triceps_Overhead_Extension_with_Rope/0.jpg",
-      "/exercise-images/Triceps_Overhead_Extension_with_Rope/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Triceps",
     "exercise": "Triceps Pushdown - Rope Attachment",
     "images": [
       "/exercise-images/Triceps_Pushdown_-_Rope_Attachment/0.jpg",
@@ -7749,56 +4119,11 @@
     "curated": false
   },
   {
-    "target_muscle": "Triceps",
-    "exercise": "Triceps Stretch",
-    "images": [
-      "/exercise-images/Triceps_Stretch/0.jpg",
-      "/exercise-images/Triceps_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Tuck Crunch",
-    "images": [
-      "/exercise-images/Tuck_Crunch/0.jpg",
-      "/exercise-images/Tuck_Crunch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Biceps",
     "exercise": "Two-Arm Dumbbell Preacher Curl",
     "images": [
       "/exercise-images/Two-Arm_Dumbbell_Preacher_Curl/0.jpg",
       "/exercise-images/Two-Arm_Dumbbell_Preacher_Curl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Two-Arm Kettlebell Clean",
-    "images": [
-      "/exercise-images/Two-Arm_Kettlebell_Clean/0.jpg",
-      "/exercise-images/Two-Arm_Kettlebell_Clean/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Two-Arm Kettlebell Jerk",
-    "images": [
-      "/exercise-images/Two-Arm_Kettlebell_Jerk/0.jpg",
-      "/exercise-images/Two-Arm_Kettlebell_Jerk/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Two-Arm Kettlebell Military Press",
-    "images": [
-      "/exercise-images/Two-Arm_Kettlebell_Military_Press/0.jpg",
-      "/exercise-images/Two-Arm_Kettlebell_Military_Press/1.jpg"
     ],
     "curated": false
   },
@@ -7817,24 +4142,6 @@
     "images": [
       "/exercise-images/Underhand_Cable_Pulldowns/0.jpg",
       "/exercise-images/Underhand_Cable_Pulldowns/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Upper Back-Leg Grab",
-    "images": [
-      "/exercise-images/Upper_Back-Leg_Grab/0.jpg",
-      "/exercise-images/Upper_Back-Leg_Grab/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Upper Back Stretch",
-    "images": [
-      "/exercise-images/Upper_Back_Stretch/0.jpg",
-      "/exercise-images/Upper_Back_Stretch/1.jpg"
     ],
     "curated": false
   },
@@ -7862,15 +4169,6 @@
     "images": [
       "/exercise-images/Upright_Row_-_With_Bands/0.jpg",
       "/exercise-images/Upright_Row_-_With_Bands/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Shoulders",
-    "exercise": "Upward Stretch",
-    "images": [
-      "/exercise-images/Upward_Stretch/0.jpg",
-      "/exercise-images/Upward_Stretch/1.jpg"
     ],
     "curated": false
   },
@@ -7907,24 +4205,6 @@
     "images": [
       "/exercise-images/Walking_Treadmill/0.jpg",
       "/exercise-images/Walking_Treadmill/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Back",
-    "exercise": "Weighted Ball Hyperextension",
-    "images": [
-      "/exercise-images/Weighted_Ball_Hyperextension/0.jpg",
-      "/exercise-images/Weighted_Ball_Hyperextension/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Abs",
-    "exercise": "Weighted Ball Side Bend",
-    "images": [
-      "/exercise-images/Weighted_Ball_Side_Bend/0.jpg",
-      "/exercise-images/Weighted_Ball_Side_Bend/1.jpg"
     ],
     "curated": false
   },
@@ -8046,33 +4326,6 @@
     "curated": false
   },
   {
-    "target_muscle": "Biceps",
-    "exercise": "Wide-Grip Standing Barbell Curl",
-    "images": [
-      "/exercise-images/Wide-Grip_Standing_Barbell_Curl/0.jpg",
-      "/exercise-images/Wide-Grip_Standing_Barbell_Curl/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Wide Stance Barbell Squat",
-    "images": [
-      "/exercise-images/Wide_Stance_Barbell_Squat/0.jpg",
-      "/exercise-images/Wide_Stance_Barbell_Squat/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Wide Stance Stiff Legs",
-    "images": [
-      "/exercise-images/Wide_Stance_Stiff_Legs/0.jpg",
-      "/exercise-images/Wide_Stance_Stiff_Legs/1.jpg"
-    ],
-    "curated": false
-  },
-  {
     "target_muscle": "Abs",
     "exercise": "Wind Sprints",
     "images": [
@@ -8083,64 +4336,10 @@
   },
   {
     "target_muscle": "Legs",
-    "exercise": "Windmills",
-    "images": [
-      "/exercise-images/Windmills/0.jpg",
-      "/exercise-images/Windmills/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
     "exercise": "World's Greatest Stretch",
     "images": [
       "/exercise-images/Worlds_Greatest_Stretch/0.jpg",
       "/exercise-images/Worlds_Greatest_Stretch/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Wrist Circles",
-    "images": [
-      "/exercise-images/Wrist_Circles/0.jpg",
-      "/exercise-images/Wrist_Circles/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Wrist Roller",
-    "images": [
-      "/exercise-images/Wrist_Roller/0.jpg",
-      "/exercise-images/Wrist_Roller/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Biceps",
-    "exercise": "Wrist Rotations with Straight Bar",
-    "images": [
-      "/exercise-images/Wrist_Rotations_with_Straight_Bar/0.jpg",
-      "/exercise-images/Wrist_Rotations_with_Straight_Bar/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Yoke Walk",
-    "images": [
-      "/exercise-images/Yoke_Walk/0.jpg",
-      "/exercise-images/Yoke_Walk/1.jpg"
-    ],
-    "curated": false
-  },
-  {
-    "target_muscle": "Legs",
-    "exercise": "Zercher Squats",
-    "images": [
-      "/exercise-images/Zercher_Squats/0.jpg",
-      "/exercise-images/Zercher_Squats/1.jpg"
     ],
     "curated": false
   },
