@@ -95,6 +95,12 @@ body {
   gap: 10px;
 }
 .topbar-icon { height: 34px; width: auto; filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)); }
+.topbar-wordmark {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 .user-menu {
   position: absolute;
   top: 18px;
@@ -151,7 +157,11 @@ body {
 .topbar-sub {
   margin: 6px 0 0;
   font-size: 13px;
-  color: rgba(255,255,255,.65);
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  opacity: .85;
   font-weight: 500;
   letter-spacing: .01em;
 }
