@@ -266,23 +266,6 @@ def exercises_by_muscle(muscle):
     return jsonify([_exercise_plan_dict(r) for r in rows])
 
 
-@app.route("/api/exercise-plan", methods=["DELETE"])
-def delete_exercise_plan_rows():
-    """Bulk-delete exercise_plan rows by id, for pruning the picker down to
-    exercises actually wanted - exercise_log stores the exercise name as
-    plain text (not a foreign key), so removing a row here never touches
-    anything already logged."""
-    data = request.get_json(force=True)
-    ids = data.get("ids") or []
-    if not ids or not all(isinstance(i, int) for i in ids):
-        return jsonify({"error": "ids must be a non-empty list of integers"}), 400
-    db = get_db()
-    placeholders = ",".join("?" * len(ids))
-    cur = db.execute(f"DELETE FROM exercise_plan WHERE id IN ({placeholders})", ids)
-    db.commit()
-    return jsonify({"deleted": cur.rowcount})
-
-
 # ---------------------------------------------------------------
 # Workout Log API
 # ---------------------------------------------------------------
