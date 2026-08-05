@@ -1216,8 +1216,9 @@ function applyLevelOverride(block) {
   block.dataset.levelOverrideKey = newKey;
   updateSetColumnsLabel(block);
   if (newKey === prevKey) return;
+  const hadSets = block.querySelectorAll(".set-row").length > 0;
   block.querySelector(".ex-sets").innerHTML = "";
-  addSetRow(block);
+  if (hadSets) addSetRow(block);
 }
 
 // Adds/removes the 3rd "extra field" label column (e.g. "Inclination (%)")
@@ -1253,8 +1254,9 @@ function applyExtraField(block) {
   block.dataset.extraFieldKey = newKey;
   updateSetColumnsExtraLabel(block);
   if (newKey === prevKey) return;
+  const hadSets = block.querySelectorAll(".set-row").length > 0;
   block.querySelector(".ex-sets").innerHTML = "";
-  addSetRow(block);
+  if (hadSets) addSetRow(block);
 }
 
 function updateSetTypeToggle(block) {
@@ -1277,8 +1279,9 @@ function applyExerciseType(block, type) {
   updateSetTypeToggle(block);
   if (type === prevType) return;
   updateSetColumnsLabel(block);
+  const hadSets = block.querySelectorAll(".set-row").length > 0;
   block.querySelector(".ex-sets").innerHTML = "";
-  addSetRow(block);
+  if (hadSets) addSetRow(block);
 }
 
 function addSetRow(block, { copyLast = false } = {}) {
@@ -1701,7 +1704,6 @@ function addExerciseBlock() {
   });
 
   exercisesContainer.appendChild(block);
-  addSetRow(block);
   renumberExerciseBlocks();
 
   // Most workouts train one muscle group across several exercises in a
