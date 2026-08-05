@@ -1744,6 +1744,7 @@ let currentWorkouts = [];
 let currentExerciseLogs = [];
 let currentDetailDate = null;
 let historyPage = 0; // 0 = this calendar week, 1 = last week, etc.
+let historyPhaseFilter = null; // null = All, else a CYCLE_PHASES key
 
 // Monday-start week containing dateStr, as a local midnight Date.
 function weekStartDate(dateStr) {
@@ -1833,6 +1834,10 @@ function workoutRowEdit(w) {
     </tr>`;
 }
 
+// Doubles as both the phase-color legend and the history filter: each pill
+// is clickable, filters the table to that phase, and shows which filter
+// (if any) is currently active - one control instead of a legend plus a
+// separate filter dropdown.
 function renderPhaseLegend() {
   const legend = document.getElementById("workout-log-phase-legend");
   if (!currentUser || !currentUser.last_period_date) {
@@ -1840,18 +1845,39 @@ function renderPhaseLegend() {
     return;
   }
   legend.hidden = false;
-  legend.innerHTML = CYCLE_PHASES.map(p =>
-    `<span class="phase-legend-item"><span class="phase-dot" style="background:${p.color}"></span>${p.label}</span>`
+  const allPill = `<button type="button" class="phase-legend-item phase-filter-btn${historyPhaseFilter === null ? " active" : ""}" data-phase="">All</button>`;
+  const phasePills = CYCLE_PHASES.map(p =>
+    `<button type="button" class="phase-legend-item phase-filter-btn${historyPhaseFilter === p.key ? " active" : ""}" data-phase="${p.key}"><span class="phase-dot" style="background:${p.color}"></span>${p.label}</button>`
   ).join("");
+  legend.innerHTML = allPill + phasePills;
+  legend.querySelectorAll(".phase-filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      historyPhaseFilter = btn.dataset.phase || null;
+      renderWorkoutTable();
+    });
+  });
 }
 
 function renderWorkoutTable() {
-  const pageWorkouts = currentWorkouts.filter(w => weekIndexFor(w.date) === historyPage);
+  const pageWorkouts = historyPhaseFilter
+    ? currentWorkouts.filter(w => cyclePhaseForDate(w.date)?.key === historyPhaseFilter)
+    : currentWorkouts.filter(w => weekIndexFor(w.date) === historyPage);
   const wBody = document.querySelector("#table-workout-log tbody");
   wBody.innerHTML = pageWorkouts.map(workoutRowView).join("");
   bindWorkoutRowEvents();
   renderPhaseLegend();
-  renderHistoryPager();
+
+  document.getElementById("history-pager").hidden = !!historyPhaseFilter;
+  if (!historyPhaseFilter) renderHistoryPager();
+
+  const emptyEl = document.getElementById("history-empty");
+  if (historyPhaseFilter && pageWorkouts.length === 0) {
+    const phase = CYCLE_PHASES.find(p => p.key === historyPhaseFilter);
+    emptyEl.textContent = `No workouts logged during your ${phase.label} yet.`;
+    emptyEl.hidden = false;
+  } else {
+    emptyEl.hidden = true;
+  }
 }
 
 function renderHistoryPager() {
@@ -1916,6 +1942,7 @@ function bindWorkoutEditRowEvents(id) {
 async function loadHistory() {
   showWorkoutLog();
   historyPage = 0;
+  historyPhaseFilter = null;
   currentWorkouts = await api.get("/api/workout-log");
   renderWorkoutTable();
 }
