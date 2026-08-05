@@ -1743,6 +1743,29 @@ const cardExerciseDetail = document.getElementById("card-exercise-detail");
 let currentWorkouts = [];
 let currentExerciseLogs = [];
 let currentDetailDate = null;
+let historyPage = 0; // 0 = this calendar week, 1 = last week, etc.
+
+// Monday-start week containing dateStr, as a local midnight Date.
+function weekStartDate(dateStr) {
+  const d = new Date(dateStr + "T00:00:00");
+  const day = (d.getDay() + 6) % 7; // Mon=0 ... Sun=6
+  d.setDate(d.getDate() - day);
+  return d;
+}
+
+function weekIndexFor(dateStr) {
+  const msPerWeek = 7 * 86400000;
+  return Math.round((weekStartDate(todayStr) - weekStartDate(dateStr)) / msPerWeek);
+}
+
+function formatWeekRangeLabel(page) {
+  const start = weekStartDate(todayStr);
+  start.setDate(start.getDate() - page * 7);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  const fmt = d => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return page === 0 ? `This Week (${fmt(start)} – ${fmt(end)})` : `${fmt(start)} – ${fmt(end)}`;
+}
 
 function showWorkoutLog() {
   cardExerciseDetail.hidden = true;
@@ -1823,11 +1846,32 @@ function renderPhaseLegend() {
 }
 
 function renderWorkoutTable() {
+  const pageWorkouts = currentWorkouts.filter(w => weekIndexFor(w.date) === historyPage);
   const wBody = document.querySelector("#table-workout-log tbody");
-  wBody.innerHTML = currentWorkouts.map(workoutRowView).join("");
+  wBody.innerHTML = pageWorkouts.map(workoutRowView).join("");
   bindWorkoutRowEvents();
   renderPhaseLegend();
+  renderHistoryPager();
 }
+
+function renderHistoryPager() {
+  const maxPage = currentWorkouts.length
+    ? Math.max(...currentWorkouts.map(w => weekIndexFor(w.date)))
+    : 0;
+  document.querySelector("#history-pager .history-pager-label").textContent = formatWeekRangeLabel(historyPage);
+  document.getElementById("history-pager-newer").disabled = historyPage === 0;
+  document.getElementById("history-pager-older").disabled = historyPage >= maxPage;
+}
+
+document.getElementById("history-pager-newer").addEventListener("click", () => {
+  if (historyPage === 0) return;
+  historyPage--;
+  renderWorkoutTable();
+});
+document.getElementById("history-pager-older").addEventListener("click", () => {
+  historyPage++;
+  renderWorkoutTable();
+});
 
 function bindWorkoutRowEvents() {
   const wBody = document.querySelector("#table-workout-log tbody");
@@ -1871,6 +1915,7 @@ function bindWorkoutEditRowEvents(id) {
 
 async function loadHistory() {
   showWorkoutLog();
+  historyPage = 0;
   currentWorkouts = await api.get("/api/workout-log");
   renderWorkoutTable();
 }
@@ -2103,7 +2148,9 @@ function renderPerformanceChart(series) {
 // best value and the date it was set, then buckets that exercise into
 // whichever cycle phase that date falls in. An exercise with no PR date
 // falling in a tracked cycle (or logged before cycle tracking was turned
-// on) simply doesn't appear in any bucket.
+// on) simply doesn't appear in any bucket. An exercise logged only once
+// is skipped entirely - same "nothing to beat yet" rule as checkForPR's
+// live PR toast, since a lone data point trivially "wins" its own value.
 function computePRPhaseBreakdown(history) {
   const byExercise = {};
   history.forEach(x => {
@@ -2119,6 +2166,8 @@ function computePRPhaseBreakdown(history) {
     const weightCount = rows.filter(x => x.weight_kg != null).length;
     const durationCount = rows.filter(x => x.duration_minutes != null).length;
     const metricKey = durationCount > weightCount ? "duration_minutes" : "weight_kg";
+    const metricCount = metricKey === "weight_kg" ? weightCount : durationCount;
+    if (metricCount < 2) return;
     const unit = metricKey === "weight_kg" ? "kg" : "min";
     let best = null;
     rows.forEach(x => {

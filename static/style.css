@@ -1388,6 +1388,33 @@ button:disabled {
 }
 .data-table .edit-btn:hover { background: #f1effe; }
 .data-table .row-actions { white-space: nowrap; }
+
+.history-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+.history-pager-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.history-pager-btn {
+  background: #f1effe;
+  border: none;
+  color: var(--accent-dark);
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  transition: background .15s ease;
+  font-family: inherit;
+}
+.history-pager-btn:hover:not(:disabled) { background: #e7e1fd; }
+.history-pager-btn:disabled { opacity: .4; cursor: default; }
 .data-table input, .data-table select {
   width: 100%;
   min-width: 0;

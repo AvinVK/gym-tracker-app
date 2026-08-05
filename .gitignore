@@ -12,6 +12,7 @@ android/.gradle/
 android/local.properties
 android/captures/
 android/.cxx/
+android/.idea/
 ios/App/build/
 ios/App/Pods/
 ios/App/App.xcworkspace/xcuserdata/
