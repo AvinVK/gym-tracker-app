@@ -22,7 +22,13 @@ const api = {
     if (!r.ok) throw new Error((await r.json()).error || "Request failed");
     return r.json();
   }),
-  del: (url) => fetch(url, { method: "DELETE" }),
+  del: (url, body) => fetch(url, {
+    method: "DELETE",
+    ...(body ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {}),
+  }).then(async r => {
+    if (!r.ok) throw new Error((await r.json()).error || "Request failed");
+    return r.status === 204 ? null : r.json();
+  }),
 };
 
 // ---------------- Date inputs: no future dates ----------------
@@ -494,6 +500,8 @@ document.querySelectorAll(".main-tab-btn").forEach(btn => {
       renderCycleTab();
     } else if (btn.dataset.maintab === "performance") {
       renderPerformanceTab();
+    } else if (btn.dataset.maintab === "manage-exercises") {
+      renderManageExercisesTab();
     }
   });
 });
@@ -2551,3 +2559,87 @@ async function restoreDraft() {
 // loadMuscleOptions()/checkOnboarding() already kicked off earlier
 // (see "Onboarding / profile picker"); restoreDraft() runs per-profile
 // from inside selectProfile() once we know who's using the app.
+
+// ---------------- Manage Exercises (one-off catalog pruning) ----------------
+let mngexMuscle = null;
+let mngexExercises = [];
+let mngexSelected = new Set();
+
+async function renderManageExercisesTab() {
+  if (!availableMuscles.length) await muscleOptionsReady;
+  if (!mngexMuscle) mngexMuscle = availableMuscles[0];
+  renderMngexPills();
+  await loadMngexExercises(mngexMuscle);
+}
+
+function renderMngexPills() {
+  const pillsEl = document.getElementById("mngex-muscle-pills");
+  pillsEl.innerHTML = availableMuscles.map(m =>
+    `<button type="button" class="phase-legend-item mngex-pill${m === mngexMuscle ? " active" : ""}" data-muscle="${m}">${m}</button>`
+  ).join("");
+  pillsEl.querySelectorAll(".mngex-pill").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      mngexMuscle = btn.dataset.muscle;
+      renderMngexPills();
+      await loadMngexExercises(mngexMuscle);
+    });
+  });
+}
+
+async function loadMngexExercises(muscle) {
+  mngexExercises = await api.get(`/api/exercises-by-muscle/${encodeURIComponent(muscle)}`);
+  mngexSelected = new Set();
+  renderMngexChecklist();
+}
+
+function renderMngexChecklist() {
+  const listEl = document.getElementById("mngex-list");
+  listEl.innerHTML = mngexExercises.map(ex => {
+    const imgUrl = ex.images && ex.images[0];
+    const thumb = imgUrl
+      ? `<img class="mngex-thumb" src="${imgUrl}" alt="" loading="lazy">`
+      : `<span class="mngex-thumb mngex-thumb-empty"></span>`;
+    const badge = ex.curated ? `<span class="mngex-badge">your original</span>` : "";
+    return `
+      <label class="mngex-row">
+        <input type="checkbox" class="mngex-check" data-id="${ex.id}" ${mngexSelected.has(ex.id) ? "checked" : ""}>
+        ${thumb}
+        <span class="mngex-name">${ex.exercise}${badge}</span>
+      </label>`;
+  }).join("");
+  listEl.querySelectorAll(".mngex-check").forEach(cb => {
+    cb.addEventListener("change", () => {
+      const id = parseInt(cb.dataset.id, 10);
+      if (cb.checked) mngexSelected.add(id); else mngexSelected.delete(id);
+      updateMngexActions();
+    });
+  });
+  updateMngexActions();
+}
+
+function updateMngexActions() {
+  const deleteBtn = document.getElementById("mngex-delete-btn");
+  deleteBtn.textContent = `Delete Selected (${mngexSelected.size})`;
+  deleteBtn.disabled = mngexSelected.size === 0;
+  const allSelected = mngexExercises.length > 0 && mngexSelected.size === mngexExercises.length;
+  document.getElementById("mngex-select-all").textContent = allSelected ? "Deselect All" : "Select All";
+}
+
+document.getElementById("mngex-select-all").addEventListener("click", () => {
+  const allSelected = mngexExercises.length > 0 && mngexSelected.size === mngexExercises.length;
+  mngexSelected = allSelected ? new Set() : new Set(mngexExercises.map(ex => ex.id));
+  renderMngexChecklist();
+});
+
+document.getElementById("mngex-delete-btn").addEventListener("click", async () => {
+  const count = mngexSelected.size;
+  if (!count) return;
+  const ok = await confirmModal(
+    `Delete ${count} exercise${count === 1 ? "" : "s"} from ${mngexMuscle}? This can't be undone (already-logged sets aren't affected).`,
+    "Yes, Delete"
+  );
+  if (!ok) return;
+  await api.del("/api/exercise-plan", { ids: [...mngexSelected] });
+  toast(`Deleted ${count} exercise${count === 1 ? "" : "s"}`);
+  await loadMngexExercises(mngexMuscle);
+});
