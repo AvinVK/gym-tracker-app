@@ -1,34 +1,45 @@
-:root {
-  --bg: #0d0c0a;
-  --bg-soft: #0d0c0a;
-  --ink: #f2f0ea;
-  --card: #17140f;
-  --border: #2c2820;
-  --muted: #a49c8b;
+/* Self-hosted (not a CDN link) so the app still renders its own type when
+   used offline in the Capacitor mobile wrapper. One variable-font file
+   covers the whole 400-600 weight range we use. */
+@font-face {
+  font-family: "Josefin Sans";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("fonts/JosefinSans-Variable.woff2") format("woff2");
+}
 
-  --accent: #d4af37;
-  --accent-2: #22d3ee;
-  --accent-dark: #b8912f;
-  /* Text/icon color for anything sitting directly on the gold/gold-aqua
-     gradient (buttons, active tab, selected states) - gold is too light
-     for white text to pass contrast, so those surfaces use this instead
-     of --ink. */
-  --accent-ink: #17130a;
-  --accent-glow: rgba(212, 175, 55, .22);
+:root {
+  --bg: #000000;
+  --bg-soft: #000000;
+  --ink: #f2f0f2;
+  --card: #121212;
+  --border: #2a2a2a;
+  --muted: #a6a2a8;
+
+  --accent: #f7b8c8;
+  --accent-2: #a9c4f7;
+  --accent-dark: #e8829f;
+  /* Text/icon color for anything sitting directly on the rose/periwinkle
+     gradient (buttons, active tab, selected states) - both accents are
+     light pastels, so those surfaces use this near-black instead of
+     --ink. */
+  --accent-ink: #171015;
+  --accent-glow: rgba(247, 184, 200, .22);
   --danger: #f4436c;
   --success: #17c993;
 
   /* Raised dark surfaces, lightest to darkest - replace the old light-mode
      #fbfbfe/#fff/#f1f1f6 trio (input bg / hover bg / disabled bg). */
-  --surface-2: #1c1811;
-  --surface-3: #221d15;
-  --muted-2: #8f8874;
+  --surface-2: #1a1a1a;
+  --surface-3: #202020;
+  --muted-2: #8a858e;
 
   /* Accent-tinted backgrounds/borders (badges, pills, selected rows,
      focus hovers) - replace the old light-mode #f1effe/#e7e1fd/#c9c2fb. */
-  --tint: #2a2410;
-  --tint-hover: #362c14;
-  --tint-border: #4a3f22;
+  --tint: #241820;
+  --tint-hover: #2e1e28;
+  --tint-border: #4a2f3c;
 
   /* Danger-tinted backgrounds (delete-button hover states) - replace the
      old light-mode #fdeaee/#fbd8df. */
@@ -53,7 +64,7 @@
 
 body {
   margin: 0;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Josefin Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background: var(--bg-soft);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
@@ -61,7 +72,7 @@ body {
 
 /* ---------------- Header ---------------- */
 .topbar {
-  background: linear-gradient(135deg, #0a0908 0%, #14110b 45%, #1c170e 100%);
+  background: linear-gradient(135deg, #000000 0%, #0a0709 45%, #120a10 100%);
   color: #fff;
   padding: 28px 20px 22px;
   position: relative;
@@ -82,13 +93,13 @@ body {
   inset: -60% -20% auto auto;
   width: 260px;
   height: 260px;
-  background: radial-gradient(circle, rgba(212, 175, 55, .4), transparent 70%);
+  background: radial-gradient(circle, rgba(247, 184, 200, .4), transparent 70%);
   pointer-events: none;
 }
 .topbar h1 {
   margin: 0;
   font-size: 24px;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -.02em;
   display: flex;
   align-items: center;
@@ -238,14 +249,14 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 }
 .cycle-summary-label {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .04em;
   color: var(--muted);
 }
 .cycle-summary-value {
   font-size: 17px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--ink);
   letter-spacing: -.01em;
 }
@@ -291,12 +302,12 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 .cycle-phase-header h3 {
   margin: 0;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--ink);
 }
 .cycle-phase-days {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: .03em;
@@ -320,7 +331,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 .perf-chart-title {
   margin: 0 0 12px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .04em;
   color: var(--muted);
@@ -367,13 +378,13 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 .perf-chart .perf-value-label {
   fill: var(--ink);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   font-family: inherit;
 }
 .perf-chart .perf-pr-label {
   fill: var(--accent-dark);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 500;
   font-family: inherit;
 }
 .perf-chart .perf-crosshair {
@@ -397,7 +408,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   box-shadow: var(--shadow-md);
   z-index: 2;
 }
-.perf-tooltip-value { font-weight: 700; }
+.perf-tooltip-value { font-weight: 500; }
 .perf-tooltip-date { color: var(--muted); font-size: 11px; }
 
 .prphase-row {
@@ -422,7 +433,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 .prphase-name .phase-dot { margin-right: 8px; }
 .prphase-count {
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -473,7 +484,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 .modal-card h2 {
   margin: 0 0 4px;
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 600;
 }
 .modal-sub {
   margin: 0 0 16px;
@@ -540,7 +551,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 .card h2 {
   margin: 0 0 14px;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--ink);
   display: flex;
   align-items: center;
@@ -574,7 +585,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   border: none;
   color: var(--accent);
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 500;
   padding: 4px 12px;
   border-radius: 20px;
   cursor: pointer;
@@ -605,7 +616,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: var(--accent-ink);
   font-size: 26px;
-  font-weight: 800;
+  font-weight: 600;
 }
 .profile-upload-btn {
   grid-column: unset;
@@ -809,7 +820,7 @@ button:disabled {
   display: block;
   margin-top: 2px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--muted);
 }
 
@@ -817,7 +828,7 @@ button:disabled {
 .time-picker-card h2 {
   margin: 0 0 12px;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--ink);
 }
 /* Row height (44px) and the wheel's fixed height (220px = 5 rows) drive
@@ -877,7 +888,7 @@ button:disabled {
 }
 .time-picker-option.selected {
   color: var(--ink);
-  font-weight: 700;
+  font-weight: 500;
 }
 .time-picker-option:disabled {
   color: #3a362a;
@@ -931,7 +942,7 @@ button:disabled {
 .option-picker-card h2 {
   margin: 0 0 12px;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--ink);
 }
 .option-picker-search {
@@ -1012,7 +1023,7 @@ button:disabled {
   padding: 12px;
   margin-top: 4px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--accent-dark);
   text-align: center;
   cursor: pointer;
@@ -1065,7 +1076,7 @@ button:disabled {
   justify-content: space-between;
   margin-bottom: 10px;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--ink);
 }
 .date-picker-nav {
@@ -1076,7 +1087,7 @@ button:disabled {
   height: 30px;
   border-radius: 50%;
   font-size: 17px;
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
   line-height: 1;
   transition: background .15s ease;
@@ -1090,7 +1101,7 @@ button:disabled {
 .date-picker-weekdays {
   margin-bottom: 4px;
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--muted);
   text-align: center;
   text-transform: uppercase;
@@ -1125,15 +1136,15 @@ button:disabled {
   padding: 13px;
   border-radius: var(--radius-sm);
   font-size: 14.5px;
-  font-weight: 700;
+  font-weight: 500;
   text-align: center;
   cursor: pointer;
   margin-top: 4px;
-  box-shadow: 0 10px 20px -8px rgba(212, 175, 55, .45);
+  box-shadow: 0 10px 20px -8px rgba(247, 184, 200, .45);
   transition: transform .15s ease, box-shadow .15s ease;
   font-family: inherit;
 }
-.primary:hover { box-shadow: 0 14px 26px -8px rgba(212, 175, 55, .55); }
+.primary:hover { box-shadow: 0 14px 26px -8px rgba(247, 184, 200, .55); }
 .primary:active { transform: translateY(1px) scale(.99); }
 
 .secondary {
@@ -1145,7 +1156,7 @@ button:disabled {
   padding: 10px;
   border-radius: var(--radius-sm);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 500;
   text-align: center;
   cursor: pointer;
   margin-top: 2px;
@@ -1212,7 +1223,7 @@ button:disabled {
 }
 .exercise-block-title {
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: .03em;
   text-transform: uppercase;
   color: var(--accent-dark);
@@ -1226,7 +1237,7 @@ button:disabled {
   color: var(--danger);
   cursor: pointer;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   padding: 4px 6px;
   border-radius: 6px;
   transition: background .15s ease;
@@ -1255,7 +1266,7 @@ button:disabled {
   border: none;
   background: none;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .03em;
   color: var(--muted);
@@ -1282,7 +1293,7 @@ button:disabled {
   gap: 8px;
   margin-bottom: 4px;
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .03em;
   color: var(--muted);
@@ -1303,7 +1314,7 @@ button:disabled {
 .set-row.has-extra { grid-template-columns: 48px 1fr 1fr 1fr 30px; }
 .set-row .set-number {
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--accent-dark);
   background: var(--tint);
   text-align: center;
@@ -1357,7 +1368,7 @@ button:disabled {
   background: var(--tint);
   color: var(--accent-dark);
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1;
   cursor: pointer;
   font-family: inherit;
@@ -1439,7 +1450,7 @@ button:disabled {
   background: var(--tint);
   border-color: var(--tint-border);
   color: var(--accent);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 /* A plain <table> ignores overflow on itself in most engines, so the
@@ -1461,7 +1472,7 @@ button:disabled {
 }
 .data-table th {
   color: var(--muted);
-  font-weight: 700;
+  font-weight: 500;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: .04em;
@@ -1479,7 +1490,7 @@ button:disabled {
   color: var(--danger);
   cursor: pointer;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   padding: 4px 8px;
   border-radius: 6px;
   transition: background .15s ease;
@@ -1492,7 +1503,7 @@ button:disabled {
   color: var(--accent-dark);
   cursor: pointer;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   padding: 4px 8px;
   border-radius: 6px;
   transition: background .15s ease;
@@ -1511,7 +1522,7 @@ button:disabled {
 }
 .history-pager-label {
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--muted);
 }
 .history-pager-btn {
@@ -1520,7 +1531,7 @@ button:disabled {
   color: var(--accent-dark);
   cursor: pointer;
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 500;
   padding: 8px 14px;
   border-radius: var(--radius-sm);
   transition: background .15s ease;
@@ -1572,7 +1583,7 @@ button:disabled {
     content: attr(data-label);
     flex-shrink: 0;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 500;
     text-transform: uppercase;
     letter-spacing: .04em;
     color: var(--muted);
