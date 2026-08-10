@@ -2169,7 +2169,10 @@ function renderHormoneReferenceChart() {
   CYCLE_PHASES.forEach(p => {
     const x1 = xFor(p.startDay);
     const x2 = p.key === "luteal" ? plotRight : xFor(p.endDay + 1);
-    svg.appendChild(svgEl("rect", { x: x1, y: plotTop, width: x2 - x1, height: plotH, fill: p.color, "fill-opacity": "0.1" }));
+    // Same opacity as the phase-colored area fill on the Your Performance
+    // chart (renderPerformanceChart) - 0.1 washed green and cyan into a
+    // near-identical dark teal against the black background.
+    svg.appendChild(svgEl("rect", { x: x1, y: plotTop, width: x2 - x1, height: plotH, fill: p.color, "fill-opacity": "0.28" }));
   });
 
   // Y gridlines at 0/50/100 (relative-percent axis, not real units).
