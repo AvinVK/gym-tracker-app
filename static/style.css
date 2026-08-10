@@ -99,7 +99,7 @@ body {
 .topbar h1 {
   margin: 0;
   font-size: 24px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -.02em;
   display: flex;
   align-items: center;
@@ -127,7 +127,7 @@ body {
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   color: #fff;
   background: rgba(255,255,255,.14);
   border: none;
@@ -159,7 +159,7 @@ body {
   background: none;
   border: none;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--ink);
   cursor: pointer;
   font-family: inherit;
@@ -173,7 +173,7 @@ body {
   background-clip: text;
   color: transparent;
   opacity: .85;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: .01em;
 }
 
@@ -198,7 +198,7 @@ body {
   border: none;
   color: rgba(255,255,255,.55);
   font-size: 13.5px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   border-radius: 10px;
   transition: color .2s ease, background .2s ease, transform .15s ease;
@@ -249,14 +249,14 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 }
 .cycle-summary-label {
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .04em;
   color: var(--muted);
 }
 .cycle-summary-value {
   font-size: 17px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--ink);
   letter-spacing: -.01em;
 }
@@ -302,12 +302,12 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 .cycle-phase-header h3 {
   margin: 0;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--ink);
 }
 .cycle-phase-days {
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: .03em;
@@ -331,7 +331,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 .perf-chart-title {
   margin: 0 0 12px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .04em;
   color: var(--muted);
@@ -345,7 +345,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 }
 .perf-picker-label {
   font-size: 11.5px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .04em;
   color: var(--muted);
@@ -378,13 +378,13 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 .perf-chart .perf-value-label {
   fill: var(--ink);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 700;
   font-family: inherit;
 }
 .perf-chart .perf-pr-label {
   fill: var(--accent-dark);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 700;
   font-family: inherit;
 }
 .perf-chart .perf-crosshair {
@@ -408,7 +408,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   box-shadow: var(--shadow-md);
   z-index: 2;
 }
-.perf-tooltip-value { font-weight: 500; }
+.perf-tooltip-value { font-weight: 700; }
 .perf-tooltip-date { color: var(--muted); font-size: 11px; }
 
 .prphase-row {
@@ -427,13 +427,13 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   display: flex;
   align-items: center;
   font-size: 13.5px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--ink);
 }
 .prphase-name .phase-dot { margin-right: 8px; }
 .prphase-count {
   font-size: 12.5px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -484,7 +484,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 .modal-card h2 {
   margin: 0 0 4px;
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .modal-sub {
   margin: 0 0 16px;
@@ -504,7 +504,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 
 .field-optional {
   text-transform: none;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--muted-2);
   letter-spacing: 0;
 }
@@ -518,7 +518,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   align-items: center;
   gap: 10px;
   text-transform: none;
-  font-weight: 500;
+  font-weight: 700;
   font-size: 14px;
   color: var(--ink);
   letter-spacing: 0;
@@ -551,7 +551,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 .card h2 {
   margin: 0 0 14px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--ink);
   display: flex;
   align-items: center;
@@ -585,7 +585,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   border: none;
   color: var(--accent);
   font-size: 11.5px;
-  font-weight: 500;
+  font-weight: 700;
   padding: 4px 12px;
   border-radius: 20px;
   cursor: pointer;
@@ -616,7 +616,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: var(--accent-ink);
   font-size: 26px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .profile-upload-btn {
   grid-column: unset;
@@ -643,7 +643,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   display: flex;
   flex-direction: column;
   font-size: 11.5px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .04em;
   color: var(--muted);
@@ -655,7 +655,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   width: 100%;
   min-width: 0;
   font-size: 14.5px;
-  font-weight: 500;
+  font-weight: 700;
   padding: 10px 12px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
@@ -692,7 +692,7 @@ button:disabled {
   justify-content: space-between;
   gap: 8px;
   font-size: 14.5px;
-  font-weight: 500;
+  font-weight: 700;
   font-family: inherit;
   padding: 10px 12px;
   border: 1.5px solid var(--border);
@@ -734,7 +734,7 @@ button:disabled {
   justify-content: space-between;
   gap: 8px;
   font-size: 14.5px;
-  font-weight: 500;
+  font-weight: 700;
   font-family: inherit;
   padding: 10px 12px;
   border: 1.5px solid var(--border);
@@ -783,7 +783,7 @@ button:disabled {
   justify-content: center;
   gap: 5px;
   font-size: 13.5px;
-  font-weight: 600;
+  font-weight: 700;
   font-family: inherit;
   padding: 9px 6px;
   border: 1.5px solid var(--border);
@@ -820,7 +820,7 @@ button:disabled {
   display: block;
   margin-top: 2px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--muted);
 }
 
@@ -828,7 +828,7 @@ button:disabled {
 .time-picker-card h2 {
   margin: 0 0 12px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--ink);
 }
 /* Row height (44px) and the wheel's fixed height (220px = 5 rows) drive
@@ -880,7 +880,7 @@ button:disabled {
   background: none;
   width: 100%;
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
   color: #5c5646;
   cursor: pointer;
   font-family: inherit;
@@ -888,7 +888,7 @@ button:disabled {
 }
 .time-picker-option.selected {
   color: var(--ink);
-  font-weight: 500;
+  font-weight: 700;
 }
 .time-picker-option:disabled {
   color: #3a362a;
@@ -905,7 +905,7 @@ button:disabled {
   justify-content: space-between;
   gap: 8px;
   font-size: 14.5px;
-  font-weight: 500;
+  font-weight: 700;
   font-family: inherit;
   padding: 10px 12px;
   border: 1.5px solid var(--border);
@@ -942,7 +942,7 @@ button:disabled {
 .option-picker-card h2 {
   margin: 0 0 12px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--ink);
 }
 .option-picker-search {
@@ -986,7 +986,7 @@ button:disabled {
   background: none;
   padding: 8px 12px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--ink);
   border-radius: 8px;
   cursor: pointer;
@@ -1023,7 +1023,7 @@ button:disabled {
   padding: 12px;
   margin-top: 4px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--accent-dark);
   text-align: center;
   cursor: pointer;
@@ -1042,7 +1042,7 @@ button:disabled {
   justify-content: space-between;
   gap: 8px;
   font-size: 14.5px;
-  font-weight: 500;
+  font-weight: 700;
   font-family: inherit;
   padding: 10px 12px;
   border: 1.5px solid var(--border);
@@ -1076,7 +1076,7 @@ button:disabled {
   justify-content: space-between;
   margin-bottom: 10px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--ink);
 }
 .date-picker-nav {
@@ -1087,7 +1087,7 @@ button:disabled {
   height: 30px;
   border-radius: 50%;
   font-size: 17px;
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
   line-height: 1;
   transition: background .15s ease;
@@ -1101,7 +1101,7 @@ button:disabled {
 .date-picker-weekdays {
   margin-bottom: 4px;
   font-size: 10.5px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--muted);
   text-align: center;
   text-transform: uppercase;
@@ -1112,7 +1112,7 @@ button:disabled {
   background: none;
   border-radius: 50%;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--ink);
   cursor: pointer;
   font-family: inherit;
@@ -1136,7 +1136,7 @@ button:disabled {
   padding: 13px;
   border-radius: var(--radius-sm);
   font-size: 14.5px;
-  font-weight: 500;
+  font-weight: 700;
   text-align: center;
   cursor: pointer;
   margin-top: 4px;
@@ -1156,7 +1156,7 @@ button:disabled {
   padding: 10px;
   border-radius: var(--radius-sm);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 700;
   text-align: center;
   cursor: pointer;
   margin-top: 2px;
@@ -1223,7 +1223,7 @@ button:disabled {
 }
 .exercise-block-title {
   font-size: 12.5px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: .03em;
   text-transform: uppercase;
   color: var(--accent-dark);
@@ -1237,7 +1237,7 @@ button:disabled {
   color: var(--danger);
   cursor: pointer;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 700;
   padding: 4px 6px;
   border-radius: 6px;
   transition: background .15s ease;
@@ -1266,7 +1266,7 @@ button:disabled {
   border: none;
   background: none;
   font-size: 11.5px;
-  font-weight: 500;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .03em;
   color: var(--muted);
@@ -1293,7 +1293,7 @@ button:disabled {
   gap: 8px;
   margin-bottom: 4px;
   font-size: 10.5px;
-  font-weight: 500;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .03em;
   color: var(--muted);
@@ -1314,7 +1314,7 @@ button:disabled {
 .set-row.has-extra { grid-template-columns: 48px 1fr 1fr 1fr 30px; }
 .set-row .set-number {
   font-size: 11.5px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--accent-dark);
   background: var(--tint);
   text-align: center;
@@ -1368,7 +1368,7 @@ button:disabled {
   background: var(--tint);
   color: var(--accent-dark);
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 700;
   line-height: 1;
   cursor: pointer;
   font-family: inherit;
@@ -1387,7 +1387,7 @@ button:disabled {
   background: none;
   text-align: center;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   padding: 9px 2px;
   font-family: inherit;
   color: var(--ink);
@@ -1450,7 +1450,7 @@ button:disabled {
   background: var(--tint);
   border-color: var(--tint-border);
   color: var(--accent);
-  font-weight: 500;
+  font-weight: 700;
 }
 
 /* A plain <table> ignores overflow on itself in most engines, so the
@@ -1472,7 +1472,7 @@ button:disabled {
 }
 .data-table th {
   color: var(--muted);
-  font-weight: 500;
+  font-weight: 700;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: .04em;
@@ -1490,7 +1490,7 @@ button:disabled {
   color: var(--danger);
   cursor: pointer;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 700;
   padding: 4px 8px;
   border-radius: 6px;
   transition: background .15s ease;
@@ -1503,7 +1503,7 @@ button:disabled {
   color: var(--accent-dark);
   cursor: pointer;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 700;
   padding: 4px 8px;
   border-radius: 6px;
   transition: background .15s ease;
@@ -1522,7 +1522,7 @@ button:disabled {
 }
 .history-pager-label {
   font-size: 12.5px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--muted);
 }
 .history-pager-btn {
@@ -1531,7 +1531,7 @@ button:disabled {
   color: var(--accent-dark);
   cursor: pointer;
   font-size: 12.5px;
-  font-weight: 500;
+  font-weight: 700;
   padding: 8px 14px;
   border-radius: var(--radius-sm);
   transition: background .15s ease;
@@ -1583,7 +1583,7 @@ button:disabled {
     content: attr(data-label);
     flex-shrink: 0;
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .04em;
     color: var(--muted);
@@ -1608,7 +1608,7 @@ button:disabled {
   padding: 12px 20px;
   border-radius: 24px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   opacity: 0;
   pointer-events: none;
   transition: all .25s ease;
