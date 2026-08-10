@@ -399,11 +399,44 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   line-height: 1.5;
   color: var(--muted);
 }
-.hormone-chart-note {
-  margin: 10px 0 0;
+/* Small always-visible "i" button in the chart's corner - click toggles the
+   explanatory paragraph as a popover instead of it permanently taking up
+   space above/below the chart. Click (not :hover) so it works the same on
+   a phone as with a mouse - hover-only tripped people up on the phase
+   tooltip earlier for the same reason. */
+.hormone-info-btn {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, .5);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hormone-info-btn:hover, .hormone-info-btn[aria-expanded="true"] { color: var(--ink); background: rgba(0, 0, 0, .7); }
+.hormone-info-popover {
+  position: absolute;
+  top: 36px;
+  left: 8px;
+  max-width: 78%;
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
   font-size: 12px;
   line-height: 1.5;
   color: var(--muted);
+  z-index: 3;
 }
 .hormone-chart-source {
   margin: 8px 0 0;
@@ -411,7 +444,18 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   line-height: 1.6;
   color: var(--muted-2);
 }
-.hormone-chart-source a { color: var(--accent-dark); }
+.hormone-sources-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--accent-dark);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.hormone-sources-detail { display: block; margin-top: 6px; }
+.hormone-sources-detail a { color: var(--accent-dark); }
 
 /* ---------------- Your Performance ---------------- */
 .perf-chart-title {

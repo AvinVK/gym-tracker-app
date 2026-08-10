@@ -2234,6 +2234,33 @@ function renderHormoneReferenceChart() {
 }
 renderHormoneReferenceChart();
 
+// Click-to-toggle popovers for the chart's info button and the Sources
+// link - click rather than hover so they work the same on a phone as with
+// a mouse, and closing on an outside click/tap is the standard pattern for
+// a disclosure like this (Escape too, for keyboard users).
+function initTogglePopover(btn, panel) {
+  if (!btn || !panel) return;
+  function close() {
+    panel.hidden = true;
+    btn.setAttribute("aria-expanded", "false");
+  }
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const opening = panel.hidden;
+    document.querySelectorAll(".hormone-info-popover:not([hidden]), .hormone-sources-detail:not([hidden])").forEach(p => {
+      if (p !== panel) { p.hidden = true; }
+    });
+    panel.hidden = !opening;
+    btn.setAttribute("aria-expanded", String(opening));
+  });
+  document.addEventListener("click", (e) => {
+    if (!panel.hidden && !panel.contains(e.target) && e.target !== btn) close();
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+}
+initTogglePopover(document.getElementById("hormone-info-btn"), document.getElementById("hormone-info-popover"));
+initTogglePopover(document.getElementById("hormone-sources-toggle"), document.getElementById("hormone-sources-detail"));
+
 // One point per day: the best set logged that day for that exercise (top
 // set), not every individual set - so the line reads as "how the exercise
 // progressed" rather than a noisy scatter of every rep scheme tried. Same
