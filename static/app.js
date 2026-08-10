@@ -2095,6 +2095,97 @@ function svgEl(tag, attrs) {
   return el;
 }
 
+// Illustrative relative hormone levels (0-100, each hormone scaled to its
+// own cycle peak - NOT a shared concentration scale, since estradiol/
+// progesterone/testosterone are measured in totally different units and
+// magnitudes) across a standard 28-day cycle. Shaped from the qualitative
+// patterns described in:
+//  - Reed BG, Carr BR, "The Normal Menstrual Cycle and the Control of
+//    Ovulation", Endotext (NCBI Bookshelf, NIH), 2018 - estrogen peaks just
+//    before ovulation then falls sharply at the LH surge, with a smaller
+//    secondary rise in the mid-luteal phase; progesterone stays low through
+//    the follicular phase then rises sharply after ovulation, peaking in
+//    the mid-luteal phase.
+//  - Bui HN et al., "Dynamics of serum testosterone during the menstrual
+//    cycle", Steroids, 2013 - testosterone shows only a small, statistically
+//    modest periovulatory rise on top of otherwise fairly flat levels
+//    (unlike estrogen/progesterone's large swings), so it's drawn far
+//    flatter here rather than as a third dramatic peak.
+// Not digitized from either paper's figures - hand-shaped to match the
+// papers' described curve shape and turning points, not exact data.
+const HORMONE_CURVES = {
+  estrogen: { color: "#ec6f9b", points: [
+    [1, 18], [3, 14], [5, 16], [7, 26], [9, 42], [11, 68], [12, 92], [13, 100],
+    [14, 60], [16, 50], [18, 58], [20, 68], [22, 65], [25, 40], [28, 20],
+  ] },
+  progesterone: { color: "#7c9ff0", points: [
+    [1, 8], [5, 6], [9, 6], [13, 8], [14, 10], [16, 35], [18, 65], [20, 90],
+    [22, 100], [25, 70], [28, 20],
+  ] },
+  testosterone: { color: "#34d399", points: [
+    [1, 42], [5, 40], [9, 42], [11, 48], [13, 58], [14, 62], [16, 55],
+    [18, 48], [20, 44], [22, 42], [25, 40], [28, 42],
+  ] },
+};
+
+// Standard Catmull-Rom-to-cubic-Bezier conversion (tension 1/6) so the
+// hand-picked keyframes above read as one smooth biological curve instead
+// of a jagged connect-the-dots line.
+function catmullRomPath(pts) {
+  if (pts.length < 2) return "";
+  let d = `M${pts[0].x},${pts[0].y}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] || p2;
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+  }
+  return d;
+}
+
+function renderHormoneReferenceChart() {
+  const svg = document.getElementById("hormone-chart");
+  if (!svg) return;
+  svg.innerHTML = "";
+
+  const plotLeft = PERF_PAD.left, plotRight = PERF_CHART_W - PERF_PAD.right;
+  const plotTop = PERF_PAD.top, plotBottom = PERF_CHART_H - PERF_PAD.bottom;
+  const plotW = plotRight - plotLeft, plotH = plotBottom - plotTop;
+
+  const xFor = day => plotLeft + ((day - 1) / 27) * plotW;
+  const yFor = v => plotTop + plotH - (v / 100) * plotH;
+
+  // Y gridlines at 0/50/100 (relative-percent axis, not real units).
+  [0, 50, 100].forEach(v => {
+    const y = yFor(v);
+    svg.appendChild(svgEl("line", { class: "hormone-gridline", x1: plotLeft, x2: plotRight, y1: y, y2: y }));
+  });
+
+  // X labels at cycle days 1/7/14/21/28, with the phase boundaries this
+  // app uses elsewhere (CYCLE_PHASES) shown as light vertical guides.
+  [1, 7, 14, 21, 28].forEach(day => {
+    const x = xFor(day);
+    const label = svgEl("text", { class: "hormone-axis-label", x, y: PERF_CHART_H - 8, "text-anchor": day === 1 ? "start" : day === 28 ? "end" : "middle" });
+    label.textContent = `Day ${day}`;
+    svg.appendChild(label);
+  });
+  [6, 14, 15].forEach(day => {
+    const x = xFor(day);
+    svg.appendChild(svgEl("line", { class: "hormone-gridline", x1: x, x2: x, y1: plotTop, y2: plotBottom, "stroke-dasharray": "3,3" }));
+  });
+
+  Object.values(HORMONE_CURVES).forEach(({ color, points }) => {
+    const pts = points.map(([day, v]) => ({ x: xFor(day), y: yFor(v) }));
+    svg.appendChild(svgEl("path", { class: "hormone-line", d: catmullRomPath(pts), stroke: color }));
+  });
+}
+renderHormoneReferenceChart();
+
 // One point per day: the best set logged that day for that exercise (top
 // set), not every individual set - so the line reads as "how the exercise
 // progressed" rather than a noisy scatter of every rep scheme tried. Same
