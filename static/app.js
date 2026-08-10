@@ -2210,7 +2210,10 @@ function renderHormoneReferenceChart() {
     tooltip.innerHTML = `<span class="hormone-tooltip-dot" style="background:${phase.color}"></span><span>${phase.label}<span class="hormone-tooltip-day"> — Day ${day}</span></span>`;
     const wrapRect = wrap.getBoundingClientRect();
     tooltip.style.left = `${clientX - wrapRect.left}px`;
-    tooltip.style.top = `${clientY - wrapRect.top - 12}px`;
+    // Well clear of a fingertip on touch, not just a mouse cursor - 12px
+    // (fine for a mouse pointer) left the tooltip hidden under the finger
+    // that triggered it on phones.
+    tooltip.style.top = `${clientY - wrapRect.top - 44}px`;
     tooltip.hidden = false;
     crosshair.setAttribute("x1", xFor(day));
     crosshair.setAttribute("x2", xFor(day));

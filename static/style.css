@@ -391,6 +391,24 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 }
 .hormone-tooltip-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 .hormone-tooltip-day { color: var(--muted); font-size: 11px; }
+/* Positioned by percentage, not px, so it tracks the SVG's plot-area
+   top-left corner (PERF_PAD.left/PERF_CHART_W, PERF_PAD.top/PERF_CHART_H)
+   at any rendered width - the viewBox has preserveAspectRatio="none", so
+   viewBox-percent and rendered-percent are the same number. */
+.hormone-day1-note {
+  position: absolute;
+  left: 7.7%;
+  top: 7.7%;
+  max-width: 42%;
+  margin: 0;
+  padding: 6px 9px;
+  background: rgba(0, 0, 0, .55);
+  border-radius: 8px;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--muted);
+  pointer-events: none;
+}
 .hormone-chart-note {
   margin: 10px 0 0;
   font-size: 12px;
