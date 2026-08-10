@@ -1597,6 +1597,7 @@ button:disabled {
   border-radius: 8px;
   font-family: inherit;
   background: var(--surface-2);
+  color: var(--ink);
 }
 .data-table input:focus, .data-table select:focus {
   outline: none;
