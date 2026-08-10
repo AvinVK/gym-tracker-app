@@ -554,11 +554,18 @@ function formatEnergyDisplay(value) {
   return info ? `${info.emoji} ${value}/10 — ${info.label}` : "How do you feel?";
 }
 
+// Same idea as formatEnergyDisplay but without the emoji/label - used where
+// space is tight (the History table's inline edit row), which doesn't need
+// the full descriptive text that the picker button shows while choosing.
+function formatEnergyCompact(value) {
+  return energyLevelInfo(value) ? `${value}/10` : "How do you feel?";
+}
+
 function setEnergyFieldValue(container, value) {
   const hidden = container.querySelector("input[type=hidden]");
   const valueEl = container.querySelector(".energy-field-value");
   hidden.value = value || "";
-  valueEl.textContent = formatEnergyDisplay(value);
+  valueEl.textContent = container.dataset.compact != null ? formatEnergyCompact(value) : formatEnergyDisplay(value);
   valueEl.classList.toggle("placeholder", !energyLevelInfo(value));
   hidden.dispatchEvent(new Event("change", { bubbles: true }));
 }
@@ -640,7 +647,12 @@ function initEnergyField(container) {
 document.querySelectorAll("[data-energy-field]").forEach(initEnergyField);
 
 // ---------------- Custom "time since eating" picker ----------------
-const MEAL_TIMING_HOURS = Array.from({ length: 13 }, (_, i) => i * 0.5); // 0 to 6 hrs, half-hour steps
+// 10/20/30/40 min, then 1 hr and up in 30-min steps to 6 hrs - stored as
+// hours (rounded to 2dp) since that's what workout_log.hours_since_meal is,
+// but generated from minutes here since that's how the increments were
+// actually specified.
+const MEAL_TIMING_MINUTES = [10, 20, 30, 40, ...Array.from({ length: 11 }, (_, i) => 60 + i * 30)];
+const MEAL_TIMING_HOURS = MEAL_TIMING_MINUTES.map(m => Math.round((m / 60) * 100) / 100);
 
 const mtpModal = document.getElementById("meal-timing-picker-modal");
 const mtpHoursCol = document.getElementById("mtp-hours");
@@ -649,6 +661,10 @@ let mtpSelected = null;
 
 function formatMealTimingLabel(value) {
   const n = parseFloat(value);
+  if (n < 1) {
+    const mins = Math.round(n * 60);
+    return `${mins} min${mins === 1 ? "" : "s"} ago`;
+  }
   return `${n} ${n === 1 ? "hr" : "hrs"} ago`;
 }
 
@@ -1013,7 +1029,10 @@ function openOptionPicker(container) {
   opSearch.value = "";
   renderOptionPickerList(container);
   opModal.hidden = false;
-  opSearch.focus();
+  // Deliberately not auto-focusing the search box here - on mobile that
+  // pops the keyboard open the instant the picker appears, covering half
+  // the list before the user has asked to type anything. It only opens now
+  // when they actually tap the search field themselves.
 }
 
 opSearch.addEventListener("input", () => {
@@ -1338,6 +1357,7 @@ function addSetRow(block, { copyLast = false } = {}) {
       <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease weight">&minus;</button>
       <input type="number" step="0.5" class="set-weight stepper-input" placeholder="kg" aria-label="Weight in kg">
       <button type="button" class="stepper-btn stepper-plus" aria-label="Increase weight">+</button>
+      <button type="button" class="set-bodyweight-btn" aria-label="No added weight - bodyweight only">BW</button>
     </div>
     ${extraHtml}
     <button type="button" class="set-remove">✕</button>`;
@@ -1363,11 +1383,19 @@ function addSetRow(block, { copyLast = false } = {}) {
   }
   row.querySelectorAll(".stepper").forEach(initStepper);
   if (!isCardio) {
+    const weightInput = row.querySelector(".set-weight");
+    const bwBtn = row.querySelector(".set-bodyweight-btn");
+    const syncBodyweightBtn = () => bwBtn.classList.toggle("active", weightInput.value === "0");
+    bwBtn.addEventListener("click", () => {
+      weightInput.value = bwBtn.classList.contains("active") ? "" : "0";
+      weightInput.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    syncBodyweightBtn();
     // Debounced so nudging the stepper's +/- buttons repeatedly (each one
     // fires its own "input" event) only checks once the value settles,
     // instead of once per click on the way up.
-    const weightInput = row.querySelector(".set-weight");
     weightInput.addEventListener("input", () => {
+      syncBodyweightBtn();
       clearTimeout(weightInput.__prTimer);
       weightInput.__prTimer = setTimeout(async () => {
         const newValue = parseFloat(weightInput.value);
@@ -1428,22 +1456,29 @@ function parseSpokenSet(text) {
   return { reps, weight };
 }
 
-// Tries each speech-recognition alternative (best guess first) through
-// parseFn and keeps the first one that fills in every field - the top
-// alternative sometimes mishears a short word like "reps" while a
-// lower-ranked one gets it right, so checking a few before settling
-// meaningfully improves accuracy over trusting alternative #1 alone. Falls
-// back to the first alternative that got at least one field, or an empty
-// parse of the top alternative if none matched anything.
+// Merges parseFn's reading of each speech-recognition alternative, field by
+// field, always trusting the earliest (highest-confidence) alternative that
+// answered a given field and never letting a later one override it - only
+// used to fill in whatever the top alternative left blank. Picking whichever
+// alternative looked "most complete" (an earlier version of this function)
+// backfired on noisier phone-mic audio: a low-confidence alternative that
+// happened to parse cleanly, even wrongly, would win over a mostly-correct
+// top alternative just for being more "complete", which made results worse
+// on a phone than doing nothing beyond alternative #1 at all.
 function bestSpeechParse(results, parseFn) {
-  let partial = null;
+  let merged = null;
   for (let i = 0; i < results.length; i++) {
     const parsed = parseFn(results[i].transcript);
-    const values = Object.values(parsed);
-    if (values.length && values.every(v => v != null)) return parsed;
-    if (!partial && values.some(v => v != null)) partial = parsed;
+    if (!merged) {
+      merged = parsed;
+    } else {
+      for (const key in parsed) {
+        if (merged[key] == null && parsed[key] != null) merged[key] = parsed[key];
+      }
+    }
+    if (Object.values(merged).every(v => v != null)) break;
   }
-  return partial || parseFn(results[0]?.transcript || "");
+  return merged || parseFn(results[0]?.transcript || "");
 }
 
 // Same idea as parseSpokenSet, but for cardio: "15 minutes at level 6",
@@ -1480,8 +1515,11 @@ function initVoiceSetButton(block) {
     // >1 so a mis-transcribed "reps" in the top guess can still be caught by
     // checking the recognizer's other candidate transcripts (bestSpeechParse
     // below) instead of failing outright on whichever one happened to be
-    // ranked first.
-    recognition.maxAlternatives = 5;
+    // ranked first. Kept small, not maxed out - alternatives past the first
+    // couple are usually low-confidence noise on a phone mic, and
+    // bestSpeechParse only consults them to fill in a field the top
+    // alternative missed entirely, not to second-guess one it already got.
+    recognition.maxAlternatives = 3;
 
     btn.classList.add("listening");
     btn.disabled = true;
@@ -1495,6 +1533,12 @@ function initVoiceSetButton(block) {
     }, 8000);
 
     recognition.addEventListener("result", (e) => {
+      // Force the mic to release the moment we have a final result instead
+      // of waiting on the browser's own end-of-speech detection - on iOS
+      // Safari that detection can lag well behind the result event, so the
+      // "browser is listening" indicator stays lit even though we're done
+      // with it.
+      try { recognition.stop(); } catch (err) { /* already stopped */ }
       const transcript = e.results[0][0].transcript;
       const isCardio = block.dataset.exerciseType === "cardio";
       if (isCardio) {
@@ -1575,6 +1619,9 @@ function initNoteMicButton(block) {
     }, 8000);
 
     recognition.addEventListener("result", (e) => {
+      // See initVoiceSetButton - stop right away so the mic indicator
+      // doesn't linger on iOS Safari after we've already got our result.
+      try { recognition.stop(); } catch (err) { /* already stopped */ }
       const transcript = e.results[0][0].transcript;
       input.value = input.value ? `${input.value} ${transcript}` : transcript;
       input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -1877,9 +1924,9 @@ document.getElementById("exercise-detail-back").addEventListener("click", showWo
 function energyFieldHtml(cls, value) {
   const info = energyLevelInfo(value);
   return `
-    <div class="energy-field">
+    <div class="energy-field" data-compact>
       <button type="button" class="energy-field-btn">
-        <span class="energy-field-value${info ? "" : " placeholder"}">${formatEnergyDisplay(value)}</span>
+        <span class="energy-field-value${info ? "" : " placeholder"}">${formatEnergyCompact(value)}</span>
         <span class="energy-field-icon" aria-hidden="true">⚡</span>
       </button>
       <input type="hidden" class="${cls}" value="${value || ""}">
@@ -2047,6 +2094,142 @@ function svgEl(tag, attrs) {
   for (const k in attrs) el.setAttribute(k, attrs[k]);
   return el;
 }
+
+// Illustrative relative hormone levels (0-100, each hormone scaled to its
+// own cycle peak - NOT a shared concentration scale, since estradiol/
+// progesterone/testosterone are measured in totally different units and
+// magnitudes) across a standard 28-day cycle. Shaped from the qualitative
+// patterns described in:
+//  - Reed BG, Carr BR, "The Normal Menstrual Cycle and the Control of
+//    Ovulation", Endotext (NCBI Bookshelf, NIH), 2018 - estrogen peaks just
+//    before ovulation then falls sharply at the LH surge, with a smaller
+//    secondary rise in the mid-luteal phase; progesterone stays low through
+//    the follicular phase then rises sharply after ovulation, peaking in
+//    the mid-luteal phase.
+//  - Bui HN et al., "Dynamics of serum testosterone during the menstrual
+//    cycle", Steroids, 2013 - testosterone shows only a small, statistically
+//    modest periovulatory rise on top of otherwise fairly flat levels
+//    (unlike estrogen/progesterone's large swings), so it's drawn far
+//    flatter here rather than as a third dramatic peak.
+// Not digitized from either paper's figures - hand-shaped to match the
+// papers' described curve shape and turning points, not exact data.
+const HORMONE_CURVES = {
+  estrogen: { color: "#ec6f9b", points: [
+    [1, 18], [3, 14], [5, 16], [7, 26], [9, 42], [11, 68], [12, 92], [13, 100],
+    [14, 60], [16, 50], [18, 58], [20, 68], [22, 65], [25, 40], [28, 20],
+  ] },
+  progesterone: { color: "#7c9ff0", points: [
+    [1, 8], [5, 6], [9, 6], [13, 8], [14, 10], [16, 35], [18, 65], [20, 90],
+    [22, 100], [25, 70], [28, 20],
+  ] },
+  testosterone: { color: "#34d399", points: [
+    [1, 42], [5, 40], [9, 42], [11, 48], [13, 58], [14, 62], [16, 55],
+    [18, 48], [20, 44], [22, 42], [25, 40], [28, 42],
+  ] },
+};
+
+// Standard Catmull-Rom-to-cubic-Bezier conversion (tension 1/6) so the
+// hand-picked keyframes above read as one smooth biological curve instead
+// of a jagged connect-the-dots line.
+function catmullRomPath(pts) {
+  if (pts.length < 2) return "";
+  let d = `M${pts[0].x},${pts[0].y}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] || p2;
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+  }
+  return d;
+}
+
+function renderHormoneReferenceChart() {
+  const svg = document.getElementById("hormone-chart");
+  if (!svg) return;
+  svg.innerHTML = "";
+
+  const plotLeft = PERF_PAD.left, plotRight = PERF_CHART_W - PERF_PAD.right;
+  const plotTop = PERF_PAD.top, plotBottom = PERF_CHART_H - PERF_PAD.bottom;
+  const plotW = plotRight - plotLeft, plotH = plotBottom - plotTop;
+
+  const xFor = day => plotLeft + ((day - 1) / 27) * plotW;
+  const yFor = v => plotTop + plotH - (v / 100) * plotH;
+
+  // Same phase colors/day-ranges used everywhere else in the app (History
+  // phase dots, PR-by-phase breakdown, the phase cards above this chart) -
+  // drawn first as translucent bands so the curves render on top of them.
+  // Luteal's band is stretched to the plot's right edge rather than to
+  // xFor(29) (which doesn't exist - day 28 is the cycle's last day) so it
+  // doesn't fall a half-day short of the axis.
+  CYCLE_PHASES.forEach(p => {
+    const x1 = xFor(p.startDay);
+    const x2 = p.key === "luteal" ? plotRight : xFor(p.endDay + 1);
+    // Same opacity as the phase-colored area fill on the Your Performance
+    // chart (renderPerformanceChart) - 0.1 washed green and cyan into a
+    // near-identical dark teal against the black background.
+    svg.appendChild(svgEl("rect", { x: x1, y: plotTop, width: x2 - x1, height: plotH, fill: p.color, "fill-opacity": "0.28" }));
+  });
+
+  // Y gridlines at 0/50/100 (relative-percent axis, not real units).
+  [0, 50, 100].forEach(v => {
+    const y = yFor(v);
+    svg.appendChild(svgEl("line", { class: "hormone-gridline", x1: plotLeft, x2: plotRight, y1: y, y2: y }));
+  });
+
+  // X labels at cycle days 1/7/14/21/28.
+  [1, 7, 14, 21, 28].forEach(day => {
+    const x = xFor(day);
+    const label = svgEl("text", { class: "hormone-axis-label", x, y: PERF_CHART_H - 8, "text-anchor": day === 1 ? "start" : day === 28 ? "end" : "middle" });
+    label.textContent = `Day ${day}`;
+    svg.appendChild(label);
+  });
+
+  Object.values(HORMONE_CURVES).forEach(({ color, points }) => {
+    const pts = points.map(([day, v]) => ({ x: xFor(day), y: yFor(v) }));
+    svg.appendChild(svgEl("path", { class: "hormone-line", d: catmullRomPath(pts), stroke: color }));
+  });
+
+  // Hover anywhere over the plot to see which phase that day falls in -
+  // same crosshair-plus-tooltip pattern as the Your Performance chart
+  // (renderPerformanceChart), except keyed on day-under-cursor instead of
+  // nearest data point, since this chart has no discrete points to snap to.
+  const wrap = svg.closest(".hormone-chart-wrap");
+  const tooltip = document.getElementById("hormone-tooltip");
+  const crosshair = svgEl("line", { class: "hormone-crosshair", x1: 0, x2: 0, y1: plotTop, y2: plotBottom });
+  svg.appendChild(crosshair);
+  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent" });
+  svg.appendChild(hitRect);
+
+  function showTooltip(day, clientX, clientY) {
+    const phase = cyclePhaseForDay(day);
+    tooltip.innerHTML = `<span class="hormone-tooltip-dot" style="background:${phase.color}"></span><span>${phase.label}<span class="hormone-tooltip-day"> — Day ${day}</span></span>`;
+    const wrapRect = wrap.getBoundingClientRect();
+    tooltip.style.left = `${clientX - wrapRect.left}px`;
+    tooltip.style.top = `${clientY - wrapRect.top - 12}px`;
+    tooltip.hidden = false;
+    crosshair.setAttribute("x1", xFor(day));
+    crosshair.setAttribute("x2", xFor(day));
+    crosshair.style.opacity = 1;
+  }
+  function hideTooltip() {
+    tooltip.hidden = true;
+    crosshair.style.opacity = 0;
+  }
+  hitRect.addEventListener("pointermove", (e) => {
+    const svgRect = svg.getBoundingClientRect();
+    const scaleX = PERF_CHART_W / svgRect.width;
+    const localX = (e.clientX - svgRect.left) * scaleX;
+    const day = Math.min(28, Math.max(1, Math.round(1 + ((localX - plotLeft) / plotW) * 27)));
+    showTooltip(day, e.clientX, e.clientY);
+  });
+  hitRect.addEventListener("pointerleave", hideTooltip);
+}
+renderHormoneReferenceChart();
 
 // One point per day: the best set logged that day for that exercise (top
 // set), not every individual set - so the line reads as "how the exercise

@@ -6,6 +6,11 @@ dev_server.log
 secret_key.txt
 .claude/
 
+# Source/working logo files - static/logo-mark.png and static/favicon.png
+# (the actual assets the app uses) are cropped from these and committed.
+/clockit_logo.png
+/clockit_logo_recolored.png
+
 # Node / Capacitor
 node_modules/
 android/app/build/
