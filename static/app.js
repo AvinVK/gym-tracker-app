@@ -1517,6 +1517,12 @@ function initVoiceSetButton(block) {
     }, 8000);
 
     recognition.addEventListener("result", (e) => {
+      // Force the mic to release the moment we have a final result instead
+      // of waiting on the browser's own end-of-speech detection - on iOS
+      // Safari that detection can lag well behind the result event, so the
+      // "browser is listening" indicator stays lit even though we're done
+      // with it.
+      try { recognition.stop(); } catch (err) { /* already stopped */ }
       const transcript = e.results[0][0].transcript;
       const isCardio = block.dataset.exerciseType === "cardio";
       if (isCardio) {
@@ -1597,6 +1603,9 @@ function initNoteMicButton(block) {
     }, 8000);
 
     recognition.addEventListener("result", (e) => {
+      // See initVoiceSetButton - stop right away so the mic indicator
+      // doesn't linger on iOS Safari after we've already got our result.
+      try { recognition.stop(); } catch (err) { /* already stopped */ }
       const transcript = e.results[0][0].transcript;
       input.value = input.value ? `${input.value} ${transcript}` : transcript;
       input.dispatchEvent(new Event("input", { bubbles: true }));
