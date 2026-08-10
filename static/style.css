@@ -355,7 +355,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
-  margin: 14px 0 4px;
+  margin: 0 0 14px;
 }
 .hormone-legend-item {
   display: inline-flex;
