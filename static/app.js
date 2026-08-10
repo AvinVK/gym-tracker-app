@@ -422,10 +422,14 @@ function renderCycleTab() {
     ? nextPhase.startDay - cycleDay
     : (CYCLE_LENGTH_DAYS - cycleDay) + nextPhase.startDay;
 
+  const nextPhaseDate = new Date(todayStr + "T00:00:00");
+  nextPhaseDate.setDate(nextPhaseDate.getDate() + daysUntilNext);
+  const nextPhaseDateLabel = nextPhaseDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
   document.getElementById("cycle-current-phase").textContent = currentPhase.label;
   document.getElementById("cycle-current-detail").textContent = `Day ${cycleDay} of ~${CYCLE_LENGTH_DAYS}`;
   document.getElementById("cycle-next-phase").textContent = nextPhase.label;
-  document.getElementById("cycle-next-detail").textContent = `Starts in ${daysUntilNext} day${daysUntilNext === 1 ? "" : "s"}`;
+  document.getElementById("cycle-next-detail").textContent = `Starts in ${daysUntilNext} day${daysUntilNext === 1 ? "" : "s"} (${nextPhaseDateLabel})`;
 
   document.querySelectorAll(".cycle-phase-card").forEach(c => c.classList.toggle("active", c.dataset.phase === currentPhase.key));
 }
