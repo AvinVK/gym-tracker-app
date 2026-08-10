@@ -1376,6 +1376,26 @@ button:disabled {
 }
 .stepper .stepper-btn:hover { background: var(--tint-hover); }
 .stepper .stepper-btn:active { transform: scale(.93); }
+/* Toggle, not an increment/decrement button - sets weight straight to 0 for
+   bodyweight-only exercises instead of clicking minus repeatedly. */
+.set-bodyweight-btn {
+  flex: 0 0 34px;
+  border: none;
+  border-left: 1.5px solid var(--border);
+  background: var(--tint);
+  color: var(--accent-dark);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s ease, color .15s ease;
+}
+.set-bodyweight-btn:hover { background: var(--tint-hover); }
+.set-bodyweight-btn.active {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: var(--accent-ink);
+}
 /* Two classes' worth of specificity is deliberate — this needs to beat
    ".grid-form input" (which sets its own border/padding/background) since
    steppers live inside .grid-form both here and in the exercise blocks. */
