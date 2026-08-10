@@ -554,11 +554,18 @@ function formatEnergyDisplay(value) {
   return info ? `${info.emoji} ${value}/10 — ${info.label}` : "How do you feel?";
 }
 
+// Same idea as formatEnergyDisplay but without the emoji/label - used where
+// space is tight (the History table's inline edit row), which doesn't need
+// the full descriptive text that the picker button shows while choosing.
+function formatEnergyCompact(value) {
+  return energyLevelInfo(value) ? `${value}/10` : "How do you feel?";
+}
+
 function setEnergyFieldValue(container, value) {
   const hidden = container.querySelector("input[type=hidden]");
   const valueEl = container.querySelector(".energy-field-value");
   hidden.value = value || "";
-  valueEl.textContent = formatEnergyDisplay(value);
+  valueEl.textContent = container.dataset.compact != null ? formatEnergyCompact(value) : formatEnergyDisplay(value);
   valueEl.classList.toggle("placeholder", !energyLevelInfo(value));
   hidden.dispatchEvent(new Event("change", { bubbles: true }));
 }
@@ -1917,9 +1924,9 @@ document.getElementById("exercise-detail-back").addEventListener("click", showWo
 function energyFieldHtml(cls, value) {
   const info = energyLevelInfo(value);
   return `
-    <div class="energy-field">
+    <div class="energy-field" data-compact>
       <button type="button" class="energy-field-btn">
-        <span class="energy-field-value${info ? "" : " placeholder"}">${formatEnergyDisplay(value)}</span>
+        <span class="energy-field-value${info ? "" : " placeholder"}">${formatEnergyCompact(value)}</span>
         <span class="energy-field-icon" aria-hidden="true">⚡</span>
       </button>
       <input type="hidden" class="${cls}" value="${value || ""}">

@@ -1531,6 +1531,34 @@ button:disabled {
   margin-right: 4px;
 }
 .data-table .edit-btn:hover { background: var(--tint); }
+.data-table .save-btn {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border: none;
+  color: var(--accent-ink);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-family: inherit;
+  margin-right: 4px;
+  transition: box-shadow .15s ease, transform .15s ease;
+}
+.data-table .save-btn:hover { box-shadow: 0 6px 14px -6px rgba(247, 184, 200, .55); }
+.data-table .save-btn:active { transform: scale(.97); }
+.data-table .cancel-btn {
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-family: inherit;
+  transition: background .15s ease;
+}
+.data-table .cancel-btn:hover { background: var(--surface-3); }
 .data-table .row-actions { white-space: nowrap; }
 
 .history-pager {
