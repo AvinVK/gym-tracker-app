@@ -2148,13 +2148,19 @@ function catmullRomPath(pts) {
   return d;
 }
 
+// Unlike PERF_PAD, this chart draws no y-axis number labels, so it doesn't
+// need PERF_PAD's wide left margin (46px, sized to fit those numbers) -
+// reusing it left the plot area visibly off-center, with a much bigger gap
+// on the left than the right.
+const HORMONE_PAD = { left: 16, right: 16, top: 20, bottom: 30 };
+
 function renderHormoneReferenceChart() {
   const svg = document.getElementById("hormone-chart");
   if (!svg) return;
   svg.innerHTML = "";
 
-  const plotLeft = PERF_PAD.left, plotRight = PERF_CHART_W - PERF_PAD.right;
-  const plotTop = PERF_PAD.top, plotBottom = PERF_CHART_H - PERF_PAD.bottom;
+  const plotLeft = HORMONE_PAD.left, plotRight = PERF_CHART_W - HORMONE_PAD.right;
+  const plotTop = HORMONE_PAD.top, plotBottom = PERF_CHART_H - HORMONE_PAD.bottom;
   const plotW = plotRight - plotLeft, plotH = plotBottom - plotTop;
 
   const xFor = day => plotLeft + ((day - 1) / 27) * plotW;

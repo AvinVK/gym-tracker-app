@@ -406,8 +406,8 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
    tooltip earlier for the same reason. */
 .hormone-info-btn {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 14px;
+  left: 14px;
   width: 22px;
   height: 22px;
   border-radius: 50%;
@@ -424,8 +424,8 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 .hormone-info-btn:hover, .hormone-info-btn[aria-expanded="true"] { color: var(--ink); background: rgba(0, 0, 0, .7); }
 .hormone-info-popover {
   position: absolute;
-  top: 36px;
-  left: 8px;
+  top: 42px;
+  left: 14px;
   max-width: 78%;
   margin: 0;
   padding: 10px 12px;
