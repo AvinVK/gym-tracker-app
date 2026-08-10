@@ -366,45 +366,31 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   color: var(--ink);
 }
 .hormone-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
-/* Small always-visible badge in the chart's corner; hovering it reveals the
-   phase legend as a dropdown instead of a permanent row cluttering the
-   bottom of the chart. */
-.hormone-phase-hover { position: absolute; top: 8px; right: 8px; }
-.hormone-phase-hover-badge {
-  display: inline-block;
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--muted);
-  background: rgba(0, 0, 0, .5);
-  padding: 4px 9px;
-  border-radius: 999px;
-  cursor: default;
-}
-.hormone-phase-hover-list.phase-legend {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 7px;
-  margin: 0;
-  background: var(--card);
-  border: 1px solid var(--border);
-  padding: 10px 12px;
-  border-radius: 10px;
-  box-shadow: var(--shadow-md);
+.hormone-chart .hormone-crosshair {
+  stroke: var(--muted);
+  stroke-width: 1;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-4px);
-  transition: opacity .15s ease, transform .15s ease;
+}
+.hormone-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--surface-3);
+  color: var(--ink);
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.4;
   white-space: nowrap;
+  transform: translate(-50%, -100%);
+  box-shadow: var(--shadow-md);
   z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
-.hormone-phase-hover:hover .hormone-phase-hover-list.phase-legend {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
+.hormone-tooltip-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.hormone-tooltip-day { color: var(--muted); font-size: 11px; }
 .hormone-chart-note {
   margin: 10px 0 0;
   font-size: 12px;

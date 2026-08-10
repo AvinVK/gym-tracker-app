@@ -2194,12 +2194,40 @@ function renderHormoneReferenceChart() {
     svg.appendChild(svgEl("path", { class: "hormone-line", d: catmullRomPath(pts), stroke: color }));
   });
 
-  const legendEl = document.getElementById("hormone-phase-legend");
-  if (legendEl) {
-    legendEl.innerHTML = CYCLE_PHASES.map(p =>
-      `<span class="phase-legend-item"><span class="phase-dot" style="background:${p.color}"></span>${p.label}</span>`
-    ).join("");
+  // Hover anywhere over the plot to see which phase that day falls in -
+  // same crosshair-plus-tooltip pattern as the Your Performance chart
+  // (renderPerformanceChart), except keyed on day-under-cursor instead of
+  // nearest data point, since this chart has no discrete points to snap to.
+  const wrap = svg.closest(".hormone-chart-wrap");
+  const tooltip = document.getElementById("hormone-tooltip");
+  const crosshair = svgEl("line", { class: "hormone-crosshair", x1: 0, x2: 0, y1: plotTop, y2: plotBottom });
+  svg.appendChild(crosshair);
+  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent" });
+  svg.appendChild(hitRect);
+
+  function showTooltip(day, clientX, clientY) {
+    const phase = cyclePhaseForDay(day);
+    tooltip.innerHTML = `<span class="hormone-tooltip-dot" style="background:${phase.color}"></span><span>${phase.label}<span class="hormone-tooltip-day"> — Day ${day}</span></span>`;
+    const wrapRect = wrap.getBoundingClientRect();
+    tooltip.style.left = `${clientX - wrapRect.left}px`;
+    tooltip.style.top = `${clientY - wrapRect.top - 12}px`;
+    tooltip.hidden = false;
+    crosshair.setAttribute("x1", xFor(day));
+    crosshair.setAttribute("x2", xFor(day));
+    crosshair.style.opacity = 1;
   }
+  function hideTooltip() {
+    tooltip.hidden = true;
+    crosshair.style.opacity = 0;
+  }
+  hitRect.addEventListener("pointermove", (e) => {
+    const svgRect = svg.getBoundingClientRect();
+    const scaleX = PERF_CHART_W / svgRect.width;
+    const localX = (e.clientX - svgRect.left) * scaleX;
+    const day = Math.min(28, Math.max(1, Math.round(1 + ((localX - plotLeft) / plotW) * 27)));
+    showTooltip(day, e.clientX, e.clientY);
+  });
+  hitRect.addEventListener("pointerleave", hideTooltip);
 }
 renderHormoneReferenceChart();
 
