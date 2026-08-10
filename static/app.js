@@ -2160,29 +2160,43 @@ function renderHormoneReferenceChart() {
   const xFor = day => plotLeft + ((day - 1) / 27) * plotW;
   const yFor = v => plotTop + plotH - (v / 100) * plotH;
 
+  // Same phase colors/day-ranges used everywhere else in the app (History
+  // phase dots, PR-by-phase breakdown, the phase cards above this chart) -
+  // drawn first as translucent bands so the curves render on top of them.
+  // Luteal's band is stretched to the plot's right edge rather than to
+  // xFor(29) (which doesn't exist - day 28 is the cycle's last day) so it
+  // doesn't fall a half-day short of the axis.
+  CYCLE_PHASES.forEach(p => {
+    const x1 = xFor(p.startDay);
+    const x2 = p.key === "luteal" ? plotRight : xFor(p.endDay + 1);
+    svg.appendChild(svgEl("rect", { x: x1, y: plotTop, width: x2 - x1, height: plotH, fill: p.color, "fill-opacity": "0.1" }));
+  });
+
   // Y gridlines at 0/50/100 (relative-percent axis, not real units).
   [0, 50, 100].forEach(v => {
     const y = yFor(v);
     svg.appendChild(svgEl("line", { class: "hormone-gridline", x1: plotLeft, x2: plotRight, y1: y, y2: y }));
   });
 
-  // X labels at cycle days 1/7/14/21/28, with the phase boundaries this
-  // app uses elsewhere (CYCLE_PHASES) shown as light vertical guides.
+  // X labels at cycle days 1/7/14/21/28.
   [1, 7, 14, 21, 28].forEach(day => {
     const x = xFor(day);
     const label = svgEl("text", { class: "hormone-axis-label", x, y: PERF_CHART_H - 8, "text-anchor": day === 1 ? "start" : day === 28 ? "end" : "middle" });
     label.textContent = `Day ${day}`;
     svg.appendChild(label);
   });
-  [6, 14, 15].forEach(day => {
-    const x = xFor(day);
-    svg.appendChild(svgEl("line", { class: "hormone-gridline", x1: x, x2: x, y1: plotTop, y2: plotBottom, "stroke-dasharray": "3,3" }));
-  });
 
   Object.values(HORMONE_CURVES).forEach(({ color, points }) => {
     const pts = points.map(([day, v]) => ({ x: xFor(day), y: yFor(v) }));
     svg.appendChild(svgEl("path", { class: "hormone-line", d: catmullRomPath(pts), stroke: color }));
   });
+
+  const legendEl = document.getElementById("hormone-phase-legend");
+  if (legendEl) {
+    legendEl.innerHTML = CYCLE_PHASES.map(p =>
+      `<span class="phase-legend-item"><span class="phase-dot" style="background:${p.color}"></span>${p.label}</span>`
+    ).join("");
+  }
 }
 renderHormoneReferenceChart();
 
