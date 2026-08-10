@@ -291,7 +291,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   flex-shrink: 0;
   line-height: 1.3;
 }
-.cycle-phase-info { min-width: 0; }
+.cycle-phase-info { min-width: 0; flex: 1; }
 .cycle-phase-header {
   display: flex;
   align-items: baseline;
