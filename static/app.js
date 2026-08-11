@@ -1255,51 +1255,23 @@ async function guardPrEdit(row, newValue, unit) {
   return ok;
 }
 
-function updateSetColumnsLabel(block) {
-  const isCardio = block.dataset.exerciseType === "cardio";
-  const levelOverride = EXERCISE_LEVEL_OVERRIDES[block.querySelector(".ex-exercise").value];
-  const cols = block.querySelectorAll(".set-columns-label-col");
-  cols[0].textContent = isCardio ? "Duration (min)" : "Reps";
-  cols[1].textContent = isCardio ? (levelOverride ? levelOverride.label : "Level") : "Weight (kg)";
-  block.querySelector(".set-columns-label").classList.toggle("is-cardio", isCardio);
-}
-
 // Rebuilds the sets list when the currently-selected exercise's Level
 // override (see EXERCISE_LEVEL_OVERRIDES) changes - e.g. Treadmill Walk
 // swaps the generic 1-10 intensity Level for an actual Speed reading, so
 // switching to/from it needs a different 2nd cardio field, not just a
 // different label. Same rebuild-only-when-needed guard as
-// applyExerciseType/applyExtraField.
+// applyExerciseType/applyExtraField. Labels live inline on each row (see
+// addSetRow) and regenerate themselves whenever rows are rebuilt, so there's
+// nothing to separately sync here beyond the rebuild itself.
 function applyLevelOverride(block) {
   const levelOverride = EXERCISE_LEVEL_OVERRIDES[block.querySelector(".ex-exercise").value];
   const prevKey = block.dataset.levelOverrideKey || "";
   const newKey = levelOverride ? levelOverride.key : "";
   block.dataset.levelOverrideKey = newKey;
-  updateSetColumnsLabel(block);
   if (newKey === prevKey) return;
   const hadSets = block.querySelectorAll(".set-row").length > 0;
   block.querySelector(".ex-sets").innerHTML = "";
   if (hadSets) addSetRow(block);
-}
-
-// Adds/removes the 3rd "extra field" label column (e.g. "Inclination (%)")
-// next to Reps/Weight or Duration/Level, keeping it in sync with whether
-// the currently-selected exercise has one (see EXERCISE_EXTRA_FIELDS).
-function updateSetColumnsExtraLabel(block) {
-  const extraField = EXERCISE_EXTRA_FIELDS[block.querySelector(".ex-exercise").value];
-  const label = block.querySelector(".set-columns-label");
-  let extraCol = label.querySelector(".set-columns-label-extra");
-  label.classList.toggle("has-extra", !!extraField);
-  if (extraField) {
-    if (!extraCol) {
-      extraCol = document.createElement("span");
-      extraCol.className = "set-columns-label-col set-columns-label-extra";
-      label.appendChild(extraCol);
-    }
-    extraCol.textContent = extraField.label;
-  } else if (extraCol) {
-    extraCol.remove();
-  }
 }
 
 // Rebuilds the sets list when the currently-selected exercise's extra field
@@ -1313,7 +1285,6 @@ function applyExtraField(block) {
   const prevKey = block.dataset.extraFieldKey || "";
   const newKey = extraField ? extraField.key : "";
   block.dataset.extraFieldKey = newKey;
-  updateSetColumnsExtraLabel(block);
   if (newKey === prevKey) return;
   const hadSets = block.querySelectorAll(".set-row").length > 0;
   block.querySelector(".ex-sets").innerHTML = "";
@@ -1339,7 +1310,6 @@ function applyExerciseType(block, type) {
   block.dataset.exerciseType = type;
   updateSetTypeToggle(block);
   if (type === prevType) return;
-  updateSetColumnsLabel(block);
   const hadSets = block.querySelectorAll(".set-row").length > 0;
   block.querySelector(".ex-sets").innerHTML = "";
   if (hadSets) addSetRow(block);
@@ -1354,7 +1324,8 @@ function addSetRow(block, { copyLast = false } = {}) {
   const levelOverride = EXERCISE_LEVEL_OVERRIDES[exerciseName];
   const extraField = EXERCISE_EXTRA_FIELDS[exerciseName];
   const row = document.createElement("div");
-  row.className = "set-row" + (isCardio ? " is-cardio" : "") + (extraField ? " has-extra" : "");
+  row.className = "set-row" + (extraField ? " has-extra" : "");
+  const extraLabelHtml = extraField ? `<span class="set-row-label set-row-label-3">${extraField.label}</span>` : "";
   const extraHtml = extraField ? `
     <div class="stepper set-extra-field" data-step="${extraField.step}" data-min="${extraField.min}">
       <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease ${extraField.label}">&minus;</button>
@@ -1378,6 +1349,9 @@ function addSetRow(block, { copyLast = false } = {}) {
       <input type="hidden" class="set-level">
     </div>`;
   row.innerHTML = isCardio ? `
+    <span class="set-row-label set-row-label-1">Duration (min)</span>
+    <span class="set-row-label set-row-label-2">${levelOverride ? levelOverride.label : "Level"}</span>
+    ${extraLabelHtml}
     <span class="set-number"></span>
     <div class="stepper-duration set-duration-field">
       <button type="button" class="set-wheel-field-btn" aria-label="Set duration">
@@ -1389,6 +1363,12 @@ function addSetRow(block, { copyLast = false } = {}) {
     ${levelHtml}
     ${extraHtml}
     <button type="button" class="set-remove" aria-label="Remove set">&minus;</button>` : `
+    <span class="set-row-label set-row-label-1">Reps</span>
+    <span class="set-row-label set-row-label-2 weight-mode-toggle">
+      <button type="button" class="weight-mode-btn active" data-mode="weight">Weight (kg)</button>
+      <button type="button" class="weight-mode-btn" data-mode="bw">BW</button>
+    </span>
+    ${extraLabelHtml}
     <span class="set-number"></span>
     <div class="stepper stepper-reps" data-step="2" data-min="1">
       <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease reps">&minus;</button>
@@ -1400,7 +1380,6 @@ function addSetRow(block, { copyLast = false } = {}) {
       <input type="number" step="0.5" class="set-weight stepper-input" placeholder="kg" aria-label="Weight in kg">
       <button type="button" class="stepper-btn stepper-plus" aria-label="Increase weight">+</button>
     </div>
-    <button type="button" class="set-bodyweight-btn" aria-label="No added weight - bodyweight only">BW</button>
     ${extraHtml}
     <button type="button" class="set-remove" aria-label="Remove set">&minus;</button>`;
   if (isCardio) {
@@ -1426,18 +1405,25 @@ function addSetRow(block, { copyLast = false } = {}) {
   row.querySelectorAll(".stepper").forEach(initStepper);
   if (!isCardio) {
     const weightInput = row.querySelector(".set-weight");
-    const bwBtn = row.querySelector(".set-bodyweight-btn");
-    const syncBodyweightBtn = () => bwBtn.classList.toggle("active", weightInput.value === "0");
-    bwBtn.addEventListener("click", () => {
-      weightInput.value = bwBtn.classList.contains("active") ? "" : "0";
-      weightInput.dispatchEvent(new Event("input", { bubbles: true }));
+    const weightModeBtns = row.querySelectorAll(".weight-mode-btn");
+    const syncWeightMode = () => {
+      const isBW = weightInput.value === "0";
+      weightModeBtns.forEach(btn => btn.classList.toggle("active", (btn.dataset.mode === "bw") === isBW));
+    };
+    weightModeBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const wantsBW = btn.dataset.mode === "bw";
+        if (wantsBW === (weightInput.value === "0")) return; // already in that mode
+        weightInput.value = wantsBW ? "0" : "";
+        weightInput.dispatchEvent(new Event("input", { bubbles: true }));
+      });
     });
-    syncBodyweightBtn();
+    syncWeightMode();
     // Debounced so nudging the stepper's +/- buttons repeatedly (each one
     // fires its own "input" event) only checks once the value settles,
     // instead of once per click on the way up.
     weightInput.addEventListener("input", () => {
-      syncBodyweightBtn();
+      syncWeightMode();
       clearTimeout(weightInput.__prTimer);
       weightInput.__prTimer = setTimeout(async () => {
         const newValue = parseFloat(weightInput.value);
@@ -1773,11 +1759,6 @@ function addExerciseBlock() {
           <button type="button" class="set-type-btn" data-type="strength">Reps</button>
           <button type="button" class="set-type-btn" data-type="cardio">Time</button>
         </div>
-      </div>
-      <div class="set-columns-label" aria-hidden="true">
-        <span class="set-columns-label-spacer"></span>
-        <span class="set-columns-label-col">Reps</span>
-        <span class="set-columns-label-col">Weight (kg)</span>
       </div>
       <div class="ex-sets"></div>
       <div class="set-actions">
@@ -2980,10 +2961,8 @@ async function restoreDraft() {
           }
           block.dataset.exerciseType = ex.type || "strength";
           block.dataset.levelOverrideKey = (EXERCISE_LEVEL_OVERRIDES[ex.exercise] || {}).key || "";
-          updateSetColumnsLabel(block);
           updateSetTypeToggle(block);
           block.dataset.extraFieldKey = (EXERCISE_EXTRA_FIELDS[ex.exercise] || {}).key || "";
-          updateSetColumnsExtraLabel(block);
           block.querySelector(".ex-notes").value = ex.notes || "";
           const isCardio = block.dataset.exerciseType === "cardio";
           block.querySelector(".ex-sets").innerHTML = "";
