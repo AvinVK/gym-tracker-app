@@ -1261,6 +1261,7 @@ function updateSetColumnsLabel(block) {
   const cols = block.querySelectorAll(".set-columns-label-col");
   cols[0].textContent = isCardio ? "Duration (min)" : "Reps";
   cols[1].textContent = isCardio ? (levelOverride ? levelOverride.label : "Level") : "Weight (kg)";
+  block.querySelector(".set-columns-label").classList.toggle("is-cardio", isCardio);
 }
 
 // Rebuilds the sets list when the currently-selected exercise's Level
@@ -1353,7 +1354,7 @@ function addSetRow(block, { copyLast = false } = {}) {
   const levelOverride = EXERCISE_LEVEL_OVERRIDES[exerciseName];
   const extraField = EXERCISE_EXTRA_FIELDS[exerciseName];
   const row = document.createElement("div");
-  row.className = "set-row" + (extraField ? " has-extra" : "");
+  row.className = "set-row" + (isCardio ? " is-cardio" : "") + (extraField ? " has-extra" : "");
   const extraHtml = extraField ? `
     <div class="stepper set-extra-field" data-step="${extraField.step}" data-min="${extraField.min}">
       <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease ${extraField.label}">&minus;</button>
