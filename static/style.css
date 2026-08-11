@@ -475,6 +475,14 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   letter-spacing: .04em;
   color: var(--muted);
 }
+/* A second (or later) chart title in the same card - the first one sits
+   flush under the card heading, but a later one needs a divider so the
+   two chart sections don't visually run together. */
+.perf-chart-title:not(:first-child) {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
 .perf-picker {
   display: flex;
   flex-direction: column;
@@ -549,6 +557,10 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 }
 .perf-tooltip-value { font-weight: 700; }
 .perf-tooltip-date { color: var(--muted); font-size: 11px; }
+/* Unlike the PR chart's short "34 min" tooltip, this one can carry a full
+   meal description - let it wrap instead of running off-screen as one
+   long nowrap line. */
+#energy-tooltip { white-space: normal; max-width: 200px; }
 
 .prphase-row {
   padding: 12px 0;
