@@ -62,6 +62,12 @@
    the browser's built-in [hidden] rule at equal specificity). */
 [hidden] { display: none !important; }
 
+/* Kills the browser's built-in double-tap-to-zoom gesture app-wide - this
+   is meant to feel like a native app, not a webpage, so a stray double-tap
+   on a button shouldn't zoom the page. Pinch-zoom (accessibility) still
+   works since "manipulation" only drops double-tap, not pinch. */
+html { touch-action: manipulation; }
+
 body {
   margin: 0;
   font-family: "Josefin Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -322,10 +328,10 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 }
 .cycle-phase-card.active {
   border-color: var(--accent);
-  background: var(--tint);
+  background: var(--surface-2);
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
-.cycle-phase-card.active .cycle-phase-days { color: var(--accent-dark); }
+.cycle-phase-card.active .cycle-phase-days { color: var(--accent-2); }
 
 .hormone-chart-subtitle {
   margin: -6px 0 14px;
@@ -750,9 +756,9 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 }
 .card-title-row h2 { margin-bottom: 14px; }
 .edit-link-btn {
-  background: var(--tint);
+  background: var(--surface-2);
   border: none;
-  color: var(--accent);
+  color: var(--accent-2);
   font-size: 11.5px;
   font-weight: 700;
   padding: 4px 12px;
@@ -762,7 +768,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   margin-bottom: 14px;
   transition: background .15s ease;
 }
-.edit-link-btn:hover { background: var(--tint-hover); }
+.edit-link-btn:hover { background: var(--surface-3); }
 
 /* ---------------- Profile ---------------- */
 .profile-avatar-row {
@@ -1016,7 +1022,7 @@ button:disabled {
   right: 0;
   height: 44px;
   transform: translateY(-50%);
-  background: var(--tint);
+  background: var(--surface-2);
   border-radius: 10px;
   pointer-events: none;
   z-index: 0;
@@ -1174,14 +1180,20 @@ button:disabled {
   border-radius: 8px;
   object-fit: cover;
   flex-shrink: 0;
-  background: var(--tint);
+  background: var(--surface-2);
   position: relative;
+  cursor: zoom-in;
   transform-origin: left top;
   transition: transform .15s ease, box-shadow .15s ease;
 }
-.option-picker-item:hover .option-picker-thumb {
+/* Tapping the image itself enlarges it in place - not a hover, since hover
+   doesn't mean anything on a touch screen and was firing on the wrong
+   gesture. A second tap (handled in JS, toggling this class) shrinks it
+   back. */
+.option-picker-thumb.enlarged {
   transform: scale(3);
   z-index: 1;
+  cursor: zoom-out;
   box-shadow: 0 10px 24px -6px rgba(0, 0, 0, .7), 0 0 0 1px var(--border);
 }
 .option-picker-show-all {
@@ -1249,9 +1261,9 @@ button:disabled {
   color: var(--ink);
 }
 .date-picker-nav {
-  background: var(--tint);
+  background: var(--surface-2);
   border: none;
-  color: var(--accent-dark);
+  color: var(--accent-2);
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -1261,7 +1273,7 @@ button:disabled {
   line-height: 1;
   transition: background .15s ease;
 }
-.date-picker-nav:hover { background: var(--tint-hover); }
+.date-picker-nav:hover { background: var(--surface-3); }
 .date-picker-weekdays, .date-picker-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -1287,7 +1299,7 @@ button:disabled {
   font-family: inherit;
   transition: background .15s ease, color .15s ease;
 }
-.date-picker-day:hover:not(:disabled) { background: var(--tint); }
+.date-picker-day:hover:not(:disabled) { background: var(--surface-2); }
 .date-picker-day.today { color: var(--accent-dark); }
 .date-picker-day.selected {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
@@ -1319,9 +1331,9 @@ button:disabled {
 .secondary {
   grid-column: 1 / -1;
   display: block;
-  background: var(--tint);
-  border: 1.5px dashed var(--tint-border);
-  color: var(--accent-dark);
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  color: var(--accent-2);
   padding: 10px;
   border-radius: var(--radius-sm);
   font-size: 13px;
@@ -1332,7 +1344,7 @@ button:disabled {
   transition: background .15s ease, transform .15s ease;
   font-family: inherit;
 }
-.secondary:hover { background: var(--tint-hover); }
+.secondary:hover { background: var(--surface-3); }
 .secondary:active { transform: scale(.98); }
 
 .set-actions {
@@ -1380,7 +1392,12 @@ button:disabled {
   border-radius: 14px;
   padding: 14px;
   margin-bottom: 14px;
-  background: linear-gradient(180deg, #1a160f, #17140f);
+  /* Literal, not var(--surface-2) - the shadowed --surface-2 below is for
+     descendants (option-field buttons, steppers, plain inputs), which all
+     read that variable for their own background and need to stay one step
+     lighter than this card, not the card itself. */
+  background: #1a1a1a;
+  --surface-2: var(--surface-3);
   animation: fadeUp .25s ease;
 }
 .exercise-block-header {
@@ -1395,8 +1412,8 @@ button:disabled {
   font-weight: 700;
   letter-spacing: .03em;
   text-transform: uppercase;
-  color: var(--accent-dark);
-  background: var(--tint);
+  color: var(--accent-2);
+  background: var(--surface-2);
   padding: 4px 10px;
   border-radius: 20px;
 }
@@ -1443,7 +1460,7 @@ button:disabled {
   font-family: inherit;
   transition: background .15s ease, color .15s ease;
 }
-.set-type-btn:not(.active):hover { background: var(--tint); }
+.set-type-btn:not(.active):hover { background: var(--surface-2); }
 .set-type-btn.active {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: var(--accent-ink);
@@ -1456,9 +1473,14 @@ button:disabled {
    tracks are filled (spacer, col, col); the remove track is left empty by
    simply having no 4th child, which is fine since grid auto-placement
    still lines the two labels up with reps/weight exactly. */
+/* Weight's column gets a head start over reps' - the weight stepper packs
+   3 controls (-, input, +, BW) into the same pill reps only needs 2 for
+   (-, input, +), so an even 1fr/1fr split left the weight number squeezed
+   down to a handful of px, effectively invisible. 3fr/5fr keeps the same
+   ratio (not a flat added width) at any screen size. */
 .set-columns-label {
   display: grid;
-  grid-template-columns: 48px 1fr 1fr 30px;
+  grid-template-columns: 48px 3fr 5fr 30px;
   gap: 8px;
   margin-bottom: 4px;
   font-size: 10.5px;
@@ -1475,7 +1497,7 @@ button:disabled {
 
 .set-row {
   display: grid;
-  grid-template-columns: 48px 1fr 1fr 30px;
+  grid-template-columns: 48px 3fr 5fr 30px;
   gap: 8px;
   align-items: center;
   margin-bottom: 7px;
@@ -1484,8 +1506,8 @@ button:disabled {
 .set-row .set-number {
   font-size: 11.5px;
   font-weight: 700;
-  color: var(--accent-dark);
-  background: var(--tint);
+  color: var(--accent-2);
+  background: var(--surface-2);
   text-align: center;
   border-radius: 8px;
   padding: 8px 2px;
@@ -1534,8 +1556,8 @@ button:disabled {
 .stepper .stepper-btn {
   flex: 0 0 30px;
   border: none;
-  background: var(--tint);
-  color: var(--accent-dark);
+  background: var(--border);
+  color: var(--accent-2);
   font-size: 16px;
   font-weight: 700;
   line-height: 1;
@@ -1543,24 +1565,25 @@ button:disabled {
   font-family: inherit;
   transition: background .15s ease;
 }
-.stepper .stepper-btn:hover { background: var(--tint-hover); }
+.stepper .stepper-btn:hover { background: #333333; }
 .stepper .stepper-btn:active { transform: scale(.93); }
 /* Toggle, not an increment/decrement button - sets weight straight to 0 for
    bodyweight-only exercises instead of clicking minus repeatedly. */
 .set-bodyweight-btn {
-  flex: 0 0 34px;
+  flex: 0 0 27px;
   border: none;
   border-left: 1.5px solid var(--border);
-  background: var(--tint);
-  color: var(--accent-dark);
-  font-size: 10.5px;
+  background: #333333;
+  color: var(--accent-2);
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: .02em;
+  letter-spacing: .01em;
+  padding: 0;
   cursor: pointer;
   font-family: inherit;
   transition: background .15s ease, color .15s ease;
 }
-.set-bodyweight-btn:hover { background: var(--tint-hover); }
+.set-bodyweight-btn:hover { background: #3d3d3d; }
 .set-bodyweight-btn.active {
   background: linear-gradient(90deg, var(--accent), var(--accent-2));
   color: var(--accent-ink);
@@ -1586,6 +1609,12 @@ button:disabled {
   border: none;
   background: none;
   box-shadow: none;
+}
+/* The one number in a set row people scan for hardest - a size bump keeps
+   it legible at the narrow width the BW toggle otherwise leaves it. */
+.set-row .stepper-weight .set-weight {
+  font-size: 16px;
+  font-weight: 700;
 }
 .stepper-input::placeholder { color: var(--muted-2); }
 /* Hide the native up/down arrows — the stepper's own +/- buttons replace them. */
@@ -1636,9 +1665,9 @@ button:disabled {
 }
 .phase-filter-btn:hover { background: var(--surface-2); }
 .phase-filter-btn.active {
-  background: var(--tint);
-  border-color: var(--tint-border);
-  color: var(--accent);
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--accent-2);
   font-weight: 700;
 }
 
@@ -1699,7 +1728,7 @@ button:disabled {
   font-family: inherit;
   margin-right: 4px;
 }
-.data-table .edit-btn:hover { background: var(--tint); }
+.data-table .edit-btn:hover { background: var(--surface-2); }
 .data-table .save-btn {
   background: linear-gradient(90deg, var(--accent), var(--accent-2));
   border: none;
@@ -1743,9 +1772,9 @@ button:disabled {
   color: var(--muted);
 }
 .history-pager-btn {
-  background: var(--tint);
+  background: var(--surface-2);
   border: none;
-  color: var(--accent-dark);
+  color: var(--accent-2);
   cursor: pointer;
   font-size: 12.5px;
   font-weight: 700;
@@ -1754,7 +1783,7 @@ button:disabled {
   transition: background .15s ease;
   font-family: inherit;
 }
-.history-pager-btn:hover:not(:disabled) { background: var(--tint-hover); }
+.history-pager-btn:hover:not(:disabled) { background: var(--surface-3); }
 .history-pager-btn:disabled { opacity: .4; cursor: default; }
 
 .data-table input, .data-table select {
@@ -1872,7 +1901,7 @@ button:disabled {
   .set-columns-label { display: none; }
 
   .set-row {
-    grid-template-columns: 40px 1fr 1fr 32px;
+    grid-template-columns: 40px 3fr 5fr 32px;
     grid-template-areas: "num reps weight remove";
   }
   /* Exercises with an extra field (e.g. Treadmill Walk's Inclination) don't
