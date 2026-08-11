@@ -1350,9 +1350,9 @@ function addSetRow(block, { copyLast = false } = {}) {
     </div>`;
   row.innerHTML = isCardio ? `
     <span class="set-row-label set-row-label-1">Duration (min)</span>
+    <span class="set-number"></span>
     <span class="set-row-label set-row-label-2">${levelOverride ? levelOverride.label : "Level"}</span>
     ${extraLabelHtml}
-    <span class="set-number"></span>
     <div class="stepper-duration set-duration-field">
       <button type="button" class="set-wheel-field-btn" aria-label="Set duration">
         <span class="set-wheel-field-icon" aria-hidden="true">⏱️</span>
@@ -1364,12 +1364,12 @@ function addSetRow(block, { copyLast = false } = {}) {
     ${extraHtml}
     <button type="button" class="set-remove" aria-label="Remove set">&minus;</button>` : `
     <span class="set-row-label set-row-label-1">Reps</span>
-    <span class="set-row-label set-row-label-2 weight-mode-toggle">
-      <button type="button" class="weight-mode-btn active" data-mode="weight">Weight (kg)</button>
-      <button type="button" class="weight-mode-btn" data-mode="bw">BW</button>
-    </span>
-    ${extraLabelHtml}
     <span class="set-number"></span>
+    <span class="set-row-label set-row-label-2">Weight (kg)</span>
+    <button type="button" class="set-bodyweight-btn" aria-label="No added weight - bodyweight only">
+      <span class="bw-switch" aria-hidden="true"></span>BW
+    </button>
+    ${extraLabelHtml}
     <div class="stepper stepper-reps" data-step="2" data-min="1">
       <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease reps">&minus;</button>
       <input type="number" class="set-reps stepper-input" min="1" placeholder="0" aria-label="Reps" required>
@@ -1405,25 +1405,18 @@ function addSetRow(block, { copyLast = false } = {}) {
   row.querySelectorAll(".stepper").forEach(initStepper);
   if (!isCardio) {
     const weightInput = row.querySelector(".set-weight");
-    const weightModeBtns = row.querySelectorAll(".weight-mode-btn");
-    const syncWeightMode = () => {
-      const isBW = weightInput.value === "0";
-      weightModeBtns.forEach(btn => btn.classList.toggle("active", (btn.dataset.mode === "bw") === isBW));
-    };
-    weightModeBtns.forEach(btn => {
-      btn.addEventListener("click", () => {
-        const wantsBW = btn.dataset.mode === "bw";
-        if (wantsBW === (weightInput.value === "0")) return; // already in that mode
-        weightInput.value = wantsBW ? "0" : "";
-        weightInput.dispatchEvent(new Event("input", { bubbles: true }));
-      });
+    const bwBtn = row.querySelector(".set-bodyweight-btn");
+    const syncBodyweightBtn = () => bwBtn.classList.toggle("active", weightInput.value === "0");
+    bwBtn.addEventListener("click", () => {
+      weightInput.value = bwBtn.classList.contains("active") ? "" : "0";
+      weightInput.dispatchEvent(new Event("input", { bubbles: true }));
     });
-    syncWeightMode();
+    syncBodyweightBtn();
     // Debounced so nudging the stepper's +/- buttons repeatedly (each one
     // fires its own "input" event) only checks once the value settles,
     // instead of once per click on the way up.
     weightInput.addEventListener("input", () => {
-      syncWeightMode();
+      syncBodyweightBtn();
       clearTimeout(weightInput.__prTimer);
       weightInput.__prTimer = setTimeout(async () => {
         const newValue = parseFloat(weightInput.value);
