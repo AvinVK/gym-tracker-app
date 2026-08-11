@@ -1387,7 +1387,7 @@ function addSetRow(block, { copyLast = false } = {}) {
     </div>
     ${levelHtml}
     ${extraHtml}
-    <button type="button" class="set-remove">✕</button>` : `
+    <button type="button" class="set-remove" aria-label="Remove set">&minus;</button>` : `
     <span class="set-number"></span>
     <div class="stepper stepper-reps" data-step="2" data-min="1">
       <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease reps">&minus;</button>
@@ -1401,7 +1401,7 @@ function addSetRow(block, { copyLast = false } = {}) {
       <button type="button" class="set-bodyweight-btn" aria-label="No added weight - bodyweight only">BW</button>
     </div>
     ${extraHtml}
-    <button type="button" class="set-remove">✕</button>`;
+    <button type="button" class="set-remove" aria-label="Remove set">&minus;</button>`;
   if (isCardio) {
     initSetDurationField(row.querySelector(".set-duration-field"));
     if (!levelOverride) initSetLevelField(row.querySelector(".set-level-field"));
