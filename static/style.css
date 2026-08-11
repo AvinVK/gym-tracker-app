@@ -1476,26 +1476,27 @@ button:disabled {
    controls) instead of a single header shared above every row - that
    shared header only ever worked at desktop widths (it needed its own
    breakpoint-specific column tracks to stay aligned with the rows below
-   it, which kept drifting out of sync) and couldn't host a per-set
-   control anyway (see the weight/BW toggle below). Building the label
-   into each row's own grid means one definition works at any width and
-   can never drift out of alignment with its own row. */
+   it, which kept drifting out of sync). Building the label into each
+   row's own grid means one definition works at any width and can never
+   drift out of alignment with its own row. Set N and BW both sit on this
+   label line too - Set N centered between the two field labels, BW
+   right-aligned - so neither one costs the steppers below any width. */
 .set-row {
   display: grid;
-  grid-template-columns: 44px 1fr 1fr 26px;
+  grid-template-columns: 1fr auto 1fr auto;
   grid-template-areas:
-    ".   lab1   lab2   ."
-    "num field1 field2 remove";
-  gap: 8px;
-  row-gap: 3px;
+    "lab1   setn field2lab bw"
+    "field1 .    field2    remove";
+  column-gap: 8px;
+  row-gap: 4px;
   align-items: center;
   margin-bottom: 10px;
 }
 .set-row.has-extra {
-  grid-template-columns: 44px 1fr 1fr 1fr 26px;
+  grid-template-columns: 1fr auto 1fr 1fr 26px;
   grid-template-areas:
-    ".   lab1   lab2   lab3   ."
-    "num field1 field2 field3 remove";
+    "lab1   setn field2lab lab3   ."
+    "field1 .    field2    field3 remove";
 }
 .set-row-label {
   grid-area: lab1;
@@ -1509,46 +1510,61 @@ button:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.set-row-label-2 { grid-area: lab2; }
+.set-row-label-2 { grid-area: field2lab; }
 .set-row-label-3 { grid-area: lab3; }
-/* The weight column's label doubles as the weight/bodyweight switch -
-   plain underlined text, not a filled button, per design direction (a
-   pill button here read as one more filled box competing with the
-   stepper right below it). */
-.weight-mode-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.weight-mode-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  font-size: 10px;
+/* Set N and the BW toggle are styled as a matched pair - same padding,
+   radius, and background - so they read as two small badges on the same
+   line rather than one looking like an afterthought next to the other. */
+.set-row .set-number, .set-row .set-bodyweight-btn {
+  font-size: 10.5px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .03em;
-  color: var(--muted-2);
-  cursor: pointer;
-  text-decoration: none;
-  transition: color .15s ease;
-}
-.weight-mode-btn.active {
-  color: var(--accent-purple);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  border-radius: 8px;
+  padding: 4px 10px;
+  white-space: nowrap;
 }
 .set-row .set-number {
-  grid-area: num;
-  font-size: 11.5px;
-  font-weight: 700;
+  grid-area: setn;
   color: var(--accent-purple);
   background: var(--surface-2);
   text-align: center;
-  border-radius: 8px;
-  padding: 8px 2px;
+}
+.set-row .set-bodyweight-btn {
+  grid-area: bw;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted-2);
+  background: var(--surface-2);
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s ease, color .15s ease;
+}
+.set-row .set-bodyweight-btn .bw-switch {
+  width: 18px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--border);
+  position: relative;
+  flex: none;
+  transition: background .15s ease;
+}
+.set-row .set-bodyweight-btn .bw-switch::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted-2);
+  transition: transform .15s ease, background .15s ease;
+}
+.set-row .set-bodyweight-btn.active { color: var(--accent-purple); }
+.set-row .set-bodyweight-btn.active .bw-switch { background: rgba(183, 177, 246, .28); }
+.set-row .set-bodyweight-btn.active .bw-switch::after {
+  transform: translateX(8px);
+  background: var(--accent-purple);
 }
 .set-row input {
   width: 100%;
@@ -1568,6 +1584,8 @@ button:disabled {
 }
 .set-row .set-remove {
   grid-area: remove;
+  width: 26px;
+  justify-self: end;
   background: var(--danger-tint);
   border: none;
   color: var(--danger);
@@ -1921,12 +1939,12 @@ button:disabled {
      phone. Drop the extra field - and its label - to its own full-width
      line below instead of fighting the other two for space. */
   .set-row.has-extra {
-    grid-template-columns: 44px 1fr 1fr 26px;
+    grid-template-columns: 1fr auto 1fr 26px;
     grid-template-areas:
-      ".      lab1   lab2   ."
-      "num    field1 field2 remove"
-      "lab3   lab3   lab3   lab3"
-      "field3 field3 field3 field3";
+      "lab1   setn field2lab ."
+      "field1 .    field2    remove"
+      "lab3   lab3 lab3      lab3"
+      "field3 field3 field3  field3";
     row-gap: 4px;
   }
   .set-row.has-extra .set-row-label-3 { text-align: left; }
