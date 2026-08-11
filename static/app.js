@@ -422,10 +422,14 @@ function renderCycleTab() {
     ? nextPhase.startDay - cycleDay
     : (CYCLE_LENGTH_DAYS - cycleDay) + nextPhase.startDay;
 
+  const nextPhaseDate = new Date(todayStr + "T00:00:00");
+  nextPhaseDate.setDate(nextPhaseDate.getDate() + daysUntilNext);
+  const nextPhaseDateLabel = nextPhaseDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
   document.getElementById("cycle-current-phase").textContent = currentPhase.label;
   document.getElementById("cycle-current-detail").textContent = `Day ${cycleDay} of ~${CYCLE_LENGTH_DAYS}`;
   document.getElementById("cycle-next-phase").textContent = nextPhase.label;
-  document.getElementById("cycle-next-detail").textContent = `Starts in ${daysUntilNext} day${daysUntilNext === 1 ? "" : "s"}`;
+  document.getElementById("cycle-next-detail").textContent = `Starts in ${daysUntilNext} day${daysUntilNext === 1 ? "" : "s"} (${nextPhaseDateLabel})`;
 
   document.querySelectorAll(".cycle-phase-card").forEach(c => c.classList.toggle("active", c.dataset.phase === currentPhase.key));
 }
@@ -2148,13 +2152,19 @@ function catmullRomPath(pts) {
   return d;
 }
 
+// Unlike PERF_PAD, this chart draws no y-axis number labels, so it doesn't
+// need PERF_PAD's wide left margin (46px, sized to fit those numbers) -
+// reusing it left the plot area visibly off-center, with a much bigger gap
+// on the left than the right.
+const HORMONE_PAD = { left: 16, right: 16, top: 20, bottom: 30 };
+
 function renderHormoneReferenceChart() {
   const svg = document.getElementById("hormone-chart");
   if (!svg) return;
   svg.innerHTML = "";
 
-  const plotLeft = PERF_PAD.left, plotRight = PERF_CHART_W - PERF_PAD.right;
-  const plotTop = PERF_PAD.top, plotBottom = PERF_CHART_H - PERF_PAD.bottom;
+  const plotLeft = HORMONE_PAD.left, plotRight = PERF_CHART_W - HORMONE_PAD.right;
+  const plotTop = HORMONE_PAD.top, plotBottom = PERF_CHART_H - HORMONE_PAD.bottom;
   const plotW = plotRight - plotLeft, plotH = plotBottom - plotTop;
 
   const xFor = day => plotLeft + ((day - 1) / 27) * plotW;
@@ -2210,7 +2220,10 @@ function renderHormoneReferenceChart() {
     tooltip.innerHTML = `<span class="hormone-tooltip-dot" style="background:${phase.color}"></span><span>${phase.label}<span class="hormone-tooltip-day"> — Day ${day}</span></span>`;
     const wrapRect = wrap.getBoundingClientRect();
     tooltip.style.left = `${clientX - wrapRect.left}px`;
-    tooltip.style.top = `${clientY - wrapRect.top - 12}px`;
+    // Well clear of a fingertip on touch, not just a mouse cursor - 12px
+    // (fine for a mouse pointer) left the tooltip hidden under the finger
+    // that triggered it on phones.
+    tooltip.style.top = `${clientY - wrapRect.top - 44}px`;
     tooltip.hidden = false;
     crosshair.setAttribute("x1", xFor(day));
     crosshair.setAttribute("x2", xFor(day));
@@ -2230,6 +2243,33 @@ function renderHormoneReferenceChart() {
   hitRect.addEventListener("pointerleave", hideTooltip);
 }
 renderHormoneReferenceChart();
+
+// Click-to-toggle popovers for the chart's info button and the Sources
+// link - click rather than hover so they work the same on a phone as with
+// a mouse, and closing on an outside click/tap is the standard pattern for
+// a disclosure like this (Escape too, for keyboard users).
+function initTogglePopover(btn, panel) {
+  if (!btn || !panel) return;
+  function close() {
+    panel.hidden = true;
+    btn.setAttribute("aria-expanded", "false");
+  }
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const opening = panel.hidden;
+    document.querySelectorAll(".hormone-info-popover:not([hidden]), .hormone-sources-detail:not([hidden])").forEach(p => {
+      if (p !== panel) { p.hidden = true; }
+    });
+    panel.hidden = !opening;
+    btn.setAttribute("aria-expanded", String(opening));
+  });
+  document.addEventListener("click", (e) => {
+    if (!panel.hidden && !panel.contains(e.target) && e.target !== btn) close();
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+}
+initTogglePopover(document.getElementById("hormone-info-btn"), document.getElementById("hormone-info-popover"));
+initTogglePopover(document.getElementById("hormone-sources-toggle"), document.getElementById("hormone-sources-detail"));
 
 // One point per day: the best set logged that day for that exercise (top
 // set), not every individual set - so the line reads as "how the exercise
@@ -2443,6 +2483,141 @@ function renderPerformanceChart(series) {
   hitRect.addEventListener("pointerleave", hideTooltip);
 }
 
+// One point per workout_log row that has an energy_level logged - carries
+// the same row's pre-workout meal fields along for the tooltip, since
+// that's what makes this chart useful (not just the energy number alone).
+function computeEnergySeries(workoutLog) {
+  return workoutLog
+    .filter(w => w.energy_level != null)
+    .map(w => ({
+      date: w.date,
+      value: Number(w.energy_level),
+      meal: w.pre_workout_meal || null,
+      hoursSinceMeal: w.hours_since_meal,
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function formatHoursSinceMeal(hours) {
+  if (hours == null) return null;
+  if (hours < 1) return `${Math.round(hours * 60)} min before the gym`;
+  const rounded = Math.round(hours * 2) / 2; // nearest half hour
+  return `${rounded} hour${rounded === 1 ? "" : "s"} before the gym`;
+}
+
+// Energy is always 1-10 (the picker's own range), so unlike the PR chart
+// this never needs computeYAxis - the axis is fixed regardless of the
+// data's actual spread.
+function renderEnergyChart(points) {
+  const svg = document.getElementById("energy-chart");
+  const wrap = document.getElementById("energy-chart-wrap");
+  const tooltip = document.getElementById("energy-tooltip");
+  const emptyEl = document.getElementById("energy-chart-empty");
+  svg.innerHTML = "";
+  tooltip.hidden = true;
+
+  if (points.length === 0) {
+    wrap.hidden = true;
+    emptyEl.hidden = false;
+    return;
+  }
+  wrap.hidden = false;
+  emptyEl.hidden = true;
+
+  const plotLeft = PERF_PAD.left, plotRight = PERF_CHART_W - PERF_PAD.right;
+  const plotTop = PERF_PAD.top, plotBottom = PERF_CHART_H - PERF_PAD.bottom;
+  const plotW = plotRight - plotLeft, plotH = plotBottom - plotTop;
+
+  const dates = points.map(p => new Date(p.date + "T00:00:00").getTime());
+  const minDate = dates[0], maxDate = dates[dates.length - 1];
+  const dateSpan = Math.max(maxDate - minDate, 1);
+
+  const xFor = i => points.length === 1 ? plotLeft + plotW / 2 : plotLeft + ((dates[i] - minDate) / dateSpan) * plotW;
+  const yFor = v => plotTop + plotH - ((v - 1) / 9) * plotH;
+
+  const segColors = points.map(p => colorForDate(p.date));
+
+  for (let v = 2; v <= 10; v += 2) {
+    const y = yFor(v);
+    svg.appendChild(svgEl("line", { class: "perf-gridline", x1: plotLeft, x2: plotRight, y1: y, y2: y }));
+    const label = svgEl("text", { class: "perf-axis-label", x: plotLeft - 8, y: y + 4, "text-anchor": "end" });
+    label.textContent = String(v);
+    svg.appendChild(label);
+  }
+
+  const xTickCount = Math.min(points.length, 5);
+  const xTickIndices = new Set();
+  for (let i = 0; i < xTickCount; i++) {
+    xTickIndices.add(Math.round((i / (xTickCount - 1 || 1)) * (points.length - 1)));
+  }
+  xTickIndices.forEach(i => {
+    const label = svgEl("text", { class: "perf-axis-label", x: xFor(i), y: PERF_CHART_H - 8, "text-anchor": "middle" });
+    label.textContent = formatPerfDate(points[i].date);
+    svg.appendChild(label);
+  });
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const d = `M${xFor(i)},${yFor(points[i].value)} L${xFor(i + 1)},${yFor(points[i + 1].value)}`;
+    svg.appendChild(svgEl("path", { class: "perf-line", d, stroke: segColors[i] }));
+  }
+  points.forEach((p, i) => {
+    svg.appendChild(svgEl("circle", { cx: xFor(i), cy: yFor(p.value), r: 3, fill: segColors[i] }));
+  });
+
+  const crosshair = svgEl("line", { class: "perf-crosshair", x1: 0, x2: 0, y1: plotTop, y2: plotBottom });
+  svg.appendChild(crosshair);
+  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent" });
+  svg.appendChild(hitRect);
+
+  function showTooltip(i, clientX, clientY) {
+    const p = points[i];
+    tooltip.innerHTML = "";
+    const valueEl = document.createElement("div");
+    valueEl.className = "perf-tooltip-value";
+    valueEl.textContent = `Energy: ${p.value}/10`;
+    tooltip.appendChild(valueEl);
+    const mealEl = document.createElement("div");
+    mealEl.className = "perf-tooltip-date";
+    mealEl.textContent = p.meal ? `Ate: ${p.meal}` : "No meal logged";
+    tooltip.appendChild(mealEl);
+    const timingLabel = formatHoursSinceMeal(p.hoursSinceMeal);
+    if (timingLabel) {
+      const timingEl = document.createElement("div");
+      timingEl.className = "perf-tooltip-date";
+      timingEl.textContent = timingLabel.charAt(0).toUpperCase() + timingLabel.slice(1);
+      tooltip.appendChild(timingEl);
+    }
+    const dateEl = document.createElement("div");
+    dateEl.className = "perf-tooltip-date";
+    const phase = cyclePhaseForDate(p.date);
+    dateEl.textContent = phase ? `${formatPerfDate(p.date)} — ${phase.label}` : formatPerfDate(p.date);
+    tooltip.appendChild(dateEl);
+    const wrapRect = wrap.getBoundingClientRect();
+    tooltip.style.left = `${clientX - wrapRect.left}px`;
+    tooltip.style.top = `${clientY - wrapRect.top - 12}px`;
+    tooltip.hidden = false;
+    crosshair.setAttribute("x1", xFor(i));
+    crosshair.setAttribute("x2", xFor(i));
+    crosshair.style.opacity = 1;
+  }
+  function hideTooltip() {
+    tooltip.hidden = true;
+    crosshair.style.opacity = 0;
+  }
+  hitRect.addEventListener("pointermove", (e) => {
+    const svgRect = svg.getBoundingClientRect();
+    const scaleX = PERF_CHART_W / svgRect.width;
+    const localX = (e.clientX - svgRect.left) * scaleX;
+    let nearest = 0, nearestDist = Infinity;
+    points.forEach((p, i) => {
+      const d = Math.abs(xFor(i) - localX);
+      if (d < nearestDist) { nearestDist = d; nearest = i; }
+    });
+    showTooltip(nearest, e.clientX, e.clientY);
+  });
+  hitRect.addEventListener("pointerleave", hideTooltip);
+}
+
 // For each exercise, takes whichever metric (weight or duration) has more
 // data points - same rule as computeExerciseSeries() - finds its all-time
 // best value and the date it was set, then buckets that exercise into
@@ -2544,6 +2719,12 @@ async function renderPerformanceTab() {
     const selected = exercises.includes(currentValue) ? currentValue : exercises[0];
     setOptionFieldValue(field, selected);
     renderPerformanceChart(computeExerciseSeries(history, selected));
+
+    let workoutLog = [];
+    try {
+      workoutLog = await api.get("/api/workout-log");
+    } catch (err) { /* energy chart just shows its empty state */ }
+    renderEnergyChart(computeEnergySeries(workoutLog));
   }
   renderPRPhaseBreakdown(history);
 }
@@ -2552,6 +2733,16 @@ initOptionField(document.querySelector(".perf-exercise-field"));
 document.getElementById("perf-exercise-value").addEventListener("change", async (e) => {
   const history = await getExerciseHistory();
   renderPerformanceChart(computeExerciseSeries(history, e.target.value));
+});
+
+document.querySelectorAll("#perf-chart-switcher .chart-switch-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const key = btn.dataset.chart;
+    document.querySelectorAll("#perf-chart-switcher .chart-switch-btn").forEach(b => b.classList.toggle("active", b === btn));
+    document.querySelectorAll("#perf-content .chart-panel").forEach(panel => {
+      panel.hidden = panel.dataset.chartPanel !== key;
+    });
+  });
 });
 
 // ---- Exercise detail table ----

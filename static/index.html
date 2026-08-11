@@ -361,7 +361,7 @@
               <h3>Menstrual Phase</h3>
               <span class="cycle-phase-days">Day 1-5</span>
             </div>
-            <p>The uterine lining sheds and bleeding occurs. Energy is often lower — lighter workouts like walking or yoga can feel better than high-intensity training.</p>
+            <p>The uterine lining sheds and bleeding occurs.</p>
           </div>
         </div>
         <div class="cycle-phase-card" data-phase="follicular">
@@ -371,7 +371,7 @@
               <h3>Follicular Phase</h3>
               <span class="cycle-phase-days">Day 6-13</span>
             </div>
-            <p>Estrogen rises as the body prepares to release an egg. Energy and strength typically climb — a good window to push a little harder in training.</p>
+            <p>Estrogen rises as the body prepares to release an egg.</p>
           </div>
         </div>
         <div class="cycle-phase-card" data-phase="ovulation">
@@ -381,7 +381,7 @@
               <h3>Ovulation Phase</h3>
               <span class="cycle-phase-days">Day 14</span>
             </div>
-            <p>An egg is released — often the peak of energy and strength in the cycle. A good window for harder sessions or chasing a PR.</p>
+            <p>An egg is released.</p>
           </div>
         </div>
         <div class="cycle-phase-card" data-phase="luteal">
@@ -391,7 +391,7 @@
               <h3>Luteal Phase</h3>
               <span class="cycle-phase-days">Day 15-28</span>
             </div>
-            <p>Progesterone rises, then drops toward the end of the phase — PMS symptoms and lower energy are common near the end. Moderate, steady training tends to work best.</p>
+            <p>Progesterone rises, then drops toward the end of the phase — PMS symptoms are common near the end.</p>
           </div>
         </div>
       </div>
@@ -399,7 +399,7 @@
 
     <div class="card">
       <h2>Hormones Throughout Your Cycle</h2>
-      <p class="hormone-chart-subtitle">Typical relative pattern of estrogen, progesterone, and testosterone across a 28-day cycle. Day 1 is the first day of your period (the first day of bleeding), same as Day 1 of the Menstrual Phase above.</p>
+      <p class="hormone-chart-subtitle">Typical relative pattern of estrogen, progesterone, and testosterone across a 28-day cycle.</p>
       <div class="hormone-legend">
         <span class="hormone-legend-item"><span class="hormone-legend-dot" style="background:#ec6f9b"></span>Estrogen</span>
         <span class="hormone-legend-item"><span class="hormone-legend-dot" style="background:#7c9ff0"></span>Progesterone</span>
@@ -408,12 +408,16 @@
       <div class="hormone-chart-wrap">
         <svg id="hormone-chart" class="hormone-chart" viewBox="0 0 600 260" preserveAspectRatio="none"></svg>
         <div class="hormone-tooltip" id="hormone-tooltip" hidden></div>
+        <button type="button" class="hormone-info-btn" id="hormone-info-btn" aria-expanded="false" aria-label="About this chart"><span aria-hidden="true">i</span></button>
+        <div class="hormone-info-popover" id="hormone-info-popover" hidden>Shaded bands mark the cycle phases from the card above (Menstrual/Follicular/Ovulation/Luteal) — hover anywhere on the chart to see which phase that day falls in. Curves are relative levels (each hormone scaled to its own cycle peak, not a shared concentration scale) illustrating the typical pattern described in the sources below — actual levels vary by person and cycle.</div>
       </div>
-      <p class="hormone-chart-note">Shaded bands mark the cycle phases from the card above (Menstrual/Follicular/Ovulation/Luteal) — hover anywhere on the chart to see which phase that day falls in. Curves are relative levels (each hormone scaled to its own cycle peak, not a shared concentration scale) illustrating the typical pattern described in the sources below — actual levels vary by person and cycle.</p>
+      <p class="hormone-day1-note">Day 1 is the first day of your period (the first day of bleeding), same as Day 1 of the Menstrual Phase above.</p>
       <p class="hormone-chart-source">
-        Sources:
-        <a href="https://www.ncbi.nlm.nih.gov/books/NBK279054/" target="_blank" rel="noopener">Reed BG, Carr BR. "The Normal Menstrual Cycle and the Control of Ovulation." Endotext (NCBI Bookshelf, NIH), 2018</a> (estrogen &amp; progesterone patterns),
-        <a href="https://pubmed.ncbi.nlm.nih.gov/23127814/" target="_blank" rel="noopener">Bui HN, et al. "Dynamics of serum testosterone during the menstrual cycle." Steroids, 2013</a> (testosterone's small periovulatory rise).
+        <button type="button" class="hormone-sources-toggle" id="hormone-sources-toggle" aria-expanded="false">Sources</button>
+        <span class="hormone-sources-detail" id="hormone-sources-detail" hidden>
+          <a href="https://www.ncbi.nlm.nih.gov/books/NBK279054/" target="_blank" rel="noopener">Reed BG, Carr BR. "The Normal Menstrual Cycle and the Control of Ovulation." Endotext (NCBI Bookshelf, NIH), 2018</a> (estrogen &amp; progesterone patterns),
+          <a href="https://pubmed.ncbi.nlm.nih.gov/23127814/" target="_blank" rel="noopener">Bui HN, et al. "Dynamics of serum testosterone during the menstrual cycle." Steroids, 2013</a> (testosterone's small periovulatory rise).
+        </span>
       </p>
     </div>
   </section>
@@ -424,22 +428,36 @@
       <h2>Your Performance</h2>
       <p class="placeholder-text" id="perf-empty" hidden>Log a few sets to see your progress here.</p>
       <div id="perf-content" hidden>
-        <h3 class="perf-chart-title">PRs</h3>
-        <label class="perf-picker">
-          <span class="perf-picker-label">Exercise</span>
-          <div class="option-field perf-exercise-field" data-option-field data-title="Exercise">
-            <button type="button" class="option-field-btn">
-              <span class="option-field-value placeholder">Select an exercise...</span>
-              <span class="option-field-caret" aria-hidden="true">&#9662;</span>
-            </button>
-            <input type="hidden" id="perf-exercise-value">
-          </div>
-        </label>
-        <div class="perf-chart-wrap" id="perf-chart-wrap">
-          <svg id="perf-chart" class="perf-chart" viewBox="0 0 600 260" preserveAspectRatio="none"></svg>
-          <div class="perf-tooltip" id="perf-tooltip" hidden></div>
+        <div class="chart-switcher" id="perf-chart-switcher">
+          <button type="button" class="chart-switch-btn active" data-chart="prs">PRs</button>
+          <button type="button" class="chart-switch-btn" data-chart="energy">Energy vs Time</button>
         </div>
-        <div class="phase-legend" id="perf-phase-legend" hidden></div>
+
+        <div class="chart-panel" data-chart-panel="prs">
+          <label class="perf-picker">
+            <span class="perf-picker-label">Exercise</span>
+            <div class="option-field perf-exercise-field" data-option-field data-title="Exercise">
+              <button type="button" class="option-field-btn">
+                <span class="option-field-value placeholder">Select an exercise...</span>
+                <span class="option-field-caret" aria-hidden="true">&#9662;</span>
+              </button>
+              <input type="hidden" id="perf-exercise-value">
+            </div>
+          </label>
+          <div class="perf-chart-wrap" id="perf-chart-wrap">
+            <svg id="perf-chart" class="perf-chart" viewBox="0 0 600 260" preserveAspectRatio="none"></svg>
+            <div class="perf-tooltip" id="perf-tooltip" hidden></div>
+          </div>
+          <div class="phase-legend" id="perf-phase-legend" hidden></div>
+        </div>
+
+        <div class="chart-panel" data-chart-panel="energy" hidden>
+          <p class="placeholder-text" id="energy-chart-empty" hidden>Log your energy level with a workout to see this chart.</p>
+          <div class="perf-chart-wrap" id="energy-chart-wrap" hidden>
+            <svg id="energy-chart" class="perf-chart" viewBox="0 0 600 260" preserveAspectRatio="none"></svg>
+            <div class="perf-tooltip" id="energy-tooltip" hidden></div>
+          </div>
+        </div>
       </div>
     </div>
 

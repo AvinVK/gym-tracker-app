@@ -291,7 +291,7 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   flex-shrink: 0;
   line-height: 1.3;
 }
-.cycle-phase-info { min-width: 0; }
+.cycle-phase-info { min-width: 0; flex: 1; }
 .cycle-phase-header {
   display: flex;
   align-items: baseline;
@@ -391,11 +391,61 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 }
 .hormone-tooltip-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 .hormone-tooltip-day { color: var(--muted); font-size: 11px; }
-.hormone-chart-note {
-  margin: 10px 0 0;
+.hormone-day1-note {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+/* Small always-visible "i" button in the chart's corner - click toggles the
+   explanatory paragraph as a popover instead of it permanently taking up
+   space above/below the chart. Click (not :hover) so it works the same on
+   a phone as with a mouse - hover-only tripped people up on the phase
+   tooltip earlier for the same reason. */
+.hormone-info-btn {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, .65);
+  background: rgba(0, 0, 0, .55);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+/* Drawn as a real letter styled italic/serif, not the Unicode "circled i"
+   glyph (U+24D8) - that glyph's look varies a lot across platform fonts,
+   so a plain "i" gives consistent rendering on iOS/Android/desktop. */
+.hormone-info-btn span {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+}
+.hormone-info-btn:hover, .hormone-info-btn[aria-expanded="true"] { border-color: #fff; background: rgba(0, 0, 0, .75); }
+.hormone-info-popover {
+  position: absolute;
+  top: 42px;
+  left: 14px;
+  max-width: 78%;
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
   font-size: 12px;
   line-height: 1.5;
   color: var(--muted);
+  z-index: 3;
 }
 .hormone-chart-source {
   margin: 8px 0 0;
@@ -403,16 +453,53 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
   line-height: 1.6;
   color: var(--muted-2);
 }
-.hormone-chart-source a { color: var(--accent-dark); }
+.hormone-sources-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--accent-dark);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.hormone-sources-detail { display: block; margin-top: 6px; }
+.hormone-sources-detail a { color: var(--accent-dark); }
 
 /* ---------------- Your Performance ---------------- */
-.perf-chart-title {
-  margin: 0 0 12px;
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .04em;
+/* Segmented control for switching which chart occupies the shared area
+   below - visually mirrors .tabs/.tab-btn (same pill-with-gradient-active
+   look) but is a separate class so its click handler can't collide with
+   the real Log Workout/History sub-tabs, which listen on .tab-btn
+   globally. Add a chart here by adding one button (data-chart="key") and
+   one .chart-panel (data-chart-panel="key") instead of stacking another
+   chart under the last one. */
+.chart-switcher {
+  display: flex;
+  gap: 6px;
+  background: var(--bg-soft);
+  padding: 6px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+.chart-switch-btn {
+  flex: 1;
+  padding: 10px 8px;
+  background: none;
+  border: none;
   color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: color .2s ease, background .2s ease, transform .15s ease;
+  font-family: inherit;
+}
+.chart-switch-btn:active { transform: scale(.97); }
+.chart-switch-btn.active {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: var(--accent-ink);
+  box-shadow: 0 6px 16px -4px var(--accent-glow);
 }
 .perf-picker {
   display: flex;
@@ -488,6 +575,10 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
 }
 .perf-tooltip-value { font-weight: 700; }
 .perf-tooltip-date { color: var(--muted); font-size: 11px; }
+/* Unlike the PR chart's short "34 min" tooltip, this one can carry a full
+   meal description - let it wrap instead of running off-screen as one
+   long nowrap line. */
+#energy-tooltip { white-space: normal; max-width: 200px; }
 
 .prphase-row {
   padding: 12px 0;
