@@ -223,7 +223,7 @@ body {
   box-shadow: 0 6px 16px -4px var(--accent-glow);
 }
 
-main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
+main { max-width: 880px; margin: 0 auto; padding: 20px 16px 48px; }
 
 .main-tab-panel, .tab-panel { display: none; animation: fadeUp .35s ease; }
 .main-tab-panel.active, .tab-panel.active { display: block; }
