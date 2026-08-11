@@ -25,6 +25,34 @@ const api = {
   del: (url) => fetch(url, { method: "DELETE" }),
 };
 
+// ---------------- Modal scroll lock ----------------
+// Background must stay frozen behind any open modal-overlay (exercise
+// picker, date picker, etc.) - on iOS Safari the page still rubber-band
+// scrolls behind a fixed overlay with just `overflow: hidden` on body, so
+// this pins the body in place (position: fixed) instead and restores the
+// scroll position on close. Driven by a MutationObserver on the shared
+// [hidden] attribute rather than per-modal open/close calls, so it covers
+// every current and future .modal-overlay for free.
+let modalScrollY = 0;
+function updateBodyScrollLock() {
+  const anyOpen = !!document.querySelector(".modal-overlay:not([hidden])");
+  const locked = document.body.style.position === "fixed";
+  if (anyOpen && !locked) {
+    modalScrollY = window.scrollY;
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${modalScrollY}px`;
+    document.body.style.width = "100%";
+  } else if (!anyOpen && locked) {
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.width = "";
+    window.scrollTo(0, modalScrollY);
+  }
+}
+new MutationObserver(updateBodyScrollLock).observe(document.body, {
+  attributes: true, attributeFilter: ["hidden"], subtree: true,
+});
+
 // ---------------- Date inputs: no future dates ----------------
 const todayStr = new Date().toLocaleDateString("en-CA");
 
@@ -1051,6 +1079,15 @@ function closeOptionPicker() {
 
 opList.addEventListener("click", (e) => {
   if (!opActiveContainer) return;
+  // Tapping the thumbnail enlarges it in place instead of picking the
+  // exercise - it shouldn't also select and close the picker underneath it.
+  const thumb = e.target.closest(".option-picker-thumb");
+  if (thumb) {
+    const wasEnlarged = thumb.classList.contains("enlarged");
+    opList.querySelectorAll(".option-picker-thumb.enlarged").forEach(t => t.classList.remove("enlarged"));
+    if (!wasEnlarged) thumb.classList.add("enlarged");
+    return;
+  }
   if (e.target.closest(".option-picker-show-all")) {
     renderOptionPickerList(opActiveContainer, { showAll: true });
     return;
