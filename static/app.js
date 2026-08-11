@@ -2735,6 +2735,16 @@ document.getElementById("perf-exercise-value").addEventListener("change", async 
   renderPerformanceChart(computeExerciseSeries(history, e.target.value));
 });
 
+document.querySelectorAll("#perf-chart-switcher .chart-switch-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const key = btn.dataset.chart;
+    document.querySelectorAll("#perf-chart-switcher .chart-switch-btn").forEach(b => b.classList.toggle("active", b === btn));
+    document.querySelectorAll("#perf-content .chart-panel").forEach(panel => {
+      panel.hidden = panel.dataset.chartPanel !== key;
+    });
+  });
+});
+
 // ---- Exercise detail table ----
 function exerciseRowView(x) {
   return `

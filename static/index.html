@@ -428,28 +428,35 @@
       <h2>Your Performance</h2>
       <p class="placeholder-text" id="perf-empty" hidden>Log a few sets to see your progress here.</p>
       <div id="perf-content" hidden>
-        <h3 class="perf-chart-title">PRs</h3>
-        <label class="perf-picker">
-          <span class="perf-picker-label">Exercise</span>
-          <div class="option-field perf-exercise-field" data-option-field data-title="Exercise">
-            <button type="button" class="option-field-btn">
-              <span class="option-field-value placeholder">Select an exercise...</span>
-              <span class="option-field-caret" aria-hidden="true">&#9662;</span>
-            </button>
-            <input type="hidden" id="perf-exercise-value">
-          </div>
-        </label>
-        <div class="perf-chart-wrap" id="perf-chart-wrap">
-          <svg id="perf-chart" class="perf-chart" viewBox="0 0 600 260" preserveAspectRatio="none"></svg>
-          <div class="perf-tooltip" id="perf-tooltip" hidden></div>
+        <div class="chart-switcher" id="perf-chart-switcher">
+          <button type="button" class="chart-switch-btn active" data-chart="prs">PRs</button>
+          <button type="button" class="chart-switch-btn" data-chart="energy">Energy vs Time</button>
         </div>
-        <div class="phase-legend" id="perf-phase-legend" hidden></div>
 
-        <h3 class="perf-chart-title">Energy vs Time</h3>
-        <p class="placeholder-text" id="energy-chart-empty" hidden>Log your energy level with a workout to see this chart.</p>
-        <div class="perf-chart-wrap" id="energy-chart-wrap" hidden>
-          <svg id="energy-chart" class="perf-chart" viewBox="0 0 600 260" preserveAspectRatio="none"></svg>
-          <div class="perf-tooltip" id="energy-tooltip" hidden></div>
+        <div class="chart-panel" data-chart-panel="prs">
+          <label class="perf-picker">
+            <span class="perf-picker-label">Exercise</span>
+            <div class="option-field perf-exercise-field" data-option-field data-title="Exercise">
+              <button type="button" class="option-field-btn">
+                <span class="option-field-value placeholder">Select an exercise...</span>
+                <span class="option-field-caret" aria-hidden="true">&#9662;</span>
+              </button>
+              <input type="hidden" id="perf-exercise-value">
+            </div>
+          </label>
+          <div class="perf-chart-wrap" id="perf-chart-wrap">
+            <svg id="perf-chart" class="perf-chart" viewBox="0 0 600 260" preserveAspectRatio="none"></svg>
+            <div class="perf-tooltip" id="perf-tooltip" hidden></div>
+          </div>
+          <div class="phase-legend" id="perf-phase-legend" hidden></div>
+        </div>
+
+        <div class="chart-panel" data-chart-panel="energy" hidden>
+          <p class="placeholder-text" id="energy-chart-empty" hidden>Log your energy level with a workout to see this chart.</p>
+          <div class="perf-chart-wrap" id="energy-chart-wrap" hidden>
+            <svg id="energy-chart" class="perf-chart" viewBox="0 0 600 260" preserveAspectRatio="none"></svg>
+            <div class="perf-tooltip" id="energy-tooltip" hidden></div>
+          </div>
         </div>
       </div>
     </div>
