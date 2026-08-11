@@ -1914,9 +1914,16 @@ button:disabled {
      than ship a header that visibly doesn't line up with its rows. */
   .set-columns-label { display: none; }
 
+  /* BW drops to a 2nd line under the weight column instead of sharing the
+     main row - on a narrow phone, giving it a dedicated column left reps/
+     weight too little room for a 2-3 digit decimal (e.g. "17.5") to fit
+     without clipping. */
   .set-row {
-    grid-template-columns: 40px 1fr 1fr 28px 26px;
-    grid-template-areas: "num reps weight bw remove";
+    grid-template-columns: 40px 1fr 1fr 26px;
+    grid-template-areas:
+      "num  reps weight remove"
+      ".    .    bw     .";
+    row-gap: 4px;
   }
   /* Cardio sets (Duration/Level) have no BW toggle - drop the 5th (bw)
      track and area so remove doesn't drift off an unused gap. */
@@ -1940,4 +1947,11 @@ button:disabled {
   .set-row .set-bodyweight-btn { grid-area: bw; }
   .set-row .set-remove { grid-area: remove; }
   .set-row .set-extra-field { grid-area: extra; }
+  /* Stretches to fill the weight column's full width now that it's on its
+     own line under it, instead of the cramped 28px it got as a 5th
+     inline column. */
+  .set-row .set-bodyweight-btn {
+    height: 22px;
+    width: 100%;
+  }
 }
