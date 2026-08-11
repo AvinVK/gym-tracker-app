@@ -1472,52 +1472,76 @@ button:disabled {
   color: var(--accent-ink);
 }
 
-/* Same grid-template-columns as .set-row below, not an approximation —
-   flexbox with a hand-picked spacer width used to drift out of alignment
-   with the real columns as soon as label text length differed much from
-   "Reps"/"Weight (kg)" (e.g. "Duration (min)"/"Level"). Only 3 of the 5
-   tracks are filled (spacer, col, col); the bw/remove tracks are left
-   empty by simply having no 4th/5th child, which is fine since grid
-   auto-placement still lines the two labels up with reps/weight exactly. */
-.set-columns-label {
+/* Labels live inline on each row now (2nd grid row, above that row's own
+   controls) instead of a single header shared above every row - that
+   shared header only ever worked at desktop widths (it needed its own
+   breakpoint-specific column tracks to stay aligned with the rows below
+   it, which kept drifting out of sync) and couldn't host a per-set
+   control anyway (see the weight/BW toggle below). Building the label
+   into each row's own grid means one definition works at any width and
+   can never drift out of alignment with its own row. */
+.set-row {
   display: grid;
-  grid-template-columns: 48px 1fr 1fr 30px 24px;
+  grid-template-columns: 44px 1fr 1fr 26px;
+  grid-template-areas:
+    ".   lab1   lab2   ."
+    "num field1 field2 remove";
   gap: 8px;
-  margin-bottom: 4px;
-  font-size: 10.5px;
+  row-gap: 3px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.set-row.has-extra {
+  grid-template-columns: 44px 1fr 1fr 1fr 26px;
+  grid-template-areas:
+    ".   lab1   lab2   lab3   ."
+    "num field1 field2 field3 remove";
+}
+.set-row-label {
+  grid-area: lab1;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .03em;
   color: var(--muted);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.set-columns-label-col { text-align: center; }
-/* Cardio sets (Duration/Level) have no BW toggle, so they don't get the
-   5th (bw) track - 4 columns, same as before that track existed. */
-.set-columns-label.is-cardio { grid-template-columns: 48px 1fr 1fr 24px; }
-/* One extra field (e.g. Inclination) some exercises have alongside
-   Reps/Weight or Duration/Level - same grid-template-columns as
-   .set-row.has-extra below, for the same alignment reason as above. */
-.set-columns-label.has-extra { grid-template-columns: 48px 1fr 1fr 1fr 30px; }
-
-/* Reps and weight are two equal-width, structurally identical steppers
-   (-, input, +) - BW used to live inside the weight stepper as a 4th
-   flex child, which made that pill both wider than reps' AND internally
-   different (3 buttons' worth of chrome vs. 2), so the two never looked
-   like a matching pair no matter how the ratio was tuned. Giving BW its
-   own grid column fixes both at once instead of re-tuning the ratio
-   again. */
-.set-row {
-  display: grid;
-  grid-template-columns: 48px 1fr 1fr 30px 24px;
-  gap: 8px;
+.set-row-label-2 { grid-area: lab2; }
+.set-row-label-3 { grid-area: lab3; }
+/* The weight column's label doubles as the weight/bodyweight switch -
+   plain underlined text, not a filled button, per design direction (a
+   pill button here read as one more filled box competing with the
+   stepper right below it). */
+.weight-mode-toggle {
+  display: flex;
   align-items: center;
-  margin-bottom: 7px;
+  justify-content: center;
+  gap: 8px;
 }
-/* Cardio sets (Duration/Level) have no BW toggle - drop the 5th (bw)
-   track so their remove button doesn't drift off an unused gap. */
-.set-row.is-cardio { grid-template-columns: 48px 1fr 1fr 24px; }
-.set-row.has-extra { grid-template-columns: 48px 1fr 1fr 1fr 30px; }
+.weight-mode-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  color: var(--muted-2);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color .15s ease;
+}
+.weight-mode-btn.active {
+  color: var(--accent-purple);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .set-row .set-number {
+  grid-area: num;
   font-size: 11.5px;
   font-weight: 700;
   color: var(--accent-purple);
@@ -1543,6 +1567,7 @@ button:disabled {
   box-shadow: 0 0 0 4px var(--accent-glow);
 }
 .set-row .set-remove {
+  grid-area: remove;
   background: var(--danger-tint);
   border: none;
   color: var(--danger);
@@ -1556,6 +1581,9 @@ button:disabled {
   transition: background .15s ease;
 }
 .set-row .set-remove:hover { background: var(--danger-tint-hover); }
+.set-row .stepper-reps, .set-row .stepper-duration { grid-area: field1; }
+.set-row .stepper-weight, .set-row .stepper-level, .set-row .set-speed-field { grid-area: field2; }
+.set-row .set-extra-field { grid-area: field3; }
 
 .stepper {
   display: flex;
@@ -1584,30 +1612,6 @@ button:disabled {
 }
 .stepper .stepper-btn:hover { background: #333333; }
 .stepper .stepper-btn:active { transform: scale(.93); }
-/* Toggle, not an increment/decrement button - sets weight straight to 0 for
-   bodyweight-only exercises instead of clicking minus repeatedly. Its own
-   grid column (not a flex child inside .stepper-weight) so the weight
-   stepper stays structurally identical to the reps stepper - same 2
-   buttons + input, same width. */
-.set-bodyweight-btn {
-  height: 34px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: var(--border);
-  color: var(--accent-purple);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: .01em;
-  padding: 0;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background .15s ease, color .15s ease;
-}
-.set-bodyweight-btn:hover { background: #333333; }
-.set-bodyweight-btn.active {
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  color: var(--accent-ink);
-}
 /* Two classes' worth of specificity is deliberate — this needs to beat
    ".grid-form input" (which sets its own border/padding/background) since
    steppers live inside .grid-form both here and in the exercise blocks. */
@@ -1908,50 +1912,22 @@ button:disabled {
     font-size: 16px;
   }
 
-  /* Built for the desktop 4-column .set-row grid (spacer + reps + weight +
-     remove) — on the mobile 4-column layout below, "remove" moves up next
-     to weight, throwing off the alignment, so just drop the labels rather
-     than ship a header that visibly doesn't line up with its rows. */
-  .set-columns-label { display: none; }
-
-  /* BW drops to a 2nd line under the weight column instead of sharing the
-     main row - on a narrow phone, giving it a dedicated column left reps/
-     weight too little room for a 2-3 digit decimal (e.g. "17.5") to fit
-     without clipping. */
-  .set-row {
-    grid-template-columns: 40px 1fr 1fr 26px;
+  /* .set-row's own grid (labels baked into each row, see above) already
+     works unchanged at this width - nothing mobile-specific needed here
+     anymore, EXCEPT has-extra: fitting 3 full label+control columns
+     (duration/level/extra) is fine on a wide screen, but the duration and
+     level fields are full buttons with icon+text that don't compress,
+     which crushes the 3rd (extra) column down to nothing on a narrow
+     phone. Drop the extra field - and its label - to its own full-width
+     line below instead of fighting the other two for space. */
+  .set-row.has-extra {
+    grid-template-columns: 44px 1fr 1fr 26px;
     grid-template-areas:
-      "num  reps weight remove"
-      ".    .    bw     .";
+      ".      lab1   lab2   ."
+      "num    field1 field2 remove"
+      "lab3   lab3   lab3   lab3"
+      "field3 field3 field3 field3";
     row-gap: 4px;
   }
-  /* Cardio sets (Duration/Level) have no BW toggle - drop the 5th (bw)
-     track and area so remove doesn't drift off an unused gap. */
-  .set-row.is-cardio {
-    grid-template-columns: 40px 1fr 1fr 26px;
-    grid-template-areas: "num reps weight remove";
-  }
-  /* Exercises with an extra field (e.g. Treadmill Walk's Inclination) don't
-     fit a 3rd number box into the same row on a narrow screen, so it drops
-     to its own full-width row underneath instead. */
-  .set-row.has-extra {
-    grid-template-columns: 40px 1fr 1fr 26px;
-    grid-template-areas:
-      "num reps weight remove"
-      "extra extra extra extra";
-    row-gap: 6px;
-  }
-  .set-row .set-number { grid-area: num; }
-  .set-row .stepper-reps, .set-row .stepper-duration { grid-area: reps; }
-  .set-row .stepper-weight, .set-row .stepper-level, .set-row .set-speed-field { grid-area: weight; }
-  .set-row .set-bodyweight-btn { grid-area: bw; }
-  .set-row .set-remove { grid-area: remove; }
-  .set-row .set-extra-field { grid-area: extra; }
-  /* Stretches to fill the weight column's full width now that it's on its
-     own line under it, instead of the cramped 28px it got as a 5th
-     inline column. */
-  .set-row .set-bodyweight-btn {
-    height: 22px;
-    width: 100%;
-  }
+  .set-row.has-extra .set-row-label-3 { text-align: left; }
 }
