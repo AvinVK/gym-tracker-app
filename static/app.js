@@ -1398,8 +1398,8 @@ function addSetRow(block, { copyLast = false } = {}) {
       <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease weight">&minus;</button>
       <input type="number" step="0.5" class="set-weight stepper-input" placeholder="kg" aria-label="Weight in kg">
       <button type="button" class="stepper-btn stepper-plus" aria-label="Increase weight">+</button>
-      <button type="button" class="set-bodyweight-btn" aria-label="No added weight - bodyweight only">BW</button>
     </div>
+    <button type="button" class="set-bodyweight-btn" aria-label="No added weight - bodyweight only">BW</button>
     ${extraHtml}
     <button type="button" class="set-remove" aria-label="Remove set">&minus;</button>`;
   if (isCardio) {

@@ -1475,18 +1475,13 @@ button:disabled {
 /* Same grid-template-columns as .set-row below, not an approximation —
    flexbox with a hand-picked spacer width used to drift out of alignment
    with the real columns as soon as label text length differed much from
-   "Reps"/"Weight (kg)" (e.g. "Duration (min)"/"Level"). Only 3 of the 4
-   tracks are filled (spacer, col, col); the remove track is left empty by
-   simply having no 4th child, which is fine since grid auto-placement
-   still lines the two labels up with reps/weight exactly. */
-/* Weight's column gets a head start over reps' - the weight stepper packs
-   3 controls (-, input, +, BW) into the same pill reps only needs 2 for
-   (-, input, +), so an even 1fr/1fr split left the weight number squeezed
-   down to a handful of px, effectively invisible. 3fr/5fr keeps the same
-   ratio (not a flat added width) at any screen size. */
+   "Reps"/"Weight (kg)" (e.g. "Duration (min)"/"Level"). Only 3 of the 5
+   tracks are filled (spacer, col, col); the bw/remove tracks are left
+   empty by simply having no 4th/5th child, which is fine since grid
+   auto-placement still lines the two labels up with reps/weight exactly. */
 .set-columns-label {
   display: grid;
-  grid-template-columns: 48px 3fr 5fr 24px;
+  grid-template-columns: 48px 1fr 1fr 30px 24px;
   gap: 8px;
   margin-bottom: 4px;
   font-size: 10.5px;
@@ -1501,9 +1496,16 @@ button:disabled {
    .set-row.has-extra below, for the same alignment reason as above. */
 .set-columns-label.has-extra { grid-template-columns: 48px 1fr 1fr 1fr 30px; }
 
+/* Reps and weight are two equal-width, structurally identical steppers
+   (-, input, +) - BW used to live inside the weight stepper as a 4th
+   flex child, which made that pill both wider than reps' AND internally
+   different (3 buttons' worth of chrome vs. 2), so the two never looked
+   like a matching pair no matter how the ratio was tuned. Giving BW its
+   own grid column fixes both at once instead of re-tuning the ratio
+   again. */
 .set-row {
   display: grid;
-  grid-template-columns: 48px 3fr 5fr 24px;
+  grid-template-columns: 48px 1fr 1fr 30px 24px;
   gap: 8px;
   align-items: center;
   margin-bottom: 7px;
@@ -1577,12 +1579,15 @@ button:disabled {
 .stepper .stepper-btn:hover { background: #333333; }
 .stepper .stepper-btn:active { transform: scale(.93); }
 /* Toggle, not an increment/decrement button - sets weight straight to 0 for
-   bodyweight-only exercises instead of clicking minus repeatedly. */
+   bodyweight-only exercises instead of clicking minus repeatedly. Its own
+   grid column (not a flex child inside .stepper-weight) so the weight
+   stepper stays structurally identical to the reps stepper - same 2
+   buttons + input, same width. */
 .set-bodyweight-btn {
-  flex: 0 0 27px;
+  height: 34px;
   border: none;
-  border-left: 1.5px solid var(--border);
-  background: #333333;
+  border-radius: var(--radius-sm);
+  background: var(--border);
   color: var(--accent-purple);
   font-size: 9px;
   font-weight: 700;
@@ -1592,7 +1597,7 @@ button:disabled {
   font-family: inherit;
   transition: background .15s ease, color .15s ease;
 }
-.set-bodyweight-btn:hover { background: #3d3d3d; }
+.set-bodyweight-btn:hover { background: #333333; }
 .set-bodyweight-btn.active {
   background: linear-gradient(90deg, var(--accent), var(--accent-2));
   color: var(--accent-ink);
@@ -1618,12 +1623,6 @@ button:disabled {
   border: none;
   background: none;
   box-shadow: none;
-}
-/* The one number in a set row people scan for hardest - a size bump keeps
-   it legible at the narrow width the BW toggle otherwise leaves it. */
-.set-row .stepper-weight .set-weight {
-  font-size: 16px;
-  font-weight: 700;
 }
 .stepper-input::placeholder { color: var(--muted-2); }
 /* Hide the native up/down arrows — the stepper's own +/- buttons replace them. */
@@ -1910,13 +1909,14 @@ button:disabled {
   .set-columns-label { display: none; }
 
   .set-row {
-    grid-template-columns: 40px 3fr 5fr 26px;
-    grid-template-areas: "num reps weight remove";
+    grid-template-columns: 40px 1fr 1fr 28px 26px;
+    grid-template-areas: "num reps weight bw remove";
   }
   /* Exercises with an extra field (e.g. Treadmill Walk's Inclination) don't
      fit a 3rd number box into the same row on a narrow screen, so it drops
      to its own full-width row underneath instead. */
   .set-row.has-extra {
+    grid-template-columns: 40px 1fr 1fr 26px;
     grid-template-areas:
       "num reps weight remove"
       "extra extra extra extra";
@@ -1925,6 +1925,7 @@ button:disabled {
   .set-row .set-number { grid-area: num; }
   .set-row .stepper-reps, .set-row .stepper-duration { grid-area: reps; }
   .set-row .stepper-weight, .set-row .stepper-level, .set-row .set-speed-field { grid-area: weight; }
+  .set-row .set-bodyweight-btn { grid-area: bw; }
   .set-row .set-remove { grid-area: remove; }
   .set-row .set-extra-field { grid-area: extra; }
 }
