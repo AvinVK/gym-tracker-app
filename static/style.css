@@ -1485,8 +1485,8 @@ button:disabled {
   display: grid;
   grid-template-columns: 1fr auto 1fr auto;
   grid-template-areas:
-    "lab1   setn field2lab bw"
-    "field1 .    field2    remove";
+    "lab1   setn   field2lab bw"
+    "field1 field1 field2    remove";
   column-gap: 8px;
   row-gap: 4px;
   align-items: center;
@@ -1495,8 +1495,8 @@ button:disabled {
 .set-row.has-extra {
   grid-template-columns: 1fr auto 1fr 1fr 26px;
   grid-template-areas:
-    "lab1   setn field2lab lab3   ."
-    "field1 .    field2    field3 remove";
+    "lab1   setn   field2lab lab3   ."
+    "field1 field1 field2    field3 remove";
 }
 .set-row-label {
   grid-area: lab1;
@@ -1941,10 +1941,10 @@ button:disabled {
   .set-row.has-extra {
     grid-template-columns: 1fr auto 1fr 26px;
     grid-template-areas:
-      "lab1   setn field2lab ."
-      "field1 .    field2    remove"
-      "lab3   lab3 lab3      lab3"
-      "field3 field3 field3  field3";
+      "lab1   setn   field2lab ."
+      "field1 field1 field2    remove"
+      "lab3   lab3   lab3      lab3"
+      "field3 field3 field3    field3";
     row-gap: 4px;
   }
   .set-row.has-extra .set-row-label-3 { text-align: left; }
