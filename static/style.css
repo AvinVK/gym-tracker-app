@@ -1478,30 +1478,27 @@ button:disabled {
    breakpoint-specific column tracks to stay aligned with the rows below
    it, which kept drifting out of sync). Building the label into each
    row's own grid means one definition works at any width and can never
-   drift out of alignment with its own row. Set N and BW both sit on this
-   label line too - Set N centered between the two field labels, BW
-   right-aligned - so neither one costs the steppers below any width. */
-/* The Set N badge's column is split into two equal auto-sized halves
-   (setn spans both) so the reps and weight fields below can each grow
-   into their own half symmetrically - closing the dead gap between them
-   while keeping the badge centered exactly on the boundary between the
-   two fields, not just centered in its own leftover column. */
+   drift out of alignment with its own row. BW sits on this label line,
+   right-aligned. Set N sits a row down instead, on the same line as the
+   fields it labels - leftmost, own dedicated (auto-width) column - so it
+   never costs the reps/weight fields any width the way sharing the label
+   row with BW did. */
 .set-row {
   display: grid;
-  grid-template-columns: 1fr auto auto 1fr auto;
+  grid-template-columns: auto 1fr 1fr auto;
   grid-template-areas:
-    "lab1   setn   setn   field2lab bw"
-    "field1 field1 field2 field2    remove";
+    ".    lab1   field2lab bw"
+    "setn field1 field2    remove";
   column-gap: 8px;
   row-gap: 4px;
   align-items: center;
   margin-bottom: 10px;
 }
 .set-row.has-extra {
-  grid-template-columns: 1fr auto auto 1fr 1fr 26px;
+  grid-template-columns: auto 1fr 1fr 1fr 26px;
   grid-template-areas:
-    "lab1   setn   setn   field2lab lab3   ."
-    "field1 field1 field2 field2    field3 remove";
+    ".    lab1   field2lab lab3   ."
+    "setn field1 field2    field3 remove";
 }
 .set-row-label {
   grid-area: lab1;
@@ -1517,9 +1514,10 @@ button:disabled {
 }
 .set-row-label-2 { grid-area: field2lab; }
 .set-row-label-3 { grid-area: lab3; }
-/* Set N and the BW toggle are styled as a matched pair - same padding,
-   radius, and background - so they read as two small badges on the same
-   line rather than one looking like an afterthought next to the other. */
+/* Set N and the BW toggle share the same small-badge styling (padding,
+   radius, background) even though they no longer sit on the same grid
+   line, so they still read as a matched pair of affordances rather than
+   one looking like an afterthought next to the other. */
 .set-row .set-number, .set-row .set-bodyweight-btn {
   font-size: 10.5px;
   font-weight: 700;
@@ -1944,12 +1942,12 @@ button:disabled {
      phone. Drop the extra field - and its label - to its own full-width
      line below instead of fighting the other two for space. */
   .set-row.has-extra {
-    grid-template-columns: 1fr auto auto 1fr 26px;
+    grid-template-columns: auto 1fr 1fr 26px;
     grid-template-areas:
-      "lab1   setn   setn   field2lab ."
-      "field1 field1 field2 field2    remove"
-      "lab3   lab3   lab3   lab3      lab3"
-      "field3 field3 field3 field3    field3";
+      ".    lab1   field2lab ."
+      "setn field1 field2    remove"
+      "lab3 lab3   lab3      lab3"
+      "field3 field3 field3  field3";
     row-gap: 4px;
   }
   .set-row.has-extra .set-row-label-3 { text-align: left; }
