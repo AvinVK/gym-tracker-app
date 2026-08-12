@@ -1481,22 +1481,27 @@ button:disabled {
    drift out of alignment with its own row. Set N and BW both sit on this
    label line too - Set N centered between the two field labels, BW
    right-aligned - so neither one costs the steppers below any width. */
+/* The Set N badge's column is split into two equal auto-sized halves
+   (setn spans both) so the reps and weight fields below can each grow
+   into their own half symmetrically - closing the dead gap between them
+   while keeping the badge centered exactly on the boundary between the
+   two fields, not just centered in its own leftover column. */
 .set-row {
   display: grid;
-  grid-template-columns: 1fr auto 1fr auto;
+  grid-template-columns: 1fr auto auto 1fr auto;
   grid-template-areas:
-    "lab1   setn   field2lab bw"
-    "field1 field1 field2    remove";
+    "lab1   setn   setn   field2lab bw"
+    "field1 field1 field2 field2    remove";
   column-gap: 8px;
   row-gap: 4px;
   align-items: center;
   margin-bottom: 10px;
 }
 .set-row.has-extra {
-  grid-template-columns: 1fr auto 1fr 1fr 26px;
+  grid-template-columns: 1fr auto auto 1fr 1fr 26px;
   grid-template-areas:
-    "lab1   setn   field2lab lab3   ."
-    "field1 field1 field2    field3 remove";
+    "lab1   setn   setn   field2lab lab3   ."
+    "field1 field1 field2 field2    field3 remove";
 }
 .set-row-label {
   grid-area: lab1;
@@ -1939,12 +1944,12 @@ button:disabled {
      phone. Drop the extra field - and its label - to its own full-width
      line below instead of fighting the other two for space. */
   .set-row.has-extra {
-    grid-template-columns: 1fr auto 1fr 26px;
+    grid-template-columns: 1fr auto auto 1fr 26px;
     grid-template-areas:
-      "lab1   setn   field2lab ."
-      "field1 field1 field2    remove"
-      "lab3   lab3   lab3      lab3"
-      "field3 field3 field3    field3";
+      "lab1   setn   setn   field2lab ."
+      "field1 field1 field2 field2    remove"
+      "lab3   lab3   lab3   lab3      lab3"
+      "field3 field3 field3 field3    field3";
     row-gap: 4px;
   }
   .set-row.has-extra .set-row-label-3 { text-align: left; }
