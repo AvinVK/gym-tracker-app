@@ -1502,6 +1502,13 @@ button:disabled {
   align-items: center;
   margin-bottom: 10px;
 }
+/* Being out of grid flow, BW doesn't stretch the label row to fit itself
+   the way a normal grid item would - left to auto sizing, the label row
+   is only as tall as the plain text labels (~11px), shorter than BW
+   (~19px), so BW's bottom edge spilled past it into the field row below.
+   Reserving BW's real height for that row keeps it clear. has-extra rows
+   have no BW, so they're left at their natural auto height. */
+.set-row:not(.has-extra) { grid-template-rows: 20px auto; }
 .set-row.has-extra {
   grid-template-columns: auto 1fr 1fr 1fr 26px;
   grid-template-areas:
