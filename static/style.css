@@ -1482,18 +1482,21 @@ button:disabled {
    right-aligned. Set N sits a row down instead, on the same line as the
    fields it labels - leftmost, own dedicated (auto-width) column - so it
    never costs the reps/weight fields any width the way sharing the label
-   row with BW did. The BW toggle's column is wider than the remove
-   button that shares it (the toggle has a label, remove is just a bare
-   26px square), which used to leave a gap between the weight field and
-   remove on the field row. Splitting that column in two - BW spans both
-   halves same as always, weight now spans the near half too - lets the
-   weight field grow into exactly the width remove doesn't need. */
+   row with BW did. BW is pulled out of the grid entirely (absolutely
+   positioned in the top-right corner) rather than sharing a column with
+   remove - remove is a bare 26px square, far narrower than BW's
+   labelled toggle, and splitting that shared column only let the field
+   next to it (weight) claim the leftover, growing it lopsidedly bigger
+   than reps. With BW out of the way, the last real column only has to
+   fit remove, so reps and weight - both still plain 1fr - grow into
+   that reclaimed width equally and stay the same size as each other. */
 .set-row {
   display: grid;
-  grid-template-columns: auto 1fr 1fr auto auto;
+  position: relative;
+  grid-template-columns: auto 1fr 1fr auto;
   grid-template-areas:
-    ".    lab1   field2lab bw     bw"
-    "setn field1 field2    field2 remove";
+    ".    lab1   field2lab ."
+    "setn field1 field2    remove";
   column-gap: 8px;
   row-gap: 4px;
   align-items: center;
@@ -1518,6 +1521,12 @@ button:disabled {
   text-overflow: ellipsis;
 }
 .set-row-label-2 { grid-area: field2lab; }
+/* BW is absolutely positioned (see .set-bodyweight-btn below), so unlike
+   every other grid item it reserves no column of its own - nothing stops
+   the Weight label's text from running under it and getting ellipsized.
+   has-extra rows have no BW toggle, so only the plain (strength) row
+   needs this clearance. */
+.set-row:not(.has-extra) .set-row-label-2 { padding-right: 32px; }
 .set-row-label-3 { grid-area: lab3; }
 /* Set N and the BW toggle share the same small-badge styling (padding,
    radius, background) even though they no longer sit on the same grid
@@ -1537,7 +1546,9 @@ button:disabled {
   text-align: center;
 }
 .set-row .set-bodyweight-btn {
-  grid-area: bw;
+  position: absolute;
+  top: 0;
+  right: 0;
   display: flex;
   align-items: center;
   gap: 6px;
