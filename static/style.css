@@ -1482,13 +1482,18 @@ button:disabled {
    right-aligned. Set N sits a row down instead, on the same line as the
    fields it labels - leftmost, own dedicated (auto-width) column - so it
    never costs the reps/weight fields any width the way sharing the label
-   row with BW did. */
+   row with BW did. The BW toggle's column is wider than the remove
+   button that shares it (the toggle has a label, remove is just a bare
+   26px square), which used to leave a gap between the weight field and
+   remove on the field row. Splitting that column in two - BW spans both
+   halves same as always, weight now spans the near half too - lets the
+   weight field grow into exactly the width remove doesn't need. */
 .set-row {
   display: grid;
-  grid-template-columns: auto 1fr 1fr auto;
+  grid-template-columns: auto 1fr 1fr auto auto;
   grid-template-areas:
-    ".    lab1   field2lab bw"
-    "setn field1 field2    remove";
+    ".    lab1   field2lab bw     bw"
+    "setn field1 field2    field2 remove";
   column-gap: 8px;
   row-gap: 4px;
   align-items: center;
