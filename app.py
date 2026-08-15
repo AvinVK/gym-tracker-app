@@ -306,6 +306,52 @@ def exercises_by_muscle(muscle):
     return jsonify([_exercise_plan_dict(r) for r in rows])
 
 
+@app.route("/api/exercise-plan", methods=["POST"])
+def create_exercise_plan():
+    _, err = require_login()
+    if err:
+        return err
+    data = request.get_json(force=True)
+    target_muscle = (data.get("target_muscle") or "").strip()
+    exercise = (data.get("exercise") or "").strip()
+    if not target_muscle or not exercise:
+        return jsonify({"error": "target_muscle and exercise are required"}), 400
+    ex_type = "cardio" if target_muscle == "Cardio" else "strength"
+    db = get_db()
+    cur = db.execute(
+        "INSERT INTO exercise_plan (target_muscle, exercise, type, curated) VALUES (?, ?, ?, 1)",
+        (target_muscle, exercise, ex_type),
+    )
+    db.commit()
+    return jsonify({"id": cur.lastrowid}), 201
+
+
+@app.route("/api/exercise-plan/<int:plan_id>", methods=["PUT"])
+def update_exercise_plan(plan_id):
+    _, err = require_login()
+    if err:
+        return err
+    data = request.get_json(force=True)
+    exercise = (data.get("exercise") or "").strip()
+    if not exercise:
+        return jsonify({"error": "exercise name is required"}), 400
+    db = get_db()
+    db.execute("UPDATE exercise_plan SET exercise = ? WHERE id = ?", (exercise, plan_id))
+    db.commit()
+    return jsonify({"id": plan_id})
+
+
+@app.route("/api/exercise-plan/<int:plan_id>", methods=["DELETE"])
+def delete_exercise_plan(plan_id):
+    _, err = require_login()
+    if err:
+        return err
+    db = get_db()
+    db.execute("DELETE FROM exercise_plan WHERE id = ?", (plan_id,))
+    db.commit()
+    return "", 204
+
+
 # ---------------------------------------------------------------
 # Workout Log API
 # ---------------------------------------------------------------
