@@ -33,6 +33,21 @@ def api_headers(token: str) -> dict:
     return {"Authorization": f"Token {token}"}
 
 
+def parse_json(resp: requests.Response, context: str) -> dict:
+    try:
+        return resp.json()
+    except ValueError:
+        print(f"FAILURE: {context} did not return JSON (status {resp.status_code}).")
+        print(f"Content-Type: {resp.headers.get('Content-Type')}")
+        print("This usually means the account/API base URL is wrong, e.g. the account")
+        print("lives on the EU cluster (eu.pythonanywhere.com) but API_BASE points at")
+        print("www.pythonanywhere.com, or the token is invalid and PA served a login page.")
+        print("---- response body (first 500 chars) ----")
+        print(resp.text[:500])
+        print("-------------------------------------------")
+        sys.exit(1)
+
+
 def open_console(token: str) -> int:
     print("Opening a bash console on PythonAnywhere...")
     resp = requests.post(
@@ -44,7 +59,7 @@ def open_console(token: str) -> int:
         print(f"FAILURE: could not open console (status {resp.status_code}): {resp.text}")
         sys.exit(1)
 
-    console_id = resp.json().get("id")
+    console_id = parse_json(resp, "opening console").get("id")
     if not console_id:
         print(f"FAILURE: console response missing id: {resp.text}")
         sys.exit(1)
@@ -78,7 +93,7 @@ def read_output(token: str, console_id: int) -> str:
         print(f"FAILURE: could not read console output (status {resp.status_code}): {resp.text}")
         sys.exit(1)
 
-    return resp.json().get("output", "")
+    return parse_json(resp, "reading console output").get("output", "")
 
 
 def check_output_for_errors(output: str) -> None:
