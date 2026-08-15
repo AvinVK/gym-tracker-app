@@ -23,5 +23,5 @@ jobs:
 
       - name: Deploy to PythonAnywhere
         env:
-          PA_API_TOKEN: ${{ secrets.PA_API_TOKEN }}
+          DEPLOY_SECRET: ${{ secrets.DEPLOY_SECRET }}
         run: python scripts/deploy.py
