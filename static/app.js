@@ -22,9 +22,7 @@ const api = {
     if (!r.ok) throw new Error((await r.json()).error || "Request failed");
     return r.json();
   }),
-  del: (url) => fetch(url, { method: "DELETE" }).then(async r => {
-    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "Request failed");
-  }),
+  del: (url) => fetch(url, { method: "DELETE" }),
 };
 
 // ---------------- Modal scroll lock ----------------
@@ -528,8 +526,6 @@ document.querySelectorAll(".main-tab-btn").forEach(btn => {
       renderCycleTab();
     } else if (btn.dataset.maintab === "performance") {
       renderPerformanceTab();
-    } else if (btn.dataset.maintab === "exercises") {
-      loadExerciseManageTab();
     }
   });
 });
@@ -2639,11 +2635,9 @@ function renderEnergyChart(points) {
 // best value and the date it was set, then buckets that exercise into
 // whichever cycle phase that date falls in. An exercise with no PR date
 // falling in a tracked cycle (or logged before cycle tracking was turned
-// on) simply doesn't appear in any bucket. An exercise logged only once,
-// or whose all-time best still sits on its first-ever logged session
-// (multiple sets that day don't count as "beating" each other), is
-// skipped entirely - same "nothing to beat yet" rule as checkForPR's
-// live PR toast, since a lone starting session trivially "wins" its own value.
+// on) simply doesn't appear in any bucket. An exercise logged only once
+// is skipped entirely - same "nothing to beat yet" rule as checkForPR's
+// live PR toast, since a lone data point trivially "wins" its own value.
 function computePRPhaseBreakdown(history) {
   const byExercise = {};
   history.forEach(x => {
@@ -2659,22 +2653,16 @@ function computePRPhaseBreakdown(history) {
     const weightCount = rows.filter(x => x.weight_kg != null).length;
     const durationCount = rows.filter(x => x.duration_minutes != null).length;
     const metricKey = durationCount > weightCount ? "duration_minutes" : "weight_kg";
-    const metricRows = rows.filter(x => x[metricKey] != null);
-    if (metricRows.length < 2) return;
+    const metricCount = metricKey === "weight_kg" ? weightCount : durationCount;
+    if (metricCount < 2) return;
     const unit = metricKey === "weight_kg" ? "kg" : "min";
     let best = null;
-    metricRows.forEach(x => {
+    rows.forEach(x => {
       const v = x[metricKey];
+      if (v == null) return;
       if (!best || v > best.value) best = { value: v, date: x.date };
     });
     if (!best) return;
-
-    // The exercise's first-ever logged session is a baseline, not a PR -
-    // there was nothing earlier to beat. If that baseline is still the
-    // all-time best, it was never actually broken, so it isn't a PR either.
-    const firstDate = metricRows.reduce((min, x) => x.date < min ? x.date : min, metricRows[0].date);
-    if (best.date === firstDate) return;
-
     const phase = cyclePhaseForDate(best.date);
     if (!phase) return;
     byPhase[phase.key].push({ name, unit, value: best.value });
@@ -2685,8 +2673,10 @@ function computePRPhaseBreakdown(history) {
 
 // A horizontal bar per phase (count of exercises whose all-time PR landed
 // in that phase) is the right form for "compare a count across a few
-// categories" - a line chart is for trend over time, not this. Just the
-// count per phase, not which exercises - the bar answers "how many".
+// categories" - a line chart is for trend over time, not this. Bar length
+// is relative to the phase with the most PRs; the exercise names ride
+// along underneath each bar since "how many" alone doesn't answer "which
+// ones" - the actual question being asked.
 function renderPRPhaseBreakdown(history) {
   const byPhase = computePRPhaseBreakdown(history);
   const totalCount = Object.values(byPhase).reduce((sum, arr) => sum + arr.length, 0);
@@ -2705,6 +2695,9 @@ function renderPRPhaseBreakdown(history) {
   contentEl.innerHTML = CYCLE_PHASES.map(p => {
     const items = byPhase[p.key];
     const pct = items.length ? Math.max((items.length / maxCount) * 100, 6) : 2;
+    const names = items.length
+      ? items.map(it => `${it.name} (${it.value} ${it.unit})`).join(", ")
+      : "No PRs yet";
     return `
       <div class="prphase-row">
         <div class="prphase-row-top">
@@ -2714,6 +2707,7 @@ function renderPRPhaseBreakdown(history) {
         <div class="prphase-bar-track">
           <div class="prphase-bar-fill" style="width:${pct}%; background:${p.color};"></div>
         </div>
+        <p class="prphase-exercises">${names}</p>
       </div>`;
   }).join("");
 }
@@ -2813,12 +2807,8 @@ function bindExerciseRowEvents() {
   });
   eBody.querySelectorAll(".del-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
-      try {
-        await api.del(`/api/exercise-log/${btn.dataset.id}`);
-        toast("Deleted");
-      } catch (err) {
-        toast(err.message);
-      }
+      await api.del(`/api/exercise-log/${btn.dataset.id}`);
+      toast("Deleted");
       loadExerciseDetail(currentDetailDate);
     });
   });
@@ -2853,147 +2843,6 @@ function bindExerciseEditRowEvents(id) {
 async function loadExerciseDetail(date) {
   currentExerciseLogs = await api.get(`/api/exercise-log?date=${encodeURIComponent(date)}`);
   renderExerciseTable();
-}
-
-// ---------------- Manage Exercises (exercise_plan CRUD) ----------------
-let exerciseManageList = [];
-
-function exerciseManageThumb(x) {
-  const imgUrl = x.images && x.images[0];
-  return imgUrl ? `<img class="exercise-manage-thumb" src="${imgUrl}" alt="" loading="lazy">` : "";
-}
-
-function exerciseManageRowView(x) {
-  return `
-    <tr data-id="${x.id}">
-      <td data-label="Target Muscle">${x.target_muscle}</td>
-      <td data-label="Exercise">
-        <span class="exercise-manage-name-cell">${exerciseManageThumb(x)}<span>${x.exercise}</span></span>
-      </td>
-      <td class="row-actions">
-        <button class="edit-btn" data-id="${x.id}">Edit</button>
-        <button class="del-btn" data-id="${x.id}">Delete</button>
-      </td>
-    </tr>`;
-}
-
-function exerciseManageRowEdit(x) {
-  return `
-    <tr data-id="${x.id}">
-      <td data-label="Target Muscle">${x.target_muscle}</td>
-      <td data-label="Exercise">
-        <span class="exercise-manage-name-cell">${exerciseManageThumb(x)}<input type="text" class="edit-exercise-name" value="${x.exercise}"></span>
-      </td>
-      <td class="row-actions">
-        <button class="save-btn" data-id="${x.id}">Save</button>
-        <button class="cancel-btn" data-id="${x.id}">Cancel</button>
-      </td>
-    </tr>`;
-}
-
-function renderExerciseManageTable() {
-  const query = document.getElementById("exercise-manage-search").value.trim().toLowerCase();
-  const muscleFilter = document.getElementById("exercise-manage-muscle-filter").value;
-  const visible = exerciseManageList.filter(x => {
-    if (muscleFilter && x.target_muscle !== muscleFilter) return false;
-    if (query && !x.exercise.toLowerCase().includes(query) && !x.target_muscle.toLowerCase().includes(query)) return false;
-    return true;
-  });
-  document.getElementById("exercise-manage-count").textContent =
-    `${visible.length} of ${exerciseManageList.length} exercise${exerciseManageList.length === 1 ? "" : "s"}`;
-  const body = document.querySelector("#table-exercise-manage tbody");
-  body.innerHTML = visible.map(exerciseManageRowView).join("");
-  bindExerciseManageRowEvents();
-}
-
-function bindExerciseManageRowEvents() {
-  const body = document.querySelector("#table-exercise-manage tbody");
-  body.querySelectorAll(".edit-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const x = exerciseManageList.find(item => item.id == btn.dataset.id);
-      btn.closest("tr").outerHTML = exerciseManageRowEdit(x);
-      bindExerciseManageEditRowEvents(x.id);
-    });
-  });
-  body.querySelectorAll(".del-btn").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const x = exerciseManageList.find(item => item.id == btn.dataset.id);
-      if (!(await confirmModal(`Delete "${x.exercise}"? This can't be undone.`, "Yes, Delete"))) return;
-      try {
-        await api.del(`/api/exercise-plan/${btn.dataset.id}`);
-        toast("Deleted");
-      } catch (err) {
-        toast(err.message);
-      }
-      await loadExerciseManageTab();
-    });
-  });
-}
-
-// Tapping a thumbnail enlarges it in place, same affordance as the exercise
-// picker's option list - a second tap (or picking another thumb) shrinks it
-// back. Delegated on the table body so it keeps working after every re-render.
-document.querySelector("#table-exercise-manage tbody").addEventListener("click", (e) => {
-  const thumb = e.target.closest(".exercise-manage-thumb");
-  if (!thumb) return;
-  const wasEnlarged = thumb.classList.contains("enlarged");
-  document.querySelectorAll("#table-exercise-manage .exercise-manage-thumb.enlarged").forEach(t => t.classList.remove("enlarged"));
-  if (!wasEnlarged) thumb.classList.add("enlarged");
-});
-
-function bindExerciseManageEditRowEvents(id) {
-  const row = document.querySelector(`#table-exercise-manage tbody tr[data-id="${id}"]`);
-  row.querySelector(".save-btn").addEventListener("click", async () => {
-    const exercise = row.querySelector(".edit-exercise-name").value.trim();
-    if (!exercise) {
-      toast("Exercise name is required");
-      return;
-    }
-    try {
-      await api.put(`/api/exercise-plan/${id}`, { exercise });
-      toast("Updated");
-      await loadExerciseManageTab();
-    } catch (err) {
-      toast(err.message);
-    }
-  });
-  row.querySelector(".cancel-btn").addEventListener("click", () => {
-    renderExerciseManageTable();
-  });
-}
-
-document.getElementById("exercise-manage-search").addEventListener("input", renderExerciseManageTable);
-document.getElementById("exercise-manage-muscle-filter").addEventListener("change", renderExerciseManageTable);
-
-document.getElementById("form-add-exercise").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const body = Object.fromEntries(fd.entries());
-  try {
-    await api.post("/api/exercise-plan", body);
-    toast("Exercise added");
-    e.target.reset();
-    await loadExerciseManageTab();
-  } catch (err) {
-    toast(err.message);
-  }
-});
-
-async function loadExerciseManageTab() {
-  const muscleFilterEl = document.getElementById("exercise-manage-muscle-filter");
-  const prevFilter = muscleFilterEl.value;
-
-  exerciseManageList = await api.get("/api/exercise-plan");
-  const muscles = await api.get("/api/muscles");
-  document.getElementById("existing-muscles-list").innerHTML =
-    muscles.map(m => `<option value="${m}">`).join("");
-  muscleFilterEl.innerHTML =
-    `<option value="">All Muscles</option>` + muscles.map(m => `<option value="${m}">${m}</option>`).join("");
-  // Restore the previously selected filter if it's still a valid muscle
-  // (an edit/delete/add elsewhere shouldn't silently reset what they were browsing).
-  muscleFilterEl.value = muscles.includes(prevFilter) ? prevFilter : "";
-
-  renderExerciseManageTable();
 }
 
 // ---------------- Draft autosave (survive accidental reloads) ----------------

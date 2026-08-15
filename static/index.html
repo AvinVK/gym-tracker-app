@@ -207,7 +207,6 @@
   <button class="main-tab-btn" data-maintab="diet">Diet</button>
   <button class="main-tab-btn" data-maintab="cycle">Your Cycle</button>
   <button class="main-tab-btn" data-maintab="performance">Your Performance</button>
-  <button class="main-tab-btn" data-maintab="exercises">Manage Exercises</button>
 </nav>
 
 <main>
@@ -466,44 +465,6 @@
       <h2>PRs by Cycle Phase</h2>
       <p class="placeholder-text" id="prphase-empty" hidden>Log a few sets and turn on cycle tracking in your profile to see this breakdown.</p>
       <div id="prphase-content" hidden></div>
-    </div>
-  </section>
-
-  <!-- ================= MANAGE EXERCISES ================= -->
-  <section id="maintab-exercises" class="main-tab-panel">
-    <div class="card">
-      <h2>Add Exercise</h2>
-      <form id="form-add-exercise" class="grid-form">
-        <label>Target Muscle
-          <input type="text" name="target_muscle" id="new-ex-muscle" list="existing-muscles-list" placeholder="e.g. Chest" required>
-          <datalist id="existing-muscles-list"></datalist>
-        </label>
-        <label>Exercise Name
-          <input type="text" name="exercise" id="new-ex-name" placeholder="e.g. Incline Dumbbell Press" required>
-        </label>
-        <button type="submit" class="primary">Add Exercise</button>
-      </form>
-    </div>
-
-    <div class="card">
-      <div class="card-title-row">
-        <h2>Manage Exercises</h2>
-        <span class="placeholder-text" id="exercise-manage-count"></span>
-      </div>
-      <div class="exercise-manage-toolbar">
-        <input type="text" class="option-picker-search" id="exercise-manage-search" placeholder="Search exercises or muscle groups...">
-        <select class="exercise-manage-filter" id="exercise-manage-muscle-filter">
-          <option value="">All Muscles</option>
-        </select>
-      </div>
-      <div class="table-scroll">
-        <table class="data-table" id="table-exercise-manage">
-          <thead>
-            <tr><th>Target Muscle</th><th>Exercise</th><th></th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
     </div>
   </section>
 
