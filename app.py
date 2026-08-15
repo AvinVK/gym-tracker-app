@@ -85,8 +85,8 @@ DEPLOY_WSGI_FILE = "/var/www/avin0406_pythonanywhere_com_wsgi.py"
 
 @app.route("/deploy", methods=["POST"])
 def deploy():
-    expected = os.environ.get("DEPLOY_SECRET")
-    provided = request.headers.get("X-Deploy-Secret", "")
+    expected = (os.environ.get("DEPLOY_SECRET") or "").strip()
+    provided = request.headers.get("X-Deploy-Secret", "").strip()
     if not expected or not secrets.compare_digest(provided, expected):
         return jsonify({"error": "forbidden"}), 403
 
