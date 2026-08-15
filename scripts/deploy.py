@@ -16,7 +16,7 @@ DEPLOY_URL = "https://avin0406.pythonanywhere.com/deploy"
 
 
 def get_secret() -> str:
-    secret = os.environ.get("DEPLOY_SECRET")
+    secret = (os.environ.get("DEPLOY_SECRET") or "").strip()
     if not secret:
         print("FAILURE: DEPLOY_SECRET environment variable is not set.")
         sys.exit(1)
