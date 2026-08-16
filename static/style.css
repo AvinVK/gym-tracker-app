@@ -552,6 +552,9 @@ main { max-width: 880px; margin: 0 auto; padding: 20px 16px 48px; }
   stroke-linecap: round;
 }
 .perf-chart .perf-dot-ring { fill: var(--card); }
+/* Dashed so it reads as "modified" rather than another solid highlight
+   ring like perf-dot-ring's current-value/PR markers. */
+.perf-chart .perf-edited-ring { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 2 2; }
 .perf-chart .perf-value-label {
   fill: var(--ink);
   font-size: 12px;
@@ -587,6 +590,8 @@ main { max-width: 880px; margin: 0 auto; padding: 20px 16px 48px; }
 }
 .perf-tooltip-value { font-weight: 700; }
 .perf-tooltip-date { color: var(--muted); font-size: 11px; }
+.perf-tooltip-edited { color: var(--accent-dark); font-size: 11px; font-weight: 700; }
+.perf-tooltip-edited-prev { color: var(--muted); font-size: 11px; }
 /* Unlike the PR chart's short "34 min" tooltip, this one can carry a full
    meal description - let it wrap instead of running off-screen as one
    long nowrap line. */
@@ -783,21 +788,12 @@ main { max-width: 880px; margin: 0 auto; padding: 20px 16px 48px; }
   gap: 16px;
   margin-bottom: 20px;
 }
-.profile-avatar, .profile-avatar-placeholder {
+.profile-avatar {
   width: 72px;
   height: 72px;
   border-radius: 50%;
   flex-shrink: 0;
-}
-.profile-avatar { object-fit: cover; }
-.profile-avatar-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: var(--accent-ink);
-  font-size: 26px;
-  font-weight: 700;
+  object-fit: cover;
 }
 .profile-upload-btn {
   grid-column: unset;
@@ -1473,14 +1469,6 @@ button:disabled {
   color: var(--accent-ink);
 }
 
-.edit-level-speed-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.edit-level-speed-cell .edit-level-mode-toggle { flex-shrink: 0; }
-.edit-level-speed-cell .edit-level { width: 70px; }
 
 /* Labels live inline on each row now (2nd grid row, above that row's own
    controls) instead of a single header shared above every row - that
@@ -1717,6 +1705,17 @@ button:disabled {
    layout's `justify-content: space-between` (label vs. value) doesn't
    split the dot away from the date it belongs to. */
 .date-with-phase { display: inline-flex; align-items: center; }
+/* Same reasoning one level up - date-with-phase plus the optional Edited
+   badge need to act as one flex item from the <td>'s point of view too,
+   with the badge free to wrap onto its own line under the date rather
+   than fight the label for space on narrow screens. */
+.date-with-phase-wrap {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px 8px;
+}
 .phase-legend {
   display: flex;
   flex-wrap: wrap;
@@ -1923,6 +1922,150 @@ button:disabled {
   .data-table input, .data-table select { text-align: right; font-size: 16px; }
 }
 
+/* ---------------- Exercise detail list (History day drill-down) ----------------
+   Sets grouped by Muscle Group + Exercise (see groupExerciseLogs in app.js) -
+   one card per exercise instead of repeating Muscle Group/Exercise on every
+   set, and one compact line per set instead of a labeled row per field. Card
+   look mirrors .exercise-block from the logging form for consistency. */
+.exercise-detail-group {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 6px 14px;
+  margin-bottom: 14px;
+  background: #1a1a1a;
+}
+.exercise-detail-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 0;
+}
+.exercise-detail-group-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-purple);
+}
+.exercise-detail-group-actions { flex-shrink: 0; white-space: nowrap; }
+.exercise-detail-group-actions .edit-btn,
+.exercise-detail-group-actions .del-btn {
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 6px;
+  padding: 4px 8px;
+  border: none;
+  background: none;
+  transition: background .15s ease;
+}
+.exercise-detail-group-actions .edit-btn { color: var(--accent-dark); margin-right: 4px; }
+.exercise-detail-group-actions .edit-btn:hover { background: var(--surface-2); }
+.exercise-detail-group-actions .del-btn { color: var(--danger); }
+.exercise-detail-group-actions .del-btn:hover { background: var(--danger-tint); }
+.edited-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  color: var(--muted);
+  background: var(--surface-3);
+  padding: 2px 8px;
+  border-radius: 10px;
+  vertical-align: middle;
+}
+/* One per muscle group that hit an all-time PR that day (see
+   computePRDaysByDate) - same accent color as the PR chart's own "PR: ..."
+   marker label, so it reads as the same concept wherever it shows up. */
+.pr-day-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  color: var(--accent-ink);
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  padding: 2px 8px;
+  border-radius: 10px;
+  vertical-align: middle;
+}
+.exercise-set-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+}
+/* The Edited badge (see exerciseSetRowView) sits right after the set
+   summary ("16 reps · 40 kg"), on the same line as the rest of the row -
+   it only wraps to its own line when the row's flex-wrap actually runs out
+   of room (e.g. a long "was ..." previous-value diff on a narrow phone). */
+.exercise-set-row .edited-badge { flex-shrink: 0; }
+.edited-badge.added-tag { color: var(--success); }
+.edited-badge.deleted-tag { color: var(--danger); }
+/* A soft-deleted set (see exerciseSetDeletedRowView/saveGroupEdit) - shown
+   struck through and muted so it still reads as historical context, not an
+   active, editable set like the rows above it. */
+.exercise-set-row-deleted { opacity: .65; }
+.exercise-set-row-deleted .exercise-set-number { background: none; border: 1px solid var(--border); color: var(--muted); }
+.exercise-set-row-deleted .deleted-summary { text-decoration: line-through; text-decoration-color: var(--danger); }
+.exercise-set-number {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--accent-purple);
+  background: var(--surface-3);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+.exercise-set-summary {
+  /* Sized to its own content (not flex-grow) so the Edited badge sits
+     snug right after it instead of being pushed off to the far right. */
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  overflow-wrap: break-word;
+}
+
+/* Save/Cancel bar under a group's editor (see startGroupEdit in app.js) -
+   the only remaining user of .exercise-set-actions now that Edit/Delete
+   moved to the group header (.exercise-detail-group-actions above). */
+.exercise-set-actions.group-edit-save-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.exercise-set-actions .save-btn,
+.exercise-set-actions .cancel-btn {
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 6px;
+  padding: 4px 8px;
+  border: none;
+  transition: background .15s ease;
+}
+.exercise-set-actions .save-btn {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: var(--accent-ink);
+  padding: 6px 12px;
+}
+.exercise-set-actions .cancel-btn { background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); padding: 6px 12px; }
+.exercise-set-actions .cancel-btn:hover { background: var(--surface-3); }
+
+/* The exercise block used to edit a group (see startGroupEdit) is the same
+   .exercise-block from the Log Workout form, built detached into a holder
+   inside .exercise-detail-group - its own collapse chevron/title/✕ Remove
+   header is redundant there (the group's own header above already shows
+   the exercise name, and Save/Cancel replace it while editing). */
+.group-edit-mode > .exercise-block-header { display: none; }
+/* .exercise-block normally draws its own card (border/padding/background) -
+   redundant here since .exercise-detail-group already is one, so it'd
+   otherwise look like a card nested inside a card. */
+.exercise-block.group-edit-mode {
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: none;
+}
+
 /* ---------------- Toast ---------------- */
 .toast {
   position: fixed;
@@ -1952,20 +2095,28 @@ button:disabled {
 @media (max-width: 480px) {
   .grid-form { grid-template-columns: 1fr; }
   main { padding: 16px 12px 40px; }
+  /* Taken out of absolute positioning (used on wider screens, where there's
+     enough horizontal room for it to just float over the title) and put in
+     a flex row with the logo instead - same line, greeting on the right,
+     with the tagline forced onto its own full-width line below via
+     flex-wrap + flex-basis. DOM order is greeting-then-h1-then-tagline, so
+     `order` is what actually puts the logo first visually. */
+  .topbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    row-gap: 4px;
+  }
+  .topbar h1 { order: 1; min-width: 0; }
   .user-menu {
     position: relative;
     top: auto;
     right: auto;
-    display: inline-block;
-    margin-bottom: 10px;
+    order: 2;
+    flex-shrink: 0;
   }
-  /* .user-menu now sits at the left edge of the header instead of the
-     right, so the dropdown (wider than the greeting pill) must grow
-     rightward from here, not leftward off the edge of the screen. */
-  .user-menu-dropdown {
-    right: auto;
-    left: 0;
-  }
+  .topbar-sub { order: 3; flex-basis: 100%; }
 
   /* Prevent iOS Safari from zooming in when a field is focused. */
   .grid-form input, .grid-form select,

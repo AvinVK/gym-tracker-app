@@ -357,18 +357,11 @@ document.getElementById("user-greeting-btn").addEventListener("click", (e) => {
 
 document.addEventListener("click", () => { userMenuDropdown.hidden = true; });
 
+// Falls back to the default illustration (not a per-user placeholder) for
+// anyone who hasn't uploaded their own picture yet.
 function renderProfileAvatar() {
   const img = document.getElementById("profile-avatar-img");
-  const placeholder = document.getElementById("profile-avatar-placeholder");
-  if (currentUser && currentUser.avatar) {
-    img.src = currentUser.avatar;
-    img.hidden = false;
-    placeholder.hidden = true;
-  } else {
-    img.hidden = true;
-    placeholder.hidden = false;
-    placeholder.textContent = currentUser && currentUser.name ? currentUser.name[0].toUpperCase() : "?";
-  }
+  img.src = (currentUser && currentUser.avatar) || "default-avatar.png";
 }
 
 function showProfile() {
@@ -993,20 +986,24 @@ function renumberSets(block) {
 
 function initStepper(container) {
   const input = container.querySelector(".stepper-input");
-  const step = parseFloat(container.dataset.step) || 1;
-  const min = container.dataset.min !== undefined ? parseFloat(container.dataset.min) : null;
-  const max = container.dataset.max !== undefined ? parseFloat(container.dataset.max) : null;
-  function adjust(delta) {
+  // Reads step/min/max from the dataset fresh on every click rather than
+  // capturing them once - the exercise-log edit row's Level/Speed stepper
+  // swaps its dataset when the Level/Speed toggle is flipped (different
+  // units, different range), and this same function backs that stepper too.
+  function adjust(sign) {
+    const step = parseFloat(container.dataset.step) || 1;
+    const min = container.dataset.min !== undefined ? parseFloat(container.dataset.min) : null;
+    const max = container.dataset.max !== undefined ? parseFloat(container.dataset.max) : null;
     let val = parseFloat(input.value);
     if (isNaN(val)) val = 0;
-    val = Math.round((val + delta) * 100) / 100;
+    val = Math.round((val + sign * step) * 100) / 100;
     if (min != null && val < min) val = min;
     if (max != null && val > max) val = max;
     input.value = val;
     input.dispatchEvent(new Event("input", { bubbles: true }));
   }
-  container.querySelector(".stepper-minus").addEventListener("click", () => adjust(-step));
-  container.querySelector(".stepper-plus").addEventListener("click", () => adjust(step));
+  container.querySelector(".stepper-minus").addEventListener("click", () => adjust(-1));
+  container.querySelector(".stepper-plus").addEventListener("click", () => adjust(1));
 }
 
 // ---------------- PR (personal record) detection ----------------
@@ -1608,7 +1605,12 @@ async function onBlockMuscleChange(block) {
   applyLevelMode(block, "level");
 }
 
-function addExerciseBlock() {
+// container defaults to the Log Workout form's own exercise list, but the
+// History detail view's group editor (see startGroupEdit) builds a
+// detached block into its own holder instead - every side effect below
+// that assumes "the" block list means exercisesContainer is guarded so
+// that usage doesn't touch the real Log Workout form/draft at all.
+function addExerciseBlock(container = exercisesContainer) {
   const block = document.createElement("div");
   block.className = "exercise-block grid-form";
   block.__exerciseTypes = {};
@@ -1692,21 +1694,27 @@ function addExerciseBlock() {
     else collapseExerciseBlock(block);
   });
 
-  // Adding a new exercise means you're done with the earlier ones for now -
-  // collapse them down to a summary bar so the form doesn't just keep
-  // growing. A no-op on the very first block (nothing in the container
-  // yet). Also runs during draft restore's addExerciseBlock() loop, which
-  // is what leaves only the last restored exercise expanded.
-  exercisesContainer.querySelectorAll(".exercise-block").forEach(collapseExerciseBlock);
-  exercisesContainer.appendChild(block);
-  renumberExerciseBlocks();
+  if (container === exercisesContainer) {
+    // Adding a new exercise means you're done with the earlier ones for now
+    // - collapse them down to a summary bar so the form doesn't just keep
+    // growing. A no-op on the very first block (nothing in the container
+    // yet). Also runs during draft restore's addExerciseBlock() loop, which
+    // is what leaves only the last restored exercise expanded.
+    exercisesContainer.querySelectorAll(".exercise-block").forEach(collapseExerciseBlock);
+  }
+  container.appendChild(block);
+  if (container === exercisesContainer) {
+    renumberExerciseBlocks();
+  }
 
   // Most workouts train one muscle group across several exercises in a
   // row, so default a freshly-added block to whatever the previous one
   // has picked — setOptionFieldValue's change event also loads that
   // muscle's exercises into the dropdown below. Left alone during draft
-  // restoration, which sets each block's own saved value explicitly.
-  if (!restoringDraft) {
+  // restoration, which sets each block's own saved value explicitly, and
+  // during a detached (non-exercisesContainer) build, which always
+  // prefills its own muscle/exercise explicitly right after creation.
+  if (!restoringDraft && container === exercisesContainer) {
     const blocks = exercisesContainer.querySelectorAll(".exercise-block");
     const prevBlock = blocks[blocks.length - 2];
     const prevMuscle = prevBlock && prevBlock.querySelector(".ex-muscle").value;
@@ -1720,6 +1728,15 @@ function addExerciseBlock() {
 
 document.getElementById("exlog-add-exercise").addEventListener("click", addExerciseBlock);
 addExerciseBlock();
+
+// weight_kg=0 is the bodyweight sentinel (see the BW toggle in addSetRow,
+// which sets the input's value to the string "0") - `parseFloat(...) ||
+// null` would collapse that back to null since 0 is falsy in JS, silently
+// losing the "explicitly bodyweight" signal and making it indistinguishable
+// from "no weight entered". Only a truly empty input means null.
+function parseWeightKg(str) {
+  return str === "" ? null : parseFloat(str);
+}
 
 document.getElementById("form-exercise-log").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -1741,7 +1758,7 @@ document.getElementById("form-exercise-log").addEventListener("submit", async (e
             : { intensity_level: parseInt(row.querySelector(".set-level").value, 10) || null }),
         } : {
           reps: parseInt(row.querySelector(".set-reps").value, 10) || null,
-          weight_kg: parseFloat(row.querySelector(".set-weight").value) || null,
+          weight_kg: parseWeightKg(row.querySelector(".set-weight").value),
         };
         if (extraField) {
           const v = parseFloat(row.querySelector(".set-extra").value);
@@ -1825,9 +1842,19 @@ function formatWeekRangeLabel(page) {
   return page === 0 ? `This Week (${fmt(start)} – ${fmt(end)})` : `${fmt(start)} – ${fmt(end)}`;
 }
 
-function showWorkoutLog() {
+// Re-fetches rather than reusing whatever was already rendered - editing a
+// set from the detail view cascades an edited_at onto its parent
+// workout_log row (see update_exercise_log in app.py), and simply toggling
+// visibility back to the already-rendered table would leave that badge
+// (and any other edit made while in the detail view) stale until a full
+// page reload.
+async function showWorkoutLog() {
   cardExerciseDetail.hidden = true;
   cardWorkoutLog.hidden = false;
+  const [workouts, history] = await Promise.all([api.get("/api/workout-log"), getExerciseHistory()]);
+  currentWorkouts = workouts;
+  currentPRDaysByDate = computePRDaysByDate(history);
+  renderWorkoutTable();
 }
 
 async function showExerciseDetail(date) {
@@ -1841,6 +1868,52 @@ async function showExerciseDetail(date) {
 document.getElementById("exercise-detail-back").addEventListener("click", showWorkoutLog);
 
 // ---- Workout log table ----
+
+// Which day(s) hold an all-time PR, per muscle group - same "PR" definition
+// used everywhere else in the app (see checkForPR/computePRPhaseBreakdown):
+// the day's best set for an exercise counts as a PR only if it beats every
+// STRICTLY EARLIER day's best for that same exercise (so an exercise's very
+// first time logged is never itself a PR - nothing to beat yet - and a tie
+// doesn't re-mark a later day, only the day the record was first reached).
+// Returns Map<date, Set<muscle_group>> so a day with PRs in more than one
+// muscle group (e.g. Chest and Legs the same day) can show a tag for each.
+function computePRDaysByDate(history) {
+  const byExercise = new Map();
+  history.forEach(x => {
+    if (!byExercise.has(x.exercise)) byExercise.set(x.exercise, { muscle_group: x.muscle_group, rows: [] });
+    byExercise.get(x.exercise).rows.push(x);
+  });
+
+  const prDaysByDate = new Map();
+  byExercise.forEach(({ muscle_group, rows }) => {
+    const weightCount = rows.filter(x => x.weight_kg != null).length;
+    const durationCount = rows.filter(x => x.duration_minutes != null).length;
+    const metricKey = durationCount > weightCount ? "duration_minutes" : "weight_kg";
+
+    const byDate = {};
+    rows.forEach(x => {
+      const v = x[metricKey];
+      if (v == null) return;
+      if (!byDate[x.date] || v > byDate[x.date]) byDate[x.date] = v;
+    });
+
+    let runningMax = null;
+    Object.keys(byDate).sort().forEach(date => {
+      const v = byDate[date];
+      if (runningMax != null && v > runningMax) {
+        if (!prDaysByDate.has(date)) prDaysByDate.set(date, new Set());
+        prDaysByDate.get(date).add(muscle_group);
+      }
+      if (runningMax == null || v > runningMax) runningMax = v;
+    });
+  });
+  return prDaysByDate;
+}
+
+// Populated by showWorkoutLog() alongside currentWorkouts - workoutRowView
+// reads from it to tag a day's Date cell with e.g. "CHEST PR".
+let currentPRDaysByDate = new Map();
+
 function energyFieldHtml(cls, value) {
   const info = energyLevelInfo(value);
   return `
@@ -1860,9 +1933,14 @@ function formatMuscles(muscles) {
 function workoutRowView(w) {
   const phase = cyclePhaseForDate(w.date);
   const dot = phase ? `<span class="phase-dot" style="background:${phase.color}" title="${phase.label}"></span>` : "";
+  const editedBadge = w.edited_at ? `<span class="edited-badge">Edited ${formatEditedAt(w.edited_at)}</span>` : "";
+  const prMuscles = currentPRDaysByDate.get(w.date);
+  const prTags = prMuscles
+    ? [...prMuscles].map(m => `<span class="pr-day-tag">${m}-PR</span>`).join("")
+    : "";
   return `
     <tr class="clickable-row" data-date="${w.date}" data-id="${w.id}">
-      <td data-label="Date"><span class="date-with-phase">${dot}${w.date}</span></td><td data-label="Muscles Targeted">${formatMuscles(w.muscles)}</td><td data-label="Energy Level">${w.energy_level ?? ""}</td><td data-label="Notes">${w.notes || ""}</td>
+      <td data-label="Date"><span class="date-with-phase-wrap"><span class="date-with-phase">${dot}${w.date}</span>${prTags}${editedBadge}</span></td><td data-label="Muscles Targeted">${formatMuscles(w.muscles)}</td><td data-label="Energy Level">${w.energy_level ?? ""}</td><td data-label="Notes">${w.notes || ""}</td>
       <td class="row-actions">
         <button class="edit-btn" data-id="${w.id}">Edit</button>
       </td>
@@ -1997,11 +2075,9 @@ function bindWorkoutEditRowEvents(id) {
 }
 
 async function loadHistory() {
-  showWorkoutLog();
   historyPage = 0;
   historyPhaseFilter = null;
-  currentWorkouts = await api.get("/api/workout-log");
-  renderWorkoutTable();
+  await showWorkoutLog();
 }
 
 // ---- Your Performance tab: PR progression chart ----
@@ -2201,12 +2277,28 @@ function computeExerciseSeries(history, exerciseName) {
   const unit = metricKey === "weight_kg" ? "kg" : "min";
 
   const byDate = {};
+  // Latest edited_at among whichever of that date's sets were edited (not
+  // just the one that happened to set byDate's max value) - a date's point
+  // represents the whole day's sets for this exercise, so any edit to any
+  // of them counts. editedPrevByDate rides along with it - the previous
+  // value of that same (latest-edited) set's metric, for the tooltip's
+  // "was ..." line (see showTooltip).
+  const editedAtByDate = {};
+  const editedPrevByDate = {};
   rows.forEach(x => {
+    if (x.edited_at && (!editedAtByDate[x.date] || x.edited_at > editedAtByDate[x.date])) {
+      editedAtByDate[x.date] = x.edited_at;
+      editedPrevByDate[x.date] = x.previous_values ? x.previous_values[metricKey] : null;
+    }
     const v = x[metricKey];
     if (v == null) return;
     if (!byDate[x.date] || v > byDate[x.date]) byDate[x.date] = v;
   });
-  const points = Object.keys(byDate).sort().map(date => ({ date, value: byDate[date] }));
+  const points = Object.keys(byDate).sort().map(date => ({
+    date, value: byDate[date],
+    editedAt: editedAtByDate[date] || null,
+    editedPrev: editedAtByDate[date] ? (editedPrevByDate[date] ?? null) : null,
+  }));
   return { unit, points };
 }
 
@@ -2240,6 +2332,14 @@ function computeYAxis(values) {
 
 function formatPerfDate(dateStr) {
   return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+// exercise_log.edited_at is stamped server-side via SQLite's datetime('now'),
+// a "YYYY-MM-DD HH:MM:SS" UTC string - append "Z" so Date parses it as UTC
+// and converts to the viewer's local time instead of misreading it as local.
+function formatEditedAt(sqlUtcString) {
+  const d = new Date(sqlUtcString.replace(" ", "T") + "Z");
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 // Color for a single point's date, reusing the same CYCLE_PHASES colors as
@@ -2326,6 +2426,14 @@ function renderPerformanceChart(series) {
     svg.appendChild(svgEl("circle", { cx: xFor(i), cy: yFor(p.value), r: 3, fill: segColors[i] }));
   });
 
+  // Dashed ring on every point with an edit behind it (any of that date's
+  // sets), distinct from drawMarker's solid current-value/PR rings below -
+  // this can land on any point, not just those two special ones.
+  points.forEach((p, i) => {
+    if (!p.editedAt) return;
+    svg.appendChild(svgEl("circle", { class: "perf-edited-ring", cx: xFor(i), cy: yFor(p.value), r: 6 }));
+  });
+
   // Direct-label only the two moments that matter - current value and the
   // all-time PR (same point when she's currently at her peak) - never a
   // number on every dot.
@@ -2373,6 +2481,18 @@ function renderPerformanceChart(series) {
     dateEl.textContent = phase ? `${formatPerfDate(p.date)} — ${phase.label}` : formatPerfDate(p.date);
     tooltip.appendChild(valueEl);
     tooltip.appendChild(dateEl);
+    if (p.editedAt) {
+      const editedEl = document.createElement("div");
+      editedEl.className = "perf-tooltip-edited";
+      editedEl.textContent = `Edited ${formatEditedAt(p.editedAt)}`;
+      tooltip.appendChild(editedEl);
+      if (p.editedPrev != null) {
+        const prevEl = document.createElement("div");
+        prevEl.className = "perf-tooltip-edited-prev";
+        prevEl.textContent = `was ${p.editedPrev} ${unit}`;
+        tooltip.appendChild(prevEl);
+      }
+    }
     const wrapRect = wrap.getBoundingClientRect();
     tooltip.style.left = `${clientX - wrapRect.left}px`;
     tooltip.style.top = `${clientY - wrapRect.top - 12}px`;
@@ -2673,147 +2793,300 @@ function levelSpeedDisplay(x) {
   return parts.join(" / ");
 }
 
-function exerciseRowView(x) {
-  return `
-    <tr data-id="${x.id}">
-      <td data-label="Muscle Group">${x.muscle_group}</td><td data-label="Exercise">${x.exercise}</td>
-      <td data-label="Set #">${x.set_number ?? ""}</td><td data-label="Reps">${x.reps ?? ""}</td><td data-label="Weight (kg)">${x.weight_kg ?? ""}</td>
-      <td data-label="Duration (min)">${x.duration_minutes ?? ""}</td><td data-label="Level / Speed">${levelSpeedDisplay(x)}</td>
-      <td data-label="Notes">${x.notes || ""}</td>
-      <td class="row-actions">
-        <button class="edit-btn" data-id="${x.id}">Edit</button>
-        <button class="del-btn" data-id="${x.id}">Delete</button>
-      </td>
-    </tr>`;
+// Consecutive-or-not sets sharing the same Muscle Group + Exercise get
+// grouped into one card, so that pair only needs to be shown once instead
+// of repeated on every set - preserves first-seen group order and each
+// group's original (API) set order.
+function groupExerciseLogs(logs) {
+  const groups = [];
+  const byKey = new Map();
+  for (const x of logs) {
+    const key = `${x.muscle_group} ${x.exercise}`;
+    let group = byKey.get(key);
+    if (!group) {
+      group = { muscle_group: x.muscle_group, exercise: x.exercise, sets: [] };
+      byKey.set(key, group);
+      groups.push(group);
+    }
+    group.sets.push(x);
+  }
+  return groups;
 }
 
-function exerciseRowEdit(x) {
-  // Treadmill/Cycling/Cross Trainer (see EXERCISE_EXTRA_FIELDS) track Level
-  // and Speed at once, not as alternatives - there's nothing to toggle, so
-  // just show Level as a plain field. Speed itself isn't editable from this
-  // table (same as any other extra field, e.g. the old Inclination one -
-  // see the untouched carriedExtras handling in bindExerciseEditRowEvents).
-  const speedIsExtra = EXERCISE_EXTRA_FIELDS[x.exercise] === CARDIO_SPEED_FIELD;
-  // Defaults to Level when the row has neither (a fresh strength-type row
-  // being retyped as cardio) - same default as a brand new cardio block.
-  const levelMode = x.speed_kmh != null && x.intensity_level == null ? "speed" : "level";
-  const levelValue = levelMode === "speed" ? x.speed_kmh : x.intensity_level;
-  const levelSpeedCellHtml = speedIsExtra ? `
-    <input type="number" step="1" class="edit-level" value="${x.intensity_level ?? ""}">` : `
-    <div class="edit-level-speed-cell">
-      <div class="set-level-mode-toggle edit-level-mode-toggle" role="group" aria-label="Level or speed">
-        <button type="button" class="set-level-mode-btn${levelMode === "level" ? " active" : ""}" data-mode="level">Level</button>
-        <button type="button" class="set-level-mode-btn${levelMode === "speed" ? " active" : ""}" data-mode="speed">Speed</button>
-      </div>
-      <input type="number" step="0.5" class="edit-level" value="${levelValue ?? ""}">
-    </div>`;
+// One line per set instead of a label per field - joins whichever of
+// reps/weight/duration/level-speed/notes actually apply to this set.
+function exerciseSetSummary(x) {
+  const parts = [];
+  if (x.reps != null) parts.push(`${x.reps} reps`);
+  // weight_kg === 0 is the bodyweight sentinel (see the BW toggle in
+  // addSetRow) - a real, meaningful value, not "no weight recorded", so it
+  // gets its own label instead of printing the confusing "0 kg".
+  if (x.weight_kg != null) parts.push(x.weight_kg === 0 ? "BW" : `${x.weight_kg} kg`);
+  if (x.duration_minutes != null) parts.push(`${x.duration_minutes} min`);
+  const ls = levelSpeedDisplay(x);
+  if (ls) parts.push(ls);
+  if (x.notes) parts.push(x.notes);
+  return parts.join(" · ") || "—";
+}
+
+function exerciseSetRowView(x) {
+  // previous_values is only present once a row has actually been edited at
+  // least once since this snapshot mechanism shipped - older edits (or a
+  // never-edited set) just get the plain "Edited <when>" badge with no
+  // "was ..." detail rather than a misleading blank one.
+  const prevSummary = x.previous_values ? exerciseSetSummary(x.previous_values) : null;
+  // A set added later (via the group editor's +Add Set, see
+  // startGroupEdit/saveGroupEdit) gets an "Added" tag instead of "Edited" -
+  // if it's since also been edited, Edited (with its "was ..." diff) is the
+  // more relevant/recent info, so it takes priority rather than showing both.
+  const badge = x.edited_at
+    ? `<span class="edited-badge">Edited ${formatEditedAt(x.edited_at)}${prevSummary ? ` · was ${prevSummary}` : ""}</span>`
+    : (x.added_at ? `<span class="edited-badge added-tag">Added ${formatEditedAt(x.added_at)}</span>` : "");
   return `
-    <tr data-id="${x.id}" data-level-mode="${levelMode}">
-      <td data-label="Muscle Group"><input type="text" class="edit-muscle" value="${x.muscle_group}"></td>
-      <td data-label="Exercise"><input type="text" class="edit-exercise" value="${x.exercise}"></td>
-      <td data-label="Set #"><input type="number" class="edit-set" value="${x.set_number ?? ""}"></td>
-      <td data-label="Reps"><input type="number" class="edit-reps" value="${x.reps ?? ""}"></td>
-      <td data-label="Weight (kg)"><input type="number" step="0.5" class="edit-weight" value="${x.weight_kg ?? ""}"></td>
-      <td data-label="Duration (min)"><input type="number" class="edit-duration" value="${x.duration_minutes ?? ""}"></td>
-      <td data-label="Level / Speed">${levelSpeedCellHtml}</td>
-      <td data-label="Notes"><input type="text" class="edit-notes" value="${x.notes || ""}"></td>
-      <td class="row-actions">
-        <button class="save-btn" data-id="${x.id}">Save</button>
-        <button class="cancel-btn" data-id="${x.id}">Cancel</button>
-      </td>
-    </tr>`;
+    <div class="exercise-set-row" data-id="${x.id}">
+      <span class="exercise-set-number">Set ${x.set_number ?? ""}</span>
+      <span class="exercise-set-summary">${exerciseSetSummary(x)}</span>
+      ${badge}
+    </div>`;
+}
+
+// A set removed via the group editor (see saveGroupEdit) is soft-deleted,
+// not actually gone from the API response (see include_deleted=1 in
+// loadExerciseDetail) - shown as its own line, struck through, instead of
+// disappearing without a trace.
+function exerciseSetDeletedRowView(x) {
+  return `
+    <div class="exercise-set-row exercise-set-row-deleted" data-id="${x.id}">
+      <span class="exercise-set-number">Set ${x.set_number ?? ""}</span>
+      <span class="exercise-set-summary deleted-summary">${exerciseSetSummary(x)}</span>
+      <span class="edited-badge deleted-tag">Deleted ${formatEditedAt(x.deleted_at)}</span>
+    </div>`;
+}
+
+// One Edit/Delete pair per exercise group (not per set, see startGroupEdit/
+// the group-del-btn handler in bindExerciseRowEvents) - reuses the same
+// .edit-btn/.del-btn classes/styling the old per-set buttons used.
+function exerciseGroupView(group) {
+  const activeSets = group.sets.filter(s => !s.deleted_at);
+  const deletedSets = group.sets.filter(s => s.deleted_at);
+  return `
+    <div class="exercise-detail-group">
+      <div class="exercise-detail-group-header">
+        <span class="exercise-detail-group-title">${group.muscle_group} — ${group.exercise}</span>
+        <span class="exercise-detail-group-actions">
+          <button type="button" class="edit-btn group-edit-btn">Edit</button>
+          <button type="button" class="del-btn group-del-btn">Delete</button>
+        </span>
+      </div>
+      <div class="exercise-detail-group-body">${activeSets.map(exerciseSetRowView).join("")}${deletedSets.map(exerciseSetDeletedRowView).join("")}</div>
+    </div>`;
 }
 
 function renderExerciseTable() {
-  const eBody = document.querySelector("#table-exercise-log tbody");
-  eBody.innerHTML = currentExerciseLogs.map(exerciseRowView).join("");
-  bindExerciseRowEvents();
+  const groups = groupExerciseLogs(currentExerciseLogs);
+  document.getElementById("exercise-detail-list").innerHTML = groups.map(exerciseGroupView).join("");
+  bindExerciseRowEvents(groups);
 }
 
-function bindExerciseRowEvents() {
-  const eBody = document.querySelector("#table-exercise-log tbody");
-  eBody.querySelectorAll(".edit-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const x = currentExerciseLogs.find(item => item.id == btn.dataset.id);
-      btn.closest("tr").outerHTML = exerciseRowEdit(x);
-      bindExerciseEditRowEvents(x);
-    });
-  });
-  eBody.querySelectorAll(".del-btn").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      await api.del(`/api/exercise-log/${btn.dataset.id}`);
+function bindExerciseRowEvents(groups) {
+  const list = document.getElementById("exercise-detail-list");
+  list.querySelectorAll(".exercise-detail-group").forEach((groupEl, i) => {
+    const group = groups[i];
+    groupEl.querySelector(".group-edit-btn").addEventListener("click", () => startGroupEdit(groupEl, group));
+    groupEl.querySelector(".group-del-btn").addEventListener("click", async () => {
+      const ok = await confirmModal(`Delete all sets logged for ${group.muscle_group} – ${group.exercise} on ${currentDetailDate}?`, "Yes, Delete");
+      if (!ok) return;
+      await Promise.all(group.sets.map(s => api.del(`/api/exercise-log/${s.id}`)));
+      exerciseHistoryCache = null; // stale after this delete - Your Performance re-fetches next time it's opened
       toast("Deleted");
       loadExerciseDetail(currentDetailDate);
     });
   });
 }
 
-// Columns the edit row has its own input for - everything else on the
-// original record (id/user_id/date aside) is a rare exercise-specific extra
-// like inclination_percent, and needs to be carried forward on save or it's
-// silently dropped (the backend rebuilds extra_attributes from scratch out
-// of whatever the PUT body contains, see update_exercise_log in app.py).
-const EXERCISE_LOG_EDITABLE_FIELDS = new Set([
-  "id", "user_id", "date", "muscle_group", "exercise", "set_number",
-  "reps", "weight_kg", "duration_minutes", "intensity_level", "notes",
-]);
+// Swaps an exercise group's card into the exact same block used to log
+// exercises in the first place (see addExerciseBlock/addSetRow) - built
+// into a detached holder instead of the real Log Workout form, and
+// prefilled from this group's existing sets rather than starting blank.
+async function startGroupEdit(groupEl, group) {
+  groupEl.innerHTML = `
+    <div class="group-edit-holder"></div>
+    <div class="exercise-set-actions group-edit-save-actions">
+      <button type="button" class="save-btn">Save</button>
+      <button type="button" class="cancel-btn">Cancel</button>
+    </div>`;
+  const holder = groupEl.querySelector(".group-edit-holder");
+  const block = addExerciseBlock(holder);
+  // Hides the block's own header (collapse chevron/title/✕ Remove) via CSS
+  // - this group's own header above already shows the exercise name, and
+  // Save/Cancel (not a per-exercise remove-block button) is what belongs here.
+  block.classList.add("group-edit-mode");
 
-function bindExerciseEditRowEvents(x) {
-  const row = document.querySelector(`#table-exercise-log tbody tr[data-id="${x.id}"]`);
-  const speedIsExtra = EXERCISE_EXTRA_FIELDS[x.exercise] === CARDIO_SPEED_FIELD;
+  // Set the muscle field directly and await onBlockMuscleChange ourselves
+  // (rather than relying on its fire-and-forget change-listener call) so
+  // the exercise dropdown + block.__exerciseTypes are populated before
+  // picking the exercise below.
+  const muscleField = block.querySelector(".ex-muscle-field");
+  block.querySelector(".ex-muscle").value = group.muscle_group;
+  muscleField.querySelector(".option-field-value").textContent = group.muscle_group;
+  muscleField.querySelector(".option-field-value").classList.remove("placeholder");
+  await onBlockMuscleChange(block);
+  setOptionFieldValue(block.querySelector(".ex-exercise-field"), group.exercise);
+
+  // The exercise-change listener just guessed a default Level/Speed mode -
+  // override it with what this group's sets actually use. Skipped for
+  // Treadmill/Cycling/Cross Trainer, where Level and Speed are both always
+  // captured at once (see EXERCISE_EXTRA_FIELDS) rather than being a choice.
+  // Deleted sets (see exerciseGroupView/the "you deleted this set" line)
+  // aren't editable - only ever prefill from what's still active.
+  const activeSets = group.sets.filter(s => !s.deleted_at);
+
+  const speedIsExtra = EXERCISE_EXTRA_FIELDS[group.exercise] === CARDIO_SPEED_FIELD;
   if (!speedIsExtra) {
-    row.querySelectorAll(".edit-level-mode-toggle .set-level-mode-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        row.dataset.levelMode = btn.dataset.mode;
-        row.querySelectorAll(".edit-level-mode-toggle .set-level-mode-btn").forEach(b => b.classList.toggle("active", b === btn));
-      });
-    });
+    applyLevelMode(block, activeSets.some(s => s.speed_kmh != null) ? "speed" : "level");
   }
-  row.querySelector(".save-btn").addEventListener("click", async () => {
-    const levelMode = row.dataset.levelMode || "level";
-    const levelValue = row.querySelector(".edit-level").value;
-    const carriedExtras = Object.fromEntries(
-      Object.entries(x).filter(([k]) => !EXERCISE_LOG_EDITABLE_FIELDS.has(k) && k !== "speed_kmh")
-    );
-    const body = {
-      ...carriedExtras,
-      muscle_group: row.querySelector(".edit-muscle").value,
-      exercise: row.querySelector(".edit-exercise").value,
-      set_number: parseInt(row.querySelector(".edit-set").value, 10) || null,
-      reps: parseInt(row.querySelector(".edit-reps").value, 10) || null,
-      weight_kg: parseFloat(row.querySelector(".edit-weight").value) || null,
-      duration_minutes: parseFloat(row.querySelector(".edit-duration").value) || null,
-      // speedIsExtra exercises (Treadmill, Cycling, Cross Trainer) track
-      // Level and Speed at once - the single input here always edits
-      // Level, and Speed is carried forward untouched (same as any other
-      // extra field, e.g. the old Inclination one, is never editable from
-      // this table). Everything else still has the original exclusive
-      // behavior: switching the toggle and saving explicitly nulls
-      // whichever of Level/Speed *isn't* selected, so flipping modes
-      // actually clears the stale field instead of leaving both set.
-      intensity_level: speedIsExtra
-        ? (parseInt(levelValue, 10) || null)
-        : (levelMode === "level" ? (parseInt(levelValue, 10) || null) : null),
-      speed_kmh: speedIsExtra
-        ? (x.speed_kmh ?? null)
-        : (levelMode === "speed" ? (parseFloat(levelValue) || null) : null),
-      notes: row.querySelector(".edit-notes").value,
-    };
-    try {
-      await api.put(`/api/exercise-log/${x.id}`, body);
-      toast("Updated");
-      loadExerciseDetail(currentDetailDate);
-    } catch (err) {
-      toast(err.message);
+
+  const isCardio = block.dataset.exerciseType === "cardio";
+  activeSets.forEach(s => {
+    const row = addSetRow(block);
+    row.dataset.existingId = s.id;
+    // Setting .value directly (no "input" event dispatch) is deliberate -
+    // addSetRow wires a debounced PR-guard on weight/duration that would
+    // otherwise fire spurious "new PR" prompts while we're just populating
+    // existing data, not entering a new one.
+    if (isCardio) {
+      row.querySelector(".set-duration").value = s.duration_minutes ?? "";
+      const speedInput = row.querySelector(".set-speed");
+      if (speedInput) speedInput.value = s.speed_kmh ?? "";
+      else row.querySelector(".set-level").value = s.intensity_level ?? "";
+    } else {
+      row.querySelector(".set-reps").value = s.reps ?? "";
+      row.querySelector(".set-weight").value = s.weight_kg ?? "";
+      const bwBtn = row.querySelector(".set-bodyweight-btn");
+      if (bwBtn) bwBtn.classList.toggle("active", String(s.weight_kg) === "0");
+    }
+    const extraInput = row.querySelector(".set-extra");
+    if (extraInput) {
+      const extraField = EXERCISE_EXTRA_FIELDS[group.exercise];
+      extraInput.value = (extraField && s[extraField.key] != null) ? s[extraField.key] : "";
     }
   });
-  row.querySelector(".cancel-btn").addEventListener("click", () => {
+  if (block.querySelector(".ex-notes")) {
+    block.querySelector(".ex-notes").value = activeSets[0]?.notes || "";
+  }
+
+  groupEl.querySelector(".group-edit-save-actions .save-btn").addEventListener("click", () => saveGroupEdit(block, group));
+  groupEl.querySelector(".group-edit-save-actions .cancel-btn").addEventListener("click", () => {
     renderExerciseTable();
   });
 }
 
+// Loose per-field comparison - DB values are number|null, form values are
+// parsed number|null too, but this avoids false positives from type
+// mismatches (e.g. "0" vs 0) that would wrongly flag an untouched set as
+// changed (see groupSetChanged/saveGroupEdit).
+function valuesEqual(a, b) {
+  if ((a == null || a === "") && (b == null || b === "")) return true;
+  if (typeof a === "number" || typeof b === "number") return Number(a) === Number(b);
+  return String(a) === String(b);
+}
+
+// Whether a set's about-to-be-saved body actually differs from what it
+// already was - the backend unconditionally stamps edited_at/previous_values
+// on every PUT (see update_exercise_log in app.py), so saving the whole
+// group on every edit (even rows nobody touched) would wrongly mark every
+// set in it "Edited" instead of just the one the user actually changed.
+function groupSetChanged(original, setBody, extraFieldKey) {
+  if ((original.muscle_group || "") !== (setBody.muscle_group || "")) return true;
+  if ((original.exercise || "") !== (setBody.exercise || "")) return true;
+  const keys = ["set_number", "notes", "reps", "weight_kg", "duration_minutes", "intensity_level", "speed_kmh"];
+  if (extraFieldKey && !keys.includes(extraFieldKey)) keys.push(extraFieldKey);
+  return keys.some(key => !valuesEqual(original[key], setBody[key]));
+}
+
+async function saveGroupEdit(block, group) {
+  const isCardio = block.dataset.exerciseType === "cardio";
+  const muscle_group = block.querySelector(".ex-muscle").value;
+  const exercise = block.querySelector(".ex-exercise").value;
+  const notes = block.querySelector(".ex-notes") ? block.querySelector(".ex-notes").value : "";
+  const levelOverride = block.dataset.levelMode === "speed" ? CARDIO_SPEED_FIELD : null;
+  const extraField = isCardio ? EXERCISE_EXTRA_FIELDS[exercise] : null;
+  const rows = [...block.querySelectorAll(".set-row")];
+  if (!muscle_group || !exercise || rows.length === 0) {
+    toast("Pick a muscle group, exercise, and at least one set");
+    return;
+  }
+  // Deleted sets aren't part of this reconciliation at all - they're not
+  // rendered as editable rows (see startGroupEdit), so they can never show
+  // up as "kept" or "removed" here.
+  const activeSets = group.sets.filter(s => !s.deleted_at);
+  const byId = new Map(activeSets.map(s => [String(s.id), s]));
+  const keptIds = new Set();
+  const newSets = [];
+  try {
+    for (const [i, row] of rows.entries()) {
+      const setBody = {
+        muscle_group, exercise, set_number: i + 1, notes: i === 0 ? notes : "",
+        ...(isCardio ? {
+          duration_minutes: parseFloat(row.querySelector(".set-duration").value) || null,
+          ...(levelOverride
+            ? { [levelOverride.key]: parseFloat(row.querySelector(".set-speed").value) || null }
+            : { intensity_level: parseInt(row.querySelector(".set-level").value, 10) || null }),
+        } : {
+          reps: parseInt(row.querySelector(".set-reps").value, 10) || null,
+          weight_kg: parseWeightKg(row.querySelector(".set-weight").value),
+        }),
+      };
+      if (extraField) {
+        const v = parseFloat(row.querySelector(".set-extra").value);
+        setBody[extraField.key] = isNaN(v) ? null : v;
+      }
+      const existingId = row.dataset.existingId;
+      if (existingId) {
+        keptIds.add(existingId);
+        const original = byId.get(existingId);
+        if (original && !groupSetChanged(original, setBody, extraField && extraField.key)) continue;
+        await api.put(`/api/exercise-log/${existingId}`, setBody);
+      } else {
+        newSets.push(setBody);
+      }
+    }
+    if (newSets.length) {
+      // mark_edited - this is a new set added to an already-logged exercise
+      // (startGroupEdit only ever runs on a pre-existing group), not the
+      // day's original entry, so it should cascade to the Workout Log
+      // table's Edited badge the same way a value edit or a removed set does.
+      await api.post("/api/exercise-log", { date: currentDetailDate, exercises: [{ muscle_group, exercise, sets: newSets }], mark_edited: true });
+    }
+    const removedIds = activeSets.map(s => String(s.id)).filter(id => !keptIds.has(id));
+    // soft=1 - keeps the row (marked deleted, hidden everywhere else) so
+    // the group still shows a "you deleted this set" line for it (see
+    // exerciseSetDeletedRowView) instead of vanishing without a trace.
+    await Promise.all(removedIds.map(id => api.del(`/api/exercise-log/${id}?soft=1`)));
+    exerciseHistoryCache = null; // stale after this save - Your Performance re-fetches next time it's opened
+    toast("Updated");
+    loadExerciseDetail(currentDetailDate);
+  } catch (err) {
+    toast(err.message);
+  }
+}
+
+// Callers (save/delete handlers, showExerciseDetail) don't await
+// loadExerciseDetail, so a burst of edits/navigation can have several
+// requests in flight at once - a generation counter (not just comparing
+// dates) is what's needed to only ever apply the most recently *issued*
+// request's result, since two requests for the very same date can still
+// resolve out of order (e.g. two quick edits saved back to back).
+let exerciseDetailRequestId = 0;
+
 async function loadExerciseDetail(date) {
-  currentExerciseLogs = await api.get(`/api/exercise-log?date=${encodeURIComponent(date)}`);
+  const requestId = ++exerciseDetailRequestId;
+  // include_deleted=1 - the only view that needs soft-deleted sets (see
+  // delete_exercise_log/list_exercise_log in app.py) so it can show a
+  // "you deleted this set" line for them (see exerciseGroupView).
+  const logs = await api.get(`/api/exercise-log?date=${encodeURIComponent(date)}&include_deleted=1`);
+  if (requestId !== exerciseDetailRequestId) return;
+  currentExerciseLogs = logs;
   renderExerciseTable();
 }
 

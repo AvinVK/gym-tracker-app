@@ -275,14 +275,7 @@
         <h2 id="exercise-detail-title">Exercises Done</h2>
         <button type="button" class="secondary back-btn" id="exercise-detail-back">&larr; Back</button>
       </div>
-      <div class="table-scroll">
-        <table class="data-table" id="table-exercise-log">
-          <thead>
-            <tr><th>Muscle Group</th><th>Exercise</th><th>Set #</th><th>Reps</th><th>Weight (kg)</th><th>Duration (min)</th><th>Level / Speed</th><th>Notes</th><th></th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <div id="exercise-detail-list"></div>
     </div>
   </section>
   </section>
@@ -444,8 +437,7 @@
         <button type="button" class="secondary back-btn" id="profile-back">&larr; Back</button>
       </div>
       <div class="profile-avatar-row">
-        <img id="profile-avatar-img" class="profile-avatar" src="" alt="Profile picture" hidden>
-        <div id="profile-avatar-placeholder" class="profile-avatar profile-avatar-placeholder"></div>
+        <img id="profile-avatar-img" class="profile-avatar" src="" alt="Profile picture">
         <label class="secondary profile-upload-btn">
           Change Photo
           <input type="file" id="profile-avatar-input" accept="image/*" hidden>
