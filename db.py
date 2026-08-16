@@ -45,7 +45,8 @@ CREATE TABLE IF NOT EXISTS workout_log (
     energy_level INTEGER,
     pre_workout_meal TEXT,
     hours_since_meal REAL,
-    notes TEXT
+    notes TEXT,
+    edited_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS exercise_log (
@@ -60,7 +61,11 @@ CREATE TABLE IF NOT EXISTS exercise_log (
     duration_minutes REAL,
     intensity_level INTEGER,
     extra_attributes TEXT,
-    notes TEXT
+    notes TEXT,
+    edited_at TEXT,
+    previous_values TEXT,
+    added_at TEXT,
+    deleted_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS users (
@@ -153,6 +158,11 @@ def init_db():
     _ensure_column(conn, "exercise_log", "duration_minutes", "REAL")
     _ensure_column(conn, "exercise_log", "intensity_level", "INTEGER")
     _ensure_column(conn, "exercise_log", "extra_attributes", "TEXT")
+    _ensure_column(conn, "exercise_log", "edited_at", "TEXT")
+    _ensure_column(conn, "exercise_log", "previous_values", "TEXT")
+    _ensure_column(conn, "workout_log", "edited_at", "TEXT")
+    _ensure_column(conn, "exercise_log", "added_at", "TEXT")
+    _ensure_column(conn, "exercise_log", "deleted_at", "TEXT")
     _migrate_exercise_log_split_attributes(conn)
     # username retained only for rows created before this column existed;
     # no longer written to by the app (email is the login identifier now).
