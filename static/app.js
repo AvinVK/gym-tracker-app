@@ -785,192 +785,6 @@ function initMealTimingField(container) {
 
 document.querySelectorAll("[data-meal-timing-field]").forEach(initMealTimingField);
 
-// ---------------- Custom "set duration" picker (cardio sets) ----------------
-// Sets are added/removed dynamically (addSetRow), so unlike the pickers above
-// there's no static [data-x-field] to wire up at load time — initSetDurationField
-// is instead called on each new row's field container as it's created.
-const SET_DURATION_MINUTES = Array.from({ length: 121 }, (_, i) => i); // 0 to 120 min
-
-const sdpModal = document.getElementById("set-duration-picker-modal");
-const sdpMinutesCol = document.getElementById("sdp-minutes");
-let sdpActiveContainer = null;
-let sdpSelected = null;
-
-sdpMinutesCol.innerHTML = SET_DURATION_MINUTES
-  .map(m => `<button type="button" class="time-picker-option" data-value="${m}">${m} min</button>`)
-  .join("");
-
-function setSetDurationValue(row, value) {
-  const hidden = row.querySelector(".set-duration");
-  const valueEl = row.querySelector(".set-duration-field-value");
-  const hasValue = value !== "" && value != null;
-  hidden.value = hasValue ? value : "";
-  valueEl.textContent = hasValue ? `${value} min` : "Set duration";
-  valueEl.classList.toggle("placeholder", !hasValue);
-  hidden.dispatchEvent(new Event("input", { bubbles: true }));
-}
-
-function highlightSetDurationSelection() {
-  sdpMinutesCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === String(sdpSelected)));
-}
-
-function jumpToSetDurationOption(value) {
-  const target = (value != null && [...sdpMinutesCol.querySelectorAll(".time-picker-option")].find(b => b.dataset.value === String(value))) || sdpMinutesCol.firstElementChild;
-  if (!target) return;
-  sdpMinutesCol.scrollTop = target.offsetTop - (sdpMinutesCol.clientHeight - target.offsetHeight) / 2;
-}
-
-function centeredSetDurationOption() {
-  const mid = sdpMinutesCol.clientHeight / 2;
-  let closest = null;
-  let closestDist = Infinity;
-  sdpMinutesCol.querySelectorAll(".time-picker-option").forEach(opt => {
-    const dist = Math.abs((opt.offsetTop + opt.offsetHeight / 2) - (sdpMinutesCol.scrollTop + mid));
-    if (dist < closestDist) { closestDist = dist; closest = opt; }
-  });
-  return closest;
-}
-
-let sdpScrollTimer = null;
-sdpMinutesCol.addEventListener("scroll", () => {
-  clearTimeout(sdpScrollTimer);
-  sdpScrollTimer = setTimeout(() => {
-    const opt = centeredSetDurationOption();
-    if (!opt) return;
-    sdpSelected = opt.dataset.value;
-    highlightSetDurationSelection();
-  }, 100);
-});
-
-sdpMinutesCol.addEventListener("click", (e) => {
-  const btn = e.target.closest(".time-picker-option");
-  if (!btn) return;
-  sdpSelected = btn.dataset.value;
-  jumpToSetDurationOption(sdpSelected);
-  highlightSetDurationSelection();
-});
-
-function openSetDurationPicker(row) {
-  sdpActiveContainer = row;
-  const hidden = row.querySelector(".set-duration");
-  sdpSelected = hidden.value !== "" ? hidden.value : "0"; // wheel always centers on something
-  highlightSetDurationSelection();
-  sdpModal.hidden = false;
-  requestAnimationFrame(() => jumpToSetDurationOption(sdpSelected));
-}
-
-function closeSetDurationPicker() {
-  sdpModal.hidden = true;
-  sdpActiveContainer = null;
-}
-
-document.getElementById("sdp-cancel").addEventListener("click", closeSetDurationPicker);
-sdpModal.addEventListener("click", (e) => { if (e.target === sdpModal) closeSetDurationPicker(); });
-document.getElementById("sdp-done").addEventListener("click", async () => {
-  if (!sdpActiveContainer) return;
-  const row = sdpActiveContainer;
-  const newValue = parseFloat(sdpSelected);
-  closeSetDurationPicker(); // close first so the confirm modal isn't stacked on top of it
-  if (!(await guardPrEdit(row, newValue, " min"))) return;
-  setSetDurationValue(row, sdpSelected);
-  const block = row.closest(".exercise-block");
-  checkForPR(block, row, block.querySelector(".ex-exercise").value, true);
-});
-
-function initSetDurationField(container) {
-  const row = container.closest(".set-row");
-  container.querySelector(".set-wheel-field-btn").addEventListener("click", () => openSetDurationPicker(row));
-}
-
-// ---------------- Custom "set intensity level" picker (cardio sets) ----------------
-const SET_LEVELS = Array.from({ length: 10 }, (_, i) => i + 1); // 1 to 10
-
-const slpModal = document.getElementById("set-level-picker-modal");
-const slpLevelsCol = document.getElementById("slp-levels");
-let slpActiveContainer = null;
-let slpSelected = null;
-
-slpLevelsCol.innerHTML = SET_LEVELS
-  .map(n => `<button type="button" class="time-picker-option" data-value="${n}">Level ${n}</button>`)
-  .join("");
-
-function setSetLevelValue(row, value) {
-  const hidden = row.querySelector(".set-level");
-  const valueEl = row.querySelector(".set-level-field-value");
-  const hasValue = value !== "" && value != null;
-  hidden.value = hasValue ? value : "";
-  valueEl.textContent = hasValue ? `Level ${value}` : "Set level";
-  valueEl.classList.toggle("placeholder", !hasValue);
-  hidden.dispatchEvent(new Event("input", { bubbles: true }));
-}
-
-function highlightSetLevelSelection() {
-  slpLevelsCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === String(slpSelected)));
-}
-
-function jumpToSetLevelOption(value) {
-  const target = (value != null && [...slpLevelsCol.querySelectorAll(".time-picker-option")].find(b => b.dataset.value === String(value))) || slpLevelsCol.firstElementChild;
-  if (!target) return;
-  slpLevelsCol.scrollTop = target.offsetTop - (slpLevelsCol.clientHeight - target.offsetHeight) / 2;
-}
-
-function centeredSetLevelOption() {
-  const mid = slpLevelsCol.clientHeight / 2;
-  let closest = null;
-  let closestDist = Infinity;
-  slpLevelsCol.querySelectorAll(".time-picker-option").forEach(opt => {
-    const dist = Math.abs((opt.offsetTop + opt.offsetHeight / 2) - (slpLevelsCol.scrollTop + mid));
-    if (dist < closestDist) { closestDist = dist; closest = opt; }
-  });
-  return closest;
-}
-
-let slpScrollTimer = null;
-slpLevelsCol.addEventListener("scroll", () => {
-  clearTimeout(slpScrollTimer);
-  slpScrollTimer = setTimeout(() => {
-    const opt = centeredSetLevelOption();
-    if (!opt) return;
-    slpSelected = opt.dataset.value;
-    highlightSetLevelSelection();
-  }, 100);
-});
-
-slpLevelsCol.addEventListener("click", (e) => {
-  const btn = e.target.closest(".time-picker-option");
-  if (!btn) return;
-  slpSelected = btn.dataset.value;
-  jumpToSetLevelOption(slpSelected);
-  highlightSetLevelSelection();
-});
-
-function openSetLevelPicker(row) {
-  slpActiveContainer = row;
-  const hidden = row.querySelector(".set-level");
-  slpSelected = hidden.value !== "" ? hidden.value : "5"; // wheel always centers on something
-  highlightSetLevelSelection();
-  slpModal.hidden = false;
-  requestAnimationFrame(() => jumpToSetLevelOption(slpSelected));
-}
-
-function closeSetLevelPicker() {
-  slpModal.hidden = true;
-  slpActiveContainer = null;
-}
-
-document.getElementById("slp-cancel").addEventListener("click", closeSetLevelPicker);
-slpModal.addEventListener("click", (e) => { if (e.target === slpModal) closeSetLevelPicker(); });
-document.getElementById("slp-done").addEventListener("click", () => {
-  if (!slpActiveContainer) return;
-  setSetLevelValue(slpActiveContainer, slpSelected);
-  closeSetLevelPicker();
-});
-
-function initSetLevelField(container) {
-  const row = container.closest(".set-row");
-  container.querySelector(".set-wheel-field-btn").addEventListener("click", () => openSetLevelPicker(row));
-}
-
 // ---------------- Custom option picker (muscle group / exercise dropdowns) ----------------
 const opModal = document.getElementById("option-picker-modal");
 const opTitle = document.getElementById("op-title");
@@ -1151,6 +965,26 @@ function renumberExerciseBlocks() {
   });
 }
 
+// Collapsing a block only hides it (CSS) and fills in a one-line summary -
+// nothing about its actual data changes, so re-expanding always shows
+// exactly what was there before. Collapse state itself isn't persisted
+// (not part of the draft) - it's just "which block are you looking at
+// right now" UI, not data.
+function collapseExerciseBlock(block) {
+  block.classList.add("collapsed");
+  block.querySelector(".exercise-block-summary-btn").setAttribute("aria-expanded", "false");
+  const exerciseName = block.querySelector(".ex-exercise").value;
+  const setCount = block.querySelectorAll(".set-row").length;
+  block.querySelector(".exercise-block-summary").textContent = exerciseName
+    ? `${exerciseName} — ${setCount} set${setCount === 1 ? "" : "s"}`
+    : "Not filled in yet";
+}
+
+function expandExerciseBlock(block) {
+  block.classList.remove("collapsed");
+  block.querySelector(".exercise-block-summary-btn").setAttribute("aria-expanded", "true");
+}
+
 function renumberSets(block) {
   block.querySelectorAll(".set-row").forEach((row, i) => {
     row.querySelector(".set-number").textContent = `Set ${i + 1}`;
@@ -1161,11 +995,13 @@ function initStepper(container) {
   const input = container.querySelector(".stepper-input");
   const step = parseFloat(container.dataset.step) || 1;
   const min = container.dataset.min !== undefined ? parseFloat(container.dataset.min) : null;
+  const max = container.dataset.max !== undefined ? parseFloat(container.dataset.max) : null;
   function adjust(delta) {
     let val = parseFloat(input.value);
     if (isNaN(val)) val = 0;
     val = Math.round((val + delta) * 100) / 100;
     if (min != null && val < min) val = min;
+    if (max != null && val > max) val = max;
     input.value = val;
     input.dispatchEvent(new Event("input", { bubbles: true }));
   }
@@ -1255,20 +1091,18 @@ async function guardPrEdit(row, newValue, unit) {
   return ok;
 }
 
-// Rebuilds the sets list when the currently-selected exercise's Level
-// override (see EXERCISE_LEVEL_OVERRIDES) changes - e.g. Treadmill Walk
-// swaps the generic 1-10 intensity Level for an actual Speed reading, so
-// switching to/from it needs a different 2nd cardio field, not just a
-// different label. Same rebuild-only-when-needed guard as
-// applyExerciseType/applyExtraField. Labels live inline on each row (see
-// addSetRow) and regenerate themselves whenever rows are rebuilt, so there's
-// nothing to separately sync here beyond the rebuild itself.
-function applyLevelOverride(block) {
-  const levelOverride = EXERCISE_LEVEL_OVERRIDES[block.querySelector(".ex-exercise").value];
-  const prevKey = block.dataset.levelOverrideKey || "";
-  const newKey = levelOverride ? levelOverride.key : "";
-  block.dataset.levelOverrideKey = newKey;
-  if (newKey === prevKey) return;
+// Switches a cardio block's 2nd set field between "level" (generic 1-10
+// intensity wheel-picker) and "speed" (plain Speed (km/h) stepper) - the
+// small SPD switch on each set row (see addSetRow) lets the user pick
+// whichever matches what their machine actually shows, for any cardio
+// exercise, not just exercises the app happens to know about. Same
+// rebuild-only-when-needed guard as applyExerciseType/applyExtraField -
+// the switch itself is redrawn fresh by addSetRow on every rebuild, so
+// there's no separate toggle state to sync here.
+function applyLevelMode(block, mode) {
+  const prevMode = block.dataset.levelMode || "level";
+  block.dataset.levelMode = mode;
+  if (mode === prevMode) return;
   const hadSets = block.querySelectorAll(".set-row").length > 0;
   block.querySelector(".ex-sets").innerHTML = "";
   if (hadSets) addSetRow(block);
@@ -1321,44 +1155,55 @@ function addSetRow(block, { copyLast = false } = {}) {
   const lastRow = existingRows[existingRows.length - 1];
   const isCardio = block.dataset.exerciseType === "cardio";
   const exerciseName = block.querySelector(".ex-exercise").value;
-  const levelOverride = EXERCISE_LEVEL_OVERRIDES[exerciseName];
-  const extraField = EXERCISE_EXTRA_FIELDS[exerciseName];
+  const levelOverride = block.dataset.levelMode === "speed" ? CARDIO_SPEED_FIELD : null;
+  // Extra fields (Inclination, Speed-as-extra, ...) are all cardio concepts
+  // - gated on isCardio so switching a block to Reps mode (the Reps/Time
+  // toggle allows overriding type for any exercise, e.g. reps of Burpees)
+  // doesn't keep rendering a stray Speed/Inclination field alongside
+  // Reps+Weight.
+  const extraField = isCardio ? EXERCISE_EXTRA_FIELDS[exerciseName] : null;
+  // Exercises where Speed is the extra field (see EXERCISE_EXTRA_FIELDS)
+  // already show it permanently, so there's nothing left for the Level/
+  // Speed toggle to do - skip rendering it rather than offering a toggle
+  // to a state ("speed" as the 2nd field too) that would just duplicate
+  // the extra field.
+  const speedIsExtra = extraField === CARDIO_SPEED_FIELD;
   const row = document.createElement("div");
   row.className = "set-row" + (extraField ? " has-extra" : "");
   const extraLabelHtml = extraField ? `<span class="set-row-label set-row-label-3">${extraField.label}</span>` : "";
   const extraHtml = extraField ? `
     <div class="stepper set-extra-field" data-step="${extraField.step}" data-min="${extraField.min}">
       <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease ${extraField.label}">&minus;</button>
-      <input type="number" class="set-extra stepper-input" min="${extraField.min}" placeholder="${extraField.placeholder || ""}" aria-label="${extraField.label}">
+      <input type="number" class="set-extra stepper-input" min="${extraField.min}" step="${extraField.step}" placeholder="${extraField.placeholder || ""}" aria-label="${extraField.label}">
       <button type="button" class="stepper-btn stepper-plus" aria-label="Increase ${extraField.label}">+</button>
     </div>` : "";
-  // The 2nd cardio field is normally the generic 1-10 intensity Level
-  // wheel-picker, but some exercises (Treadmill Walk) swap it for a plain
-  // stepper field instead (e.g. actual Speed) via EXERCISE_LEVEL_OVERRIDES.
+  // The 2nd cardio field is the generic 1-10 intensity Level wheel-picker,
+  // or a plain Speed stepper when the block's Level/Speed toggle is set to
+  // Speed (see applyLevelMode).
   const levelHtml = levelOverride ? `
     <div class="stepper set-speed-field" data-step="${levelOverride.step}" data-min="${levelOverride.min}">
       <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease ${levelOverride.label}">&minus;</button>
       <input type="number" class="set-speed stepper-input" min="${levelOverride.min}" step="${levelOverride.step}" placeholder="${levelOverride.placeholder || ""}" aria-label="${levelOverride.label}">
       <button type="button" class="stepper-btn stepper-plus" aria-label="Increase ${levelOverride.label}">+</button>
     </div>` : `
-    <div class="stepper-level set-level-field">
-      <button type="button" class="set-wheel-field-btn" aria-label="Set intensity level">
-        <span class="set-wheel-field-icon" aria-hidden="true">🔥</span>
-        <span class="set-level-field-value set-wheel-field-value placeholder">Set level</span>
-      </button>
-      <input type="hidden" class="set-level">
+    <div class="stepper stepper-level" data-step="1" data-min="1" data-max="10">
+      <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease intensity level">&minus;</button>
+      <input type="number" class="set-level stepper-input" min="1" max="10" step="1" placeholder="0" aria-label="Intensity level, 1 to 10">
+      <button type="button" class="stepper-btn stepper-plus" aria-label="Increase intensity level">+</button>
     </div>`;
   row.innerHTML = isCardio ? `
     <span class="set-row-label set-row-label-1">Duration (min)</span>
     <span class="set-number"></span>
     <span class="set-row-label set-row-label-2">${levelOverride ? levelOverride.label : "Level"}</span>
+    ${speedIsExtra ? "" : `
+    <button type="button" class="set-speed-toggle-btn" aria-label="Track by speed instead of intensity level">
+      <span class="speed-toggle-switch" aria-hidden="true"></span>SPD
+    </button>`}
     ${extraLabelHtml}
-    <div class="stepper-duration set-duration-field">
-      <button type="button" class="set-wheel-field-btn" aria-label="Set duration">
-        <span class="set-wheel-field-icon" aria-hidden="true">⏱️</span>
-        <span class="set-duration-field-value set-wheel-field-value placeholder">Set duration</span>
-      </button>
-      <input type="hidden" class="set-duration">
+    <div class="stepper stepper-duration" data-step="5" data-min="0">
+      <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease duration">&minus;</button>
+      <input type="number" class="set-duration stepper-input" min="0" step="5" placeholder="0" aria-label="Duration in minutes">
+      <button type="button" class="stepper-btn stepper-plus" aria-label="Increase duration">+</button>
     </div>
     ${levelHtml}
     ${extraHtml}
@@ -1382,17 +1227,20 @@ function addSetRow(block, { copyLast = false } = {}) {
     </div>
     ${extraHtml}
     <button type="button" class="set-remove" aria-label="Remove set">&minus;</button>`;
-  if (isCardio) {
-    initSetDurationField(row.querySelector(".set-duration-field"));
-    if (!levelOverride) initSetLevelField(row.querySelector(".set-level-field"));
+  if (isCardio && !speedIsExtra) {
+    const speedToggleBtn = row.querySelector(".set-speed-toggle-btn");
+    speedToggleBtn.classList.toggle("active", !!levelOverride);
+    speedToggleBtn.addEventListener("click", () => {
+      applyLevelMode(block, levelOverride ? "level" : "speed");
+    });
   }
   if (copyLast && lastRow) {
     if (isCardio) {
-      setSetDurationValue(row, lastRow.querySelector(".set-duration")?.value || "");
+      row.querySelector(".set-duration").value = lastRow.querySelector(".set-duration")?.value || "";
       if (levelOverride) {
         row.querySelector(".set-speed").value = lastRow.querySelector(".set-speed")?.value || "";
       } else {
-        setSetLevelValue(row, lastRow.querySelector(".set-level")?.value || "");
+        row.querySelector(".set-level").value = lastRow.querySelector(".set-level")?.value || "";
       }
     } else {
       row.querySelector(".set-reps").value = lastRow.querySelector(".set-reps")?.value || "";
@@ -1431,6 +1279,26 @@ function addSetRow(block, { copyLast = false } = {}) {
           return;
         }
         checkForPR(block, row, block.querySelector(".ex-exercise").value, false);
+      }, 500);
+    });
+  }
+  if (isCardio) {
+    const durationInput = row.querySelector(".set-duration");
+    // Same debounce/guard shape as the weight input above - duration is the
+    // cardio PR metric (see checkForPR), so an edit that would silently
+    // erase a recorded PR needs the same confirmation weight edits get.
+    durationInput.addEventListener("input", () => {
+      clearTimeout(durationInput.__prTimer);
+      durationInput.__prTimer = setTimeout(async () => {
+        const newValue = parseFloat(durationInput.value);
+        if (isNaN(newValue)) return;
+        const proceed = await guardPrEdit(row, newValue, " min");
+        if (!proceed) {
+          durationInput.value = row.dataset.prValue;
+          durationInput.dispatchEvent(new Event("change", { bubbles: true }));
+          return;
+        }
+        checkForPR(block, row, block.querySelector(".ex-exercise").value, true);
       }, 500);
     });
   }
@@ -1569,9 +1437,13 @@ function initVoiceSetButton(block) {
           return;
         }
         const targetRow = addSetRow(block);
-        if (duration != null) setSetDurationValue(targetRow, duration);
-        if (level != null) setSetLevelValue(targetRow, level);
-        const parts = [duration != null ? `${duration} min` : null, level != null ? `level ${level}` : null].filter(Boolean);
+        const useSpeed = block.dataset.levelMode === "speed";
+        if (duration != null) targetRow.querySelector(".set-duration").value = duration;
+        if (level != null) {
+          if (useSpeed) targetRow.querySelector(".set-speed").value = level;
+          else targetRow.querySelector(".set-level").value = level;
+        }
+        const parts = [duration != null ? `${duration} min` : null, level != null ? `${useSpeed ? "speed" : "level"} ${level}` : null].filter(Boolean);
         toast(`Added set: ${parts.join(", ")}`);
         if (duration != null) checkForPR(block, targetRow, block.querySelector(".ex-exercise").value, true);
         return;
@@ -1667,23 +1539,41 @@ function initNoteMicButton(block) {
   });
 }
 
-// One-off fields that only apply to a single exercise (e.g. treadmill
-// incline) - stored in the same per-set `attributes` JSON as everything
-// else instead of a dedicated column (see docs/eav-example.md). Rendered as
-// a 3rd per-set field alongside Reps/Weight or Duration/Level (see
-// addSetRow) so it varies per set just like those do. Add more entries
-// here as new one-off fields come up.
-const EXERCISE_EXTRA_FIELDS = {
-  "Treadmill Walk": { key: "inclination_percent", label: "Inclination (%)", step: 1, min: 0, placeholder: "0" },
-};
+// The 2nd cardio field is either the generic 1-10 intensity "Level"
+// wheel-picker or a plain "Speed (km/h)" stepper - which one is shown is a
+// per-block toggle the user controls directly (see applyLevelMode), not
+// something baked into the exercise. Also stored in the per-set `attributes`
+// JSON, same mechanism as EXERCISE_EXTRA_FIELDS.
+const CARDIO_SPEED_FIELD = { key: "speed_kmh", label: "Speed (km/h)", step: 0.5, min: 0, placeholder: "0" };
 
-// Swaps the generic 1-10 intensity "Level" wheel-picker (the normal 2nd
-// cardio field) for a plain stepper field on exercises where "Level"
-// doesn't make sense - Treadmill Walk cares about actual Speed, not an
-// arbitrary intensity rating. Also stored in the per-set `attributes` JSON,
-// same mechanism as EXERCISE_EXTRA_FIELDS.
-const EXERCISE_LEVEL_OVERRIDES = {
-  "Treadmill Walk": { key: "speed_kmh", label: "Speed (km/h)", step: 0.5, min: 0, placeholder: "0" },
+// Exercises where Speed is the obviously-right starting point (a treadmill
+// has no meaningful "intensity level") - just picks the toggle's initial
+// position when the exercise is selected. The toggle itself is always
+// visible and the user can flip it either way for any cardio exercise.
+// Exercises where Level and Speed both matter at once (see
+// EXERCISE_EXTRA_FIELDS below) aren't in this set - the toggle only exists
+// for the "one or the other" case.
+const CARDIO_SPEED_DEFAULT_EXERCISES = new Set([]);
+
+// One-off fields that only apply to a single exercise - stored in the same
+// per-set `attributes` JSON as everything else instead of a dedicated
+// column (see docs/eav-example.md). Rendered as a 3rd per-set field
+// alongside Reps/Weight or Duration/Level (see addSetRow) so it varies per
+// set just like those do. Add more entries here as new one-off fields come
+// up.
+//
+// Treadmill/Cycling/Cross Trainer point this at CARDIO_SPEED_FIELD (the
+// same object the toggle uses) rather than a one-off field of their own -
+// their consoles show both a resistance/intensity Level *and* an actual
+// Speed, so Speed lives here as the extra field while Level stays the
+// normal 2nd field. Whenever extraField is CARDIO_SPEED_FIELD, addSetRow
+// hides the Level/Speed toggle entirely (see speedIsExtra below) - there's
+// nothing left to toggle since Speed's already shown, and the toggle
+// setting it to "speed" too would show Speed twice on the same row.
+const EXERCISE_EXTRA_FIELDS = {
+  "Treadmill": CARDIO_SPEED_FIELD,
+  "Cycling": CARDIO_SPEED_FIELD,
+  "Cross Trainer": CARDIO_SPEED_FIELD,
 };
 
 async function onBlockMuscleChange(block) {
@@ -1694,7 +1584,7 @@ async function onBlockMuscleChange(block) {
     setOptionFieldOptions(exField, [], { emptyText: "Pick a muscle group first" });
     applyExerciseType(block, "strength");
     applyExtraField(block);
-    applyLevelOverride(block);
+    applyLevelMode(block, "level");
     return;
   }
   const exercises = await api.get(`/api/exercises-by-muscle/${encodeURIComponent(muscle)}`);
@@ -1715,7 +1605,7 @@ async function onBlockMuscleChange(block) {
   // handler below corrects this once a specific exercise is chosen.
   applyExerciseType(block, muscle === "Cardio" ? "cardio" : "strength");
   applyExtraField(block);
-  applyLevelOverride(block);
+  applyLevelMode(block, "level");
 }
 
 function addExerciseBlock() {
@@ -1724,7 +1614,11 @@ function addExerciseBlock() {
   block.__exerciseTypes = {};
   block.innerHTML = `
     <div class="exercise-block-header">
-      <span class="exercise-block-title"></span>
+      <button type="button" class="exercise-block-summary-btn" aria-expanded="true">
+        <span class="exercise-block-chevron" aria-hidden="true">&#9662;</span>
+        <span class="exercise-block-title"></span>
+        <span class="exercise-block-summary"></span>
+      </button>
       <button type="button" class="exercise-remove">✕ Remove</button>
     </div>
     <label>Muscle Group
@@ -1778,7 +1672,7 @@ function addExerciseBlock() {
     const exerciseName = block.querySelector(".ex-exercise").value;
     applyExerciseType(block, (block.__exerciseTypes && block.__exerciseTypes[exerciseName]) || "strength");
     applyExtraField(block);
-    applyLevelOverride(block);
+    applyLevelMode(block, CARDIO_SPEED_DEFAULT_EXERCISES.has(exerciseName) ? "speed" : "level");
   });
   block.querySelector(".add-set").addEventListener("click", () => addSetRow(block));
   block.querySelector(".add-set-same").addEventListener("click", () => addSetRow(block, { copyLast: true }));
@@ -1793,7 +1687,17 @@ function addExerciseBlock() {
     renumberExerciseBlocks();
     saveExerciseDraft();
   });
+  block.querySelector(".exercise-block-summary-btn").addEventListener("click", () => {
+    if (block.classList.contains("collapsed")) expandExerciseBlock(block);
+    else collapseExerciseBlock(block);
+  });
 
+  // Adding a new exercise means you're done with the earlier ones for now -
+  // collapse them down to a summary bar so the form doesn't just keep
+  // growing. A no-op on the very first block (nothing in the container
+  // yet). Also runs during draft restore's addExerciseBlock() loop, which
+  // is what leaves only the last restored exercise expanded.
+  exercisesContainer.querySelectorAll(".exercise-block").forEach(collapseExerciseBlock);
   exercisesContainer.appendChild(block);
   renumberExerciseBlocks();
 
@@ -1823,7 +1727,7 @@ document.getElementById("form-exercise-log").addEventListener("submit", async (e
   const exercises = [...exercisesContainer.querySelectorAll(".exercise-block")].map(block => {
     const isCardio = block.dataset.exerciseType === "cardio";
     const exerciseName = block.querySelector(".ex-exercise").value;
-    const levelOverride = EXERCISE_LEVEL_OVERRIDES[exerciseName];
+    const levelOverride = block.dataset.levelMode === "speed" ? CARDIO_SPEED_FIELD : null;
     const extraField = EXERCISE_EXTRA_FIELDS[exerciseName];
     const notes = block.querySelector(".ex-notes").value;
     return {
@@ -2758,12 +2662,23 @@ document.querySelectorAll("#perf-chart-switcher .chart-switch-btn").forEach(btn 
 });
 
 // ---- Exercise detail table ----
+// A row has either intensity_level or speed_kmh (extra_attributes),
+// never both - see the Level/Speed toggle in the logging form.
+function levelSpeedDisplay(x) {
+  // Treadmill/Cycling/Cross Trainer (see EXERCISE_EXTRA_FIELDS) can have
+  // both set at once - show both rather than just whichever comes first.
+  const parts = [];
+  if (x.intensity_level != null) parts.push(`${x.intensity_level}`);
+  if (x.speed_kmh != null) parts.push(`${x.speed_kmh} km/h`);
+  return parts.join(" / ");
+}
+
 function exerciseRowView(x) {
   return `
     <tr data-id="${x.id}">
       <td data-label="Muscle Group">${x.muscle_group}</td><td data-label="Exercise">${x.exercise}</td>
       <td data-label="Set #">${x.set_number ?? ""}</td><td data-label="Reps">${x.reps ?? ""}</td><td data-label="Weight (kg)">${x.weight_kg ?? ""}</td>
-      <td data-label="Duration (min)">${x.duration_minutes ?? ""}</td><td data-label="Level">${x.intensity_level ?? ""}</td>
+      <td data-label="Duration (min)">${x.duration_minutes ?? ""}</td><td data-label="Level / Speed">${levelSpeedDisplay(x)}</td>
       <td data-label="Notes">${x.notes || ""}</td>
       <td class="row-actions">
         <button class="edit-btn" data-id="${x.id}">Edit</button>
@@ -2773,15 +2688,34 @@ function exerciseRowView(x) {
 }
 
 function exerciseRowEdit(x) {
+  // Treadmill/Cycling/Cross Trainer (see EXERCISE_EXTRA_FIELDS) track Level
+  // and Speed at once, not as alternatives - there's nothing to toggle, so
+  // just show Level as a plain field. Speed itself isn't editable from this
+  // table (same as any other extra field, e.g. the old Inclination one -
+  // see the untouched carriedExtras handling in bindExerciseEditRowEvents).
+  const speedIsExtra = EXERCISE_EXTRA_FIELDS[x.exercise] === CARDIO_SPEED_FIELD;
+  // Defaults to Level when the row has neither (a fresh strength-type row
+  // being retyped as cardio) - same default as a brand new cardio block.
+  const levelMode = x.speed_kmh != null && x.intensity_level == null ? "speed" : "level";
+  const levelValue = levelMode === "speed" ? x.speed_kmh : x.intensity_level;
+  const levelSpeedCellHtml = speedIsExtra ? `
+    <input type="number" step="1" class="edit-level" value="${x.intensity_level ?? ""}">` : `
+    <div class="edit-level-speed-cell">
+      <div class="set-level-mode-toggle edit-level-mode-toggle" role="group" aria-label="Level or speed">
+        <button type="button" class="set-level-mode-btn${levelMode === "level" ? " active" : ""}" data-mode="level">Level</button>
+        <button type="button" class="set-level-mode-btn${levelMode === "speed" ? " active" : ""}" data-mode="speed">Speed</button>
+      </div>
+      <input type="number" step="0.5" class="edit-level" value="${levelValue ?? ""}">
+    </div>`;
   return `
-    <tr data-id="${x.id}">
+    <tr data-id="${x.id}" data-level-mode="${levelMode}">
       <td data-label="Muscle Group"><input type="text" class="edit-muscle" value="${x.muscle_group}"></td>
       <td data-label="Exercise"><input type="text" class="edit-exercise" value="${x.exercise}"></td>
       <td data-label="Set #"><input type="number" class="edit-set" value="${x.set_number ?? ""}"></td>
       <td data-label="Reps"><input type="number" class="edit-reps" value="${x.reps ?? ""}"></td>
       <td data-label="Weight (kg)"><input type="number" step="0.5" class="edit-weight" value="${x.weight_kg ?? ""}"></td>
       <td data-label="Duration (min)"><input type="number" class="edit-duration" value="${x.duration_minutes ?? ""}"></td>
-      <td data-label="Level"><input type="number" class="edit-level" value="${x.intensity_level ?? ""}"></td>
+      <td data-label="Level / Speed">${levelSpeedCellHtml}</td>
       <td data-label="Notes"><input type="text" class="edit-notes" value="${x.notes || ""}"></td>
       <td class="row-actions">
         <button class="save-btn" data-id="${x.id}">Save</button>
@@ -2802,7 +2736,7 @@ function bindExerciseRowEvents() {
     btn.addEventListener("click", () => {
       const x = currentExerciseLogs.find(item => item.id == btn.dataset.id);
       btn.closest("tr").outerHTML = exerciseRowEdit(x);
-      bindExerciseEditRowEvents(x.id);
+      bindExerciseEditRowEvents(x);
     });
   });
   eBody.querySelectorAll(".del-btn").forEach(btn => {
@@ -2814,21 +2748,59 @@ function bindExerciseRowEvents() {
   });
 }
 
-function bindExerciseEditRowEvents(id) {
-  const row = document.querySelector(`#table-exercise-log tbody tr[data-id="${id}"]`);
+// Columns the edit row has its own input for - everything else on the
+// original record (id/user_id/date aside) is a rare exercise-specific extra
+// like inclination_percent, and needs to be carried forward on save or it's
+// silently dropped (the backend rebuilds extra_attributes from scratch out
+// of whatever the PUT body contains, see update_exercise_log in app.py).
+const EXERCISE_LOG_EDITABLE_FIELDS = new Set([
+  "id", "user_id", "date", "muscle_group", "exercise", "set_number",
+  "reps", "weight_kg", "duration_minutes", "intensity_level", "notes",
+]);
+
+function bindExerciseEditRowEvents(x) {
+  const row = document.querySelector(`#table-exercise-log tbody tr[data-id="${x.id}"]`);
+  const speedIsExtra = EXERCISE_EXTRA_FIELDS[x.exercise] === CARDIO_SPEED_FIELD;
+  if (!speedIsExtra) {
+    row.querySelectorAll(".edit-level-mode-toggle .set-level-mode-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        row.dataset.levelMode = btn.dataset.mode;
+        row.querySelectorAll(".edit-level-mode-toggle .set-level-mode-btn").forEach(b => b.classList.toggle("active", b === btn));
+      });
+    });
+  }
   row.querySelector(".save-btn").addEventListener("click", async () => {
+    const levelMode = row.dataset.levelMode || "level";
+    const levelValue = row.querySelector(".edit-level").value;
+    const carriedExtras = Object.fromEntries(
+      Object.entries(x).filter(([k]) => !EXERCISE_LOG_EDITABLE_FIELDS.has(k) && k !== "speed_kmh")
+    );
     const body = {
+      ...carriedExtras,
       muscle_group: row.querySelector(".edit-muscle").value,
       exercise: row.querySelector(".edit-exercise").value,
       set_number: parseInt(row.querySelector(".edit-set").value, 10) || null,
       reps: parseInt(row.querySelector(".edit-reps").value, 10) || null,
       weight_kg: parseFloat(row.querySelector(".edit-weight").value) || null,
       duration_minutes: parseFloat(row.querySelector(".edit-duration").value) || null,
-      intensity_level: parseInt(row.querySelector(".edit-level").value, 10) || null,
+      // speedIsExtra exercises (Treadmill, Cycling, Cross Trainer) track
+      // Level and Speed at once - the single input here always edits
+      // Level, and Speed is carried forward untouched (same as any other
+      // extra field, e.g. the old Inclination one, is never editable from
+      // this table). Everything else still has the original exclusive
+      // behavior: switching the toggle and saving explicitly nulls
+      // whichever of Level/Speed *isn't* selected, so flipping modes
+      // actually clears the stale field instead of leaving both set.
+      intensity_level: speedIsExtra
+        ? (parseInt(levelValue, 10) || null)
+        : (levelMode === "level" ? (parseInt(levelValue, 10) || null) : null),
+      speed_kmh: speedIsExtra
+        ? (x.speed_kmh ?? null)
+        : (levelMode === "speed" ? (parseFloat(levelValue) || null) : null),
       notes: row.querySelector(".edit-notes").value,
     };
     try {
-      await api.put(`/api/exercise-log/${id}`, body);
+      await api.put(`/api/exercise-log/${x.id}`, body);
       toast("Updated");
       loadExerciseDetail(currentDetailDate);
     } catch (err) {
@@ -2873,12 +2845,14 @@ function collectExerciseBlocksDraft() {
       muscle_group: block.querySelector(".ex-muscle").value,
       exercise: block.querySelector(".ex-exercise").value,
       type: block.dataset.exerciseType || "strength",
+      levelMode: block.dataset.levelMode || "level",
       notes: block.querySelector(".ex-notes").value,
       sets: [...block.querySelectorAll(".set-row")].map(row => {
         // levelValue holds whichever the 2nd cardio field currently is
-        // (the generic Level wheel-picker, or a per-exercise override like
-        // Speed) - restoreDraft figures out which one to write back to the
-        // same way, based on what addSetRow actually rendered for it.
+        // (the generic Level wheel-picker, or the Speed stepper when the
+        // block's levelMode is "speed") - restoreDraft figures out which one
+        // to write back to the same way, based on what addSetRow actually
+        // rendered for it.
         const s = isCardio ? {
           duration_minutes: row.querySelector(".set-duration").value,
           levelValue: (row.querySelector(".set-speed") || row.querySelector(".set-level")).value,
@@ -2953,8 +2927,8 @@ async function restoreDraft() {
             setOptionFieldValue(block.querySelector(".ex-exercise-field"), ex.exercise || "");
           }
           block.dataset.exerciseType = ex.type || "strength";
-          block.dataset.levelOverrideKey = (EXERCISE_LEVEL_OVERRIDES[ex.exercise] || {}).key || "";
           updateSetTypeToggle(block);
+          block.dataset.levelMode = ex.levelMode || "level";
           block.dataset.extraFieldKey = (EXERCISE_EXTRA_FIELDS[ex.exercise] || {}).key || "";
           block.querySelector(".ex-notes").value = ex.notes || "";
           const isCardio = block.dataset.exerciseType === "cardio";
@@ -2964,10 +2938,10 @@ async function restoreDraft() {
           const rows = block.querySelectorAll(".set-row");
           sets.forEach((s, i) => {
             if (isCardio) {
-              setSetDurationValue(rows[i], s.duration_minutes || "");
+              rows[i].querySelector(".set-duration").value = s.duration_minutes || "";
               const speedInput = rows[i].querySelector(".set-speed");
               if (speedInput) speedInput.value = s.levelValue || "";
-              else setSetLevelValue(rows[i], s.levelValue || "");
+              else rows[i].querySelector(".set-level").value = s.levelValue || "";
             } else {
               rows[i].querySelector(".set-reps").value = s.reps || "";
               rows[i].querySelector(".set-weight").value = s.weight_kg || "";
