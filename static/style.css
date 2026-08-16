@@ -950,44 +950,7 @@ button:disabled {
 
 .energy-picker-wheel .time-picker-col { width: 100px; }
 .meal-timing-picker-wheel .time-picker-col { width: 180px; }
-.duration-picker-wheel .time-picker-col { width: 140px; }
-.level-picker-wheel .time-picker-col { width: 140px; }
 
-/* ---------------- Set duration / level fields (custom in-app wheel picker,
-   used inside cardio set rows in place of the +/- stepper) ---------------- */
-.set-duration-field, .set-level-field { display: flex; }
-.set-wheel-field-btn {
-  width: 100%;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  font-size: 13.5px;
-  font-weight: 700;
-  font-family: inherit;
-  padding: 9px 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
-  color: var(--ink);
-  cursor: pointer;
-  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
-}
-.set-wheel-field-btn:hover { background: var(--surface-3); }
-.set-wheel-field-btn:focus-visible {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-glow);
-}
-.set-wheel-field-value {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.set-wheel-field-value.placeholder { color: var(--muted-2); }
-.set-wheel-field-icon { font-size: 12px; flex-shrink: 0; }
 .energy-picker-caption {
   text-align: center;
   margin-top: 12px;
@@ -1413,6 +1376,33 @@ button:disabled {
   align-items: center;
   margin-bottom: 6px;
 }
+/* Collapsing just hides everything but the header (see the .collapsed rule
+   below) and fills in .exercise-block-summary - no separate expand/collapse
+   state to keep in sync beyond the class itself, so re-expanding always
+   shows exactly what was there before. */
+.exercise-block.collapsed > label,
+.exercise-block.collapsed > .full {
+  display: none;
+}
+.exercise-block-summary-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+.exercise-block-chevron {
+  color: var(--muted);
+  font-size: 11px;
+  flex-shrink: 0;
+  transition: transform .15s ease;
+}
+.exercise-block.collapsed .exercise-block-chevron { transform: rotate(-90deg); }
 .exercise-block-title {
   font-size: 12.5px;
   font-weight: 700;
@@ -1422,7 +1412,18 @@ button:disabled {
   background: var(--surface-2);
   padding: 4px 10px;
   border-radius: 20px;
+  flex-shrink: 0;
 }
+.exercise-block-summary {
+  display: none;
+  font-size: 12.5px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.exercise-block.collapsed .exercise-block-summary { display: inline; }
 .exercise-block .exercise-remove {
   background: none;
   border: none;
@@ -1445,7 +1446,7 @@ button:disabled {
   margin-bottom: 2px;
 }
 .sets-header label { margin: 0; }
-.set-type-toggle {
+.set-type-toggle, .set-level-mode-toggle {
   display: flex;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -1453,7 +1454,7 @@ button:disabled {
   background: var(--surface-2);
   flex-shrink: 0;
 }
-.set-type-btn {
+.set-type-btn, .set-level-mode-btn {
   padding: 5px 12px;
   border: none;
   background: none;
@@ -1466,11 +1467,20 @@ button:disabled {
   font-family: inherit;
   transition: background .15s ease, color .15s ease;
 }
-.set-type-btn:not(.active):hover { background: var(--surface-2); }
-.set-type-btn.active {
+.set-type-btn:not(.active):hover, .set-level-mode-btn:not(.active):hover { background: var(--surface-2); }
+.set-type-btn.active, .set-level-mode-btn.active {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: var(--accent-ink);
 }
+
+.edit-level-speed-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.edit-level-speed-cell .edit-level-mode-toggle { flex-shrink: 0; }
+.edit-level-speed-cell .edit-level { width: 70px; }
 
 /* Labels live inline on each row now (2nd grid row, above that row's own
    controls) instead of a single header shared above every row - that
@@ -1530,16 +1540,17 @@ button:disabled {
 .set-row-label-2 { grid-area: field2lab; }
 /* BW is absolutely positioned (see .set-bodyweight-btn below), so unlike
    every other grid item it reserves no column of its own - nothing stops
-   the Weight label's text from running under it and getting ellipsized.
-   has-extra rows have no BW toggle, so only the plain (strength) row
-   needs this clearance. */
+   the 2nd field's label text from running under it and getting ellipsized.
+   Cardio rows have the equivalent SPD switch in the same spot (see below);
+   has-extra rows have neither, so only non-has-extra rows need this
+   clearance. */
 .set-row:not(.has-extra) .set-row-label-2 { padding-right: 32px; }
 .set-row-label-3 { grid-area: lab3; }
-/* Set N and the BW toggle share the same small-badge styling (padding,
-   radius, background) even though they no longer sit on the same grid
-   line, so they still read as a matched pair of affordances rather than
-   one looking like an afterthought next to the other. */
-.set-row .set-number, .set-row .set-bodyweight-btn {
+/* Set N and the BW/SPD switches share the same small-badge styling
+   (padding, radius, background) even though they no longer sit on the
+   same grid line, so they still read as a matched pair of affordances
+   rather than one looking like an afterthought next to the other. */
+.set-row .set-number, .set-row .set-bodyweight-btn, .set-row .set-speed-toggle-btn {
   font-size: 10.5px;
   font-weight: 700;
   border-radius: 8px;
@@ -1552,7 +1563,7 @@ button:disabled {
   background: var(--surface-2);
   text-align: center;
 }
-.set-row .set-bodyweight-btn {
+.set-row .set-bodyweight-btn, .set-row .set-speed-toggle-btn {
   position: absolute;
   top: 0;
   right: 0;
@@ -1566,7 +1577,7 @@ button:disabled {
   font-family: inherit;
   transition: background .15s ease, color .15s ease;
 }
-.set-row .set-bodyweight-btn .bw-switch {
+.set-row .set-bodyweight-btn .bw-switch, .set-row .set-speed-toggle-btn .speed-toggle-switch {
   width: 18px;
   height: 10px;
   border-radius: 999px;
@@ -1575,7 +1586,7 @@ button:disabled {
   flex: none;
   transition: background .15s ease;
 }
-.set-row .set-bodyweight-btn .bw-switch::after {
+.set-row .set-bodyweight-btn .bw-switch::after, .set-row .set-speed-toggle-btn .speed-toggle-switch::after {
   content: "";
   position: absolute;
   top: 1px;
@@ -1586,9 +1597,11 @@ button:disabled {
   background: var(--muted-2);
   transition: transform .15s ease, background .15s ease;
 }
-.set-row .set-bodyweight-btn.active { color: var(--accent-purple); }
-.set-row .set-bodyweight-btn.active .bw-switch { background: rgba(183, 177, 246, .28); }
-.set-row .set-bodyweight-btn.active .bw-switch::after {
+.set-row .set-bodyweight-btn.active, .set-row .set-speed-toggle-btn.active { color: var(--accent-purple); }
+.set-row .set-bodyweight-btn.active .bw-switch, .set-row .set-speed-toggle-btn.active .speed-toggle-switch {
+  background: rgba(183, 177, 246, .28);
+}
+.set-row .set-bodyweight-btn.active .bw-switch::after, .set-row .set-speed-toggle-btn.active .speed-toggle-switch::after {
   transform: translateX(8px);
   background: var(--accent-purple);
 }
@@ -1630,6 +1643,10 @@ button:disabled {
 .set-row .set-extra-field { grid-area: field3; }
 
 .stepper {
+  /* Explicit height (matching the row's remove button, also fixed at 34px)
+     rather than letting padding+content size it - keeps Reps/Weight/Speed/
+     Duration/Level all pixel-identical regardless of which one is empty. */
+  height: 34px;
   display: flex;
   align-items: stretch;
   border: 1px solid var(--border);
