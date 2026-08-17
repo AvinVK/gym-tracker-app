@@ -128,12 +128,113 @@ body {
   position: absolute;
   top: 18px;
   right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   /* Must beat .tabs (z-index: 2): .tabs comes later in the DOM, so at an
      equal z-index it would paint on top and cover the bottom of the
      dropdown (View Profile / Log Out) wherever the two overlap. */
   z-index: 3;
 }
 .user-menu[hidden] { display: none; }
+.streak-menu { position: relative; }
+.streak-badge-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(255,255,255,.14);
+  border: none;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s ease;
+}
+.streak-badge-btn:hover { background: rgba(255,255,255,.22); }
+.streak-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  min-width: 210px;
+  padding: 14px 16px;
+  animation: fadeUp .15s ease;
+}
+.streak-dropdown[hidden] { display: none; }
+.streak-dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.streak-dropdown-title { font-size: 12px; font-weight: 700; color: var(--ink); text-transform: uppercase; letter-spacing: .04em; }
+.streak-info-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface-3);
+  color: var(--muted-2);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.streak-info-btn:hover { background: var(--surface-2); color: var(--ink); }
+.streak-info-list {
+  margin: 0 0 18px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.streak-info-list li strong { color: var(--accent-dark); }
+.streak-dropdown-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+}
+.streak-dropdown-label { font-size: 12px; color: var(--muted); font-weight: 600; }
+.streak-dropdown-value { font-size: 13px; color: var(--ink); font-weight: 700; }
+.streak-week-progress-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  overflow: hidden;
+  margin: 2px 0 6px;
+}
+.streak-week-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width .2s ease;
+}
+.streak-shields { font-size: 15px; letter-spacing: 2px; }
+.streak-shields .shield-spent { opacity: .3; filter: grayscale(1); }
+.streak-dropdown-note {
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted-2);
+}
 .topbar-greeting {
   display: flex;
   align-items: center;

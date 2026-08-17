@@ -10,6 +10,7 @@ from werkzeug.utils import secure_filename
 
 import config
 from db import close_db, get_db, init_db
+from streaks import compute_streak_status
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
@@ -373,6 +374,18 @@ def update_workout_log(row_id):
     )
     db.commit()
     return jsonify({"id": row_id})
+
+
+# ---------------------------------------------------------------
+# Streak API
+# ---------------------------------------------------------------
+@app.route("/api/streak", methods=["GET"])
+def get_streak():
+    user_id, err = require_login()
+    if err:
+        return err
+    db = get_db()
+    return jsonify(compute_streak_status(db, user_id))
 
 
 # ---------------------------------------------------------------

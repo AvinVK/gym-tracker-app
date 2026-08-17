@@ -193,6 +193,34 @@ function showGreeting(name) {
   document.getElementById("user-menu").hidden = false;
 }
 
+const WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+async function refreshStreak() {
+  const s = await api.get("/api/streak");
+  if (!s || s.error) return;
+  document.getElementById("streak-count-text").textContent = s.current_streak;
+  document.getElementById("streak-current-value").textContent = `${s.current_streak} week${s.current_streak === 1 ? "" : "s"}`;
+  document.getElementById("streak-best-value").textContent = `${s.longest_streak} week${s.longest_streak === 1 ? "" : "s"}`;
+  document.getElementById("streak-week-progress-value").textContent = `${s.visits_this_week} / ${s.visits_needed} visits`;
+  const pct = Math.min(100, (s.visits_this_week / s.visits_needed) * 100);
+  document.getElementById("streak-week-progress-fill").style.width = `${pct}%`;
+  const shieldIcons = Array.from({ length: s.max_shields }, (_, i) =>
+    i < s.shield_count ? "🛡️" : '<span class="shield-spent">🛡️</span>'
+  ).join(" ");
+  document.getElementById("streak-shields-icons").innerHTML = shieldIcons;
+  const startIdx = WEEKDAY_NAMES.indexOf(s.week_start_day);
+  const endDay = WEEKDAY_NAMES[(startIdx + 6) % 7];
+  const anchorNote = document.getElementById("streak-week-anchor-note");
+  anchorNote.textContent = s.next_shield_at
+    ? `Your streak week runs ${s.week_start_day}-${endDay}. Next shield at a ${s.next_shield_at}-week streak.`
+    : `Your streak week runs ${s.week_start_day}-${endDay}. Shields full.`;
+
+  document.getElementById("streak-info-visits-needed").textContent = s.visits_needed;
+  document.getElementById("streak-info-milestone-start").textContent = s.milestone_start;
+  document.getElementById("streak-info-milestone-step").textContent = s.milestone_step;
+  document.getElementById("streak-info-max-shields").textContent = s.max_shields;
+}
+
 function hideAllAuthModals() {
   document.getElementById("auth-name-modal").hidden = true;
   document.getElementById("auth-email-modal").hidden = true;
@@ -227,6 +255,7 @@ async function onLoggedIn(user, { isNewSignup = false } = {}) {
   hideAllAuthModals();
   document.getElementById("user-menu-dropdown").hidden = true;
   showGreeting(user.name);
+  refreshStreak();
 
   await muscleOptionsReady;
   await restoreDraft(); // this user's own draft, if any; also resets restoringDraft when done
@@ -324,6 +353,8 @@ document.getElementById("form-auth-login").addEventListener("submit", async (e) 
 
 document.getElementById("logout-btn").addEventListener("click", async () => {
   document.getElementById("user-menu-dropdown").hidden = true;
+  document.getElementById("streak-dropdown").hidden = true;
+  document.getElementById("streak-info-modal").hidden = true;
   await api.post("/api/logout", {});
   currentUser = null;
   currentUserId = null;
@@ -349,13 +380,34 @@ checkAuth();
 
 // ---------------- User menu / Profile ----------------
 const userMenuDropdown = document.getElementById("user-menu-dropdown");
+const streakDropdown = document.getElementById("streak-dropdown");
 
 document.getElementById("user-greeting-btn").addEventListener("click", (e) => {
   e.stopPropagation();
+  streakDropdown.hidden = true;
   userMenuDropdown.hidden = !userMenuDropdown.hidden;
 });
 
-document.addEventListener("click", () => { userMenuDropdown.hidden = true; });
+document.getElementById("streak-badge-btn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  userMenuDropdown.hidden = true;
+  streakDropdown.hidden = !streakDropdown.hidden;
+});
+
+document.addEventListener("click", () => {
+  userMenuDropdown.hidden = true;
+  streakDropdown.hidden = true;
+});
+
+// ---------------- Streak info modal ----------------
+const streakInfoModal = document.getElementById("streak-info-modal");
+document.getElementById("streak-info-btn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  streakDropdown.hidden = true;
+  streakInfoModal.hidden = false;
+});
+document.getElementById("streak-info-close").addEventListener("click", () => { streakInfoModal.hidden = true; });
+streakInfoModal.addEventListener("click", (e) => { if (e.target === streakInfoModal) streakInfoModal.hidden = true; });
 
 // Falls back to the default illustration (not a per-user placeholder) for
 // anyone who hasn't uploaded their own picture yet.
@@ -940,6 +992,7 @@ document.getElementById("form-workout").addEventListener("submit", async (e) => 
       savedWorkoutId = res.id;
       toast("Workout logged");
     }
+    refreshStreak();
     e.target.querySelectorAll("input, select, button").forEach(el => el.disabled = true);
     document.getElementById("card-exlog").hidden = false;
     document.getElementById("workout-edit-btn").hidden = false;
@@ -1726,7 +1779,7 @@ function addExerciseBlock(container = exercisesContainer) {
   return block;
 }
 
-document.getElementById("exlog-add-exercise").addEventListener("click", addExerciseBlock);
+document.getElementById("exlog-add-exercise").addEventListener("click", () => addExerciseBlock());
 addExerciseBlock();
 
 // weight_kg=0 is the bodyweight sentinel (see the BW toggle in addSetRow,

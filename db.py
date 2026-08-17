@@ -77,7 +77,24 @@ CREATE TABLE IF NOT EXISTS users (
     age INTEGER,
     last_period_date TEXT,
     avatar TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    longest_streak INTEGER NOT NULL DEFAULT 0,
+    shield_count INTEGER NOT NULL DEFAULT 0,
+    shield_milestone_progress INTEGER NOT NULL DEFAULT 0
+);
+
+-- Calendar weeks (Monday date, ISO format) that would otherwise have broken
+-- a user's streak - fewer than the required visits that week - healed by
+-- spending one of their streak shields (see streaks.py). Kept as its own
+-- table rather than a counter because "which weeks were shielded" is a real
+-- historical decision that has to stay stable across repeated recomputation,
+-- not something derivable from the log dates alone.
+CREATE TABLE IF NOT EXISTS streak_shield_uses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    week_start TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(user_id, week_start)
 );
 """
 
@@ -172,6 +189,9 @@ def init_db():
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email)")
     _ensure_column(conn, "exercise_plan", "images", "TEXT")
     _ensure_column(conn, "exercise_plan", "curated", "INTEGER NOT NULL DEFAULT 0")
+    _ensure_column(conn, "users", "longest_streak", "INTEGER NOT NULL DEFAULT 0")
+    _ensure_column(conn, "users", "shield_count", "INTEGER NOT NULL DEFAULT 0")
+    _ensure_column(conn, "users", "shield_milestone_progress", "INTEGER NOT NULL DEFAULT 0")
     if first_run:
         conn.executemany(
             "INSERT INTO exercise_plan (target_muscle, exercise, images, curated) VALUES (?, ?, ?, ?)",
