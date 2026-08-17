@@ -94,6 +94,19 @@
   </div>
 </div>
 
+<div id="streak-info-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>How Streaks Work</h2>
+    <ul class="streak-info-list">
+      <li><strong>Weekly, not daily.</strong> Log at least <strong id="streak-info-visits-needed">4</strong> days in a week and that week counts toward your streak.</li>
+      <li><strong>Your week, your days.</strong> Your streak week runs on a 7-day cycle starting from the weekday you first logged a visit - not a fixed calendar week.</li>
+      <li><strong>Shields protect you.</strong> Fall short in a week and a shield automatically covers it, holding your streak steady instead of resetting it to zero (it won't go up that week, since nothing was logged - but it won't drop either).</li>
+      <li><strong>Earning shields.</strong> Everyone starts with 0. Reach a <strong id="streak-info-milestone-start">3</strong>-week streak to earn your first shield, then another every <strong id="streak-info-milestone-step">4</strong> weeks after that, up to a max of <strong id="streak-info-max-shields">3</strong>.</li>
+    </ul>
+    <button type="button" class="primary" id="streak-info-close">Got it</button>
+  </div>
+</div>
+
 <div id="date-picker-modal" class="modal-overlay" hidden>
   <div class="modal-card date-picker-card">
     <div class="date-picker-header">
@@ -157,6 +170,36 @@
 <header class="topbar">
   <div class="topbar-glow" aria-hidden="true"></div>
   <div class="user-menu" id="user-menu" hidden>
+    <div class="streak-menu">
+      <button type="button" class="streak-badge-btn" id="streak-badge-btn">
+        <span aria-hidden="true">🔥</span>
+        <span id="streak-count-text">0</span>
+      </button>
+      <div class="streak-dropdown" id="streak-dropdown" hidden>
+        <div class="streak-dropdown-header">
+          <span class="streak-dropdown-title">Your Streak</span>
+          <button type="button" class="streak-info-btn" id="streak-info-btn" aria-label="How streaks and shields work">&#9432;</button>
+        </div>
+        <div class="streak-dropdown-row">
+          <span class="streak-dropdown-label">Current Streak</span>
+          <span class="streak-dropdown-value" id="streak-current-value">0 weeks</span>
+        </div>
+        <div class="streak-dropdown-row">
+          <span class="streak-dropdown-label">Best Streak</span>
+          <span class="streak-dropdown-value" id="streak-best-value">0 weeks</span>
+        </div>
+        <div class="streak-dropdown-row">
+          <span class="streak-dropdown-label">This Week</span>
+          <span class="streak-dropdown-value" id="streak-week-progress-value">0 / 4 visits</span>
+        </div>
+        <div class="streak-week-progress-bar"><div class="streak-week-progress-fill" id="streak-week-progress-fill"></div></div>
+        <div class="streak-dropdown-row">
+          <span class="streak-dropdown-label">Shields</span>
+          <span class="streak-shields" id="streak-shields-icons"></span>
+        </div>
+        <p class="streak-dropdown-note" id="streak-week-anchor-note">Your streak week runs Monday-Sunday.</p>
+      </div>
+    </div>
     <button type="button" class="topbar-greeting" id="user-greeting-btn">
       <span id="user-greeting-text"></span>
       <span class="caret">&#9662;</span>
