@@ -175,30 +175,30 @@
         <span aria-hidden="true">🔥</span>
         <span id="streak-count-text">0</span>
       </button>
-      <div class="streak-dropdown" id="streak-dropdown" hidden>
-        <div class="streak-dropdown-header">
-          <span class="streak-dropdown-title">Your Streak</span>
-          <button type="button" class="streak-info-btn" id="streak-info-btn" aria-label="How streaks and shields work">&#9432;</button>
-        </div>
-        <div class="streak-dropdown-row">
-          <span class="streak-dropdown-label">Current Streak</span>
-          <span class="streak-dropdown-value" id="streak-current-value">0 weeks</span>
-        </div>
-        <div class="streak-dropdown-row">
-          <span class="streak-dropdown-label">Best Streak</span>
-          <span class="streak-dropdown-value" id="streak-best-value">0 weeks</span>
-        </div>
-        <div class="streak-dropdown-row">
-          <span class="streak-dropdown-label">This Week</span>
-          <span class="streak-dropdown-value" id="streak-week-progress-value">0 / 4 visits</span>
-        </div>
-        <div class="streak-week-progress-bar"><div class="streak-week-progress-fill" id="streak-week-progress-fill"></div></div>
-        <div class="streak-dropdown-row">
-          <span class="streak-dropdown-label">Shields</span>
-          <span class="streak-shields" id="streak-shields-icons"></span>
-        </div>
-        <p class="streak-dropdown-note" id="streak-week-anchor-note">Your streak week runs Monday-Sunday.</p>
+    </div>
+    <div class="streak-dropdown" id="streak-dropdown" hidden>
+      <div class="streak-dropdown-header">
+        <span class="streak-dropdown-title">Your Streak</span>
+        <button type="button" class="streak-info-btn" id="streak-info-btn" aria-label="How streaks and shields work">&#9432;</button>
       </div>
+      <div class="streak-dropdown-row">
+        <span class="streak-dropdown-label">Current Streak</span>
+        <span class="streak-dropdown-value" id="streak-current-value">0 weeks</span>
+      </div>
+      <div class="streak-dropdown-row">
+        <span class="streak-dropdown-label">Best Streak</span>
+        <span class="streak-dropdown-value" id="streak-best-value">0 weeks</span>
+      </div>
+      <div class="streak-dropdown-row">
+        <span class="streak-dropdown-label">This Week</span>
+        <span class="streak-dropdown-value" id="streak-week-progress-value">0 / 4 visits</span>
+      </div>
+      <div class="streak-week-progress-bar"><div class="streak-week-progress-fill" id="streak-week-progress-fill"></div></div>
+      <div class="streak-dropdown-row">
+        <span class="streak-dropdown-label">Shields</span>
+        <span class="streak-shields" id="streak-shields-icons"></span>
+      </div>
+      <p class="streak-dropdown-note" id="streak-week-anchor-note">Your streak week runs Monday-Sunday.</p>
     </div>
     <button type="button" class="topbar-greeting" id="user-greeting-btn">
       <span id="user-greeting-text"></span>
@@ -334,24 +334,47 @@
   <!-- ================= YOUR CYCLE ================= -->
   <section id="maintab-cycle" class="main-tab-panel">
     <div class="card">
-      <h2>Your Cycle</h2>
-      <div class="cycle-empty-state" id="cycle-empty" hidden>
-        <p class="placeholder-text">Add your last period date in your profile to see your current cycle phase.</p>
-        <button type="button" class="secondary" id="cycle-add-date-btn">Go to Profile</button>
+      <div class="card-title-row cycle-title-row">
+        <h2>Your Cycle</h2>
+        <span class="cycle-cal-legend"><span class="cycle-cal-legend-dot" aria-hidden="true"></span>Estimated period</span>
       </div>
-      <div class="cycle-summary" id="cycle-summary" hidden>
-        <div class="cycle-summary-block">
+      <div class="cycle-calendar-banner" id="cycle-calendar-banner" hidden>
+        <p>We don't know your last period date yet. Add it in your profile to opt in to cycle tracking - you're in control and can remove it anytime.</p>
+        <button type="button" class="secondary" id="cycle-calendar-add-date-btn">Go to Profile</button>
+      </div>
+
+      <div class="cycle-layout">
+        <div class="cycle-summary-block" id="cycle-current-block" hidden>
           <span class="cycle-summary-label">Current Phase</span>
           <span class="cycle-summary-value" id="cycle-current-phase">-</span>
           <span class="cycle-summary-sub" id="cycle-current-detail"></span>
         </div>
-        <div class="cycle-summary-divider" aria-hidden="true"></div>
-        <div class="cycle-summary-block">
+
+        <div class="cycle-cal-wrap">
+          <div class="cycle-cal-header">
+            <button type="button" class="cycle-cal-nav" id="cycle-cal-prev" aria-label="Previous month">&#8249;</button>
+            <span id="cycle-cal-month-label"></span>
+            <button type="button" class="cycle-cal-nav" id="cycle-cal-next" aria-label="Next month">&#8250;</button>
+          </div>
+          <div class="cycle-cal-weekdays">
+            <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+          </div>
+          <div class="cycle-cal-grid" id="cycle-cal-grid"></div>
+          <p class="cycle-cal-log-hint" id="cycle-cal-log-hint" hidden>Tap the day it started - today, or a past date if you missed logging it. We'll fill in the next few days for you; tap any day to add or remove it.</p>
+          <div class="cycle-cal-log-actions" id="cycle-cal-log-actions" hidden>
+            <button type="button" class="secondary" id="cycle-cal-log-cancel">Cancel</button>
+            <button type="button" class="primary" id="cycle-cal-log-save">Save</button>
+          </div>
+        </div>
+
+        <div class="cycle-summary-block cycle-summary-block-end" id="cycle-next-block" hidden>
           <span class="cycle-summary-label">Next Phase</span>
           <span class="cycle-summary-value" id="cycle-next-phase">-</span>
           <span class="cycle-summary-sub" id="cycle-next-detail"></span>
+          <button type="button" class="edit-link-btn cycle-log-period-btn" id="cycle-log-period-btn">Log Period</button>
         </div>
       </div>
+
       <p class="cycle-estimate-note" id="cycle-estimate-note" hidden>Estimated from a standard 28-day cycle starting on your last period date.</p>
     </div>
 
@@ -363,7 +386,7 @@
           <div class="cycle-phase-info">
             <div class="cycle-phase-header">
               <h3>Menstrual Phase</h3>
-              <span class="cycle-phase-days">Day 1-5</span>
+              <span class="cycle-phase-days" id="cycle-phase-days-menstrual">Day 1-5</span>
             </div>
             <p>The uterine lining sheds and bleeding occurs.</p>
           </div>
@@ -373,7 +396,7 @@
           <div class="cycle-phase-info">
             <div class="cycle-phase-header">
               <h3>Follicular Phase</h3>
-              <span class="cycle-phase-days">Day 6-13</span>
+              <span class="cycle-phase-days" id="cycle-phase-days-follicular">Day 6-13</span>
             </div>
             <p>Estrogen rises as the body prepares to release an egg.</p>
           </div>

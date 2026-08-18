@@ -114,6 +114,11 @@ def deploy():
 # Auth API
 # ---------------------------------------------------------------
 PIN_LENGTH = 4
+# 1, not higher: the Your Cycle calendar lets a period be logged as a single
+# tapped day (Log Period -> tap one day -> Save), which is a legitimate,
+# easily-produced selection, not an input error.
+MIN_PERIOD_DAYS = 1
+MAX_PERIOD_DAYS = 10
 
 
 def _valid_pin(pin):
@@ -245,6 +250,38 @@ def update_user(user_id):
     )
     db.commit()
     return jsonify({"id": user_id})
+
+
+@app.route("/api/user/<int:user_id>/period", methods=["PUT"])
+def log_period(user_id):
+    """Quick-action used by the "Log Period" button on the Your Cycle tab -
+    deliberately separate from update_user (which requires a full profile
+    payload incl. name) so logging a period start is a single lightweight
+    call, not a full profile resubmit."""
+    current_id, err = require_login()
+    if err:
+        return err
+    if current_id != user_id:
+        return jsonify({"error": "forbidden"}), 403
+    data = request.get_json(force=True)
+    last_period_date = (data.get("last_period_date") or "").strip()
+    if not last_period_date:
+        return jsonify({"error": "date is required"}), 400
+    if is_future_date(last_period_date):
+        return jsonify({"error": "date cannot be in the future"}), 400
+    try:
+        period_length_days = int(data.get("period_length_days"))
+    except (TypeError, ValueError):
+        return jsonify({"error": "period_length_days must be a number"}), 400
+    if not (MIN_PERIOD_DAYS <= period_length_days <= MAX_PERIOD_DAYS):
+        return jsonify({"error": f"period length must be between {MIN_PERIOD_DAYS} and {MAX_PERIOD_DAYS} days"}), 400
+    db = get_db()
+    db.execute(
+        "UPDATE users SET last_period_date = ?, period_length_days = ? WHERE id = ?",
+        (last_period_date, period_length_days, user_id),
+    )
+    db.commit()
+    return jsonify({"last_period_date": last_period_date, "period_length_days": period_length_days})
 
 
 @app.route("/api/user/<int:user_id>/avatar", methods=["POST"])
