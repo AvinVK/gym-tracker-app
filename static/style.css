@@ -962,7 +962,16 @@ main { max-width: 880px; margin: 0 auto; padding: 20px 16px 48px; }
   gap: 6px;
   min-width: 0;
 }
-.grid-form .full { grid-column: 1 / -1; }
+/* min-width: 0 - .full items (exercise blocks, the sets section, etc.) are
+   grid items whose default automatic min-width is their content's min-
+   content size. The exercise blocks' set rows (fixed-size steppers, an
+   un-shrinkable "Remove" button) have enough of that non-shrinking content
+   that on a ~375px-or-narrower phone the min-content is wider than the
+   screen - without this, that forces the whole card (and the page's
+   viewport itself, since mobile browsers won't scale below a fixed
+   initial-scale=1) wider than the device, clipping content off the right
+   edge instead of the labels just ellipsis-truncating as intended. */
+.grid-form .full { grid-column: 1 / -1; min-width: 0; }
 .grid-form input, .grid-form select {
   width: 100%;
   min-width: 0;
@@ -1619,6 +1628,11 @@ button:disabled {
 }
 .exercise-block-header {
   grid-column: 1 / -1;
+  /* Same min-content-blowout issue as .grid-form .full above, one level
+     deeper: this row's own children (the title pill, the "Remove" button)
+     don't shrink, so the row needs its own min-width: 0 too, or it's still
+     wide enough on its own to push the card past a narrow phone's edge. */
+  min-width: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
