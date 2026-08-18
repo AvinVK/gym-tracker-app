@@ -80,7 +80,8 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     longest_streak INTEGER NOT NULL DEFAULT 0,
     shield_count INTEGER NOT NULL DEFAULT 0,
-    shield_milestone_progress INTEGER NOT NULL DEFAULT 0
+    shield_milestone_progress INTEGER NOT NULL DEFAULT 0,
+    period_length_days INTEGER NOT NULL DEFAULT 5
 );
 
 -- Calendar weeks (Monday date, ISO format) that would otherwise have broken
@@ -192,6 +193,7 @@ def init_db():
     _ensure_column(conn, "users", "longest_streak", "INTEGER NOT NULL DEFAULT 0")
     _ensure_column(conn, "users", "shield_count", "INTEGER NOT NULL DEFAULT 0")
     _ensure_column(conn, "users", "shield_milestone_progress", "INTEGER NOT NULL DEFAULT 0")
+    _ensure_column(conn, "users", "period_length_days", "INTEGER NOT NULL DEFAULT 5")
     if first_run:
         conn.executemany(
             "INSERT INTO exercise_plan (target_muscle, exercise, images, curated) VALUES (?, ?, ?, ?)",

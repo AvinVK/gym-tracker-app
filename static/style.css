@@ -157,11 +157,12 @@ body {
 .streak-dropdown {
   position: absolute;
   top: calc(100% + 8px);
-  left: 0;
+  right: 0;
   background: var(--card);
   border-radius: 12px;
   box-shadow: var(--shadow-md);
-  min-width: 210px;
+  width: 210px;
+  max-width: calc(100vw - 32px);
   padding: 14px 16px;
   animation: fadeUp .15s ease;
 }
@@ -333,48 +334,46 @@ main { max-width: 880px; margin: 0 auto; padding: 20px 16px 48px; }
 .placeholder-text { margin: 0; color: var(--muted); font-size: 14px; }
 
 /* ---------------- Your Cycle ---------------- */
-.cycle-empty-state { text-align: center; padding: 8px 0 4px; }
-.cycle-empty-state .placeholder-text { margin-bottom: 14px; }
-.cycle-empty-state .secondary {
-  display: inline-block;
-  width: auto;
-  grid-column: unset;
-  padding: 10px 22px;
-  margin-top: 0;
-}
-
-.cycle-summary {
+/* Current phase / calendar / next phase side by side always - never
+   stacked, even on a phone screen - sizes just shrink to fit (see the
+   narrow-screen media query below). */
+.cycle-layout {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
 }
 .cycle-summary-block {
-  flex: 1;
+  /* No flex-grow: a block that grows to fill leftover row width just pushes
+     its (left/right-aligned) text away from the calendar, reading as a big
+     empty gap beside it. Let each block hug its own text instead, and let
+     .cycle-layout's justify-content:center center the tighter cluster. */
+  flex: 0 1 auto;
+  max-width: 90px;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  padding-top: 6px;
 }
-.cycle-summary-divider {
-  width: 1px;
-  align-self: stretch;
-  background: var(--border);
-}
+.cycle-summary-block-end { align-items: flex-end; text-align: right; }
+.cycle-log-period-btn { margin: 4px 0 0; white-space: nowrap; }
 .cycle-summary-label {
-  font-size: 11px;
+  font-size: 9.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .04em;
+  letter-spacing: .03em;
   color: var(--muted);
 }
 .cycle-summary-value {
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--ink);
   letter-spacing: -.01em;
+  line-height: 1.2;
 }
 .cycle-summary-sub {
-  font-size: 12.5px;
+  font-size: 10.5px;
   color: var(--muted);
 }
 .cycle-estimate-note {
@@ -383,6 +382,22 @@ main { max-width: 880px; margin: 0 auto; padding: 20px 16px 48px; }
   border-top: 1px solid var(--border);
   font-size: 11.5px;
   color: var(--muted);
+}
+
+/* Give the summary blocks and calendar a bit more breathing room where
+   there's width to spare, without ever switching to a stacked layout. */
+@media (min-width: 480px) {
+  .cycle-layout { gap: 20px; }
+  .cycle-summary-block { max-width: 200px; }
+  .cycle-summary-label { font-size: 11px; letter-spacing: .04em; }
+  .cycle-summary-value { font-size: 17px; }
+  .cycle-summary-sub { font-size: 12.5px; }
+  .cycle-cal-wrap { width: 260px; }
+  .cycle-cal-header { margin-bottom: 8px; font-size: 12.5px; }
+  .cycle-cal-nav { width: 22px; height: 22px; font-size: 14px; }
+  .cycle-cal-weekdays, .cycle-cal-grid { gap: 2px; }
+  .cycle-cal-weekdays { margin-bottom: 2px; font-size: 9px; }
+  .cycle-cal-day { font-size: 10.5px; }
 }
 
 .cycle-phase-list {
@@ -1373,6 +1388,122 @@ button:disabled {
 }
 .date-picker-day:disabled { color: #3a362a; cursor: not-allowed; }
 .date-picker-card .secondary { margin-top: 14px; }
+
+.cycle-calendar-banner {
+  background: var(--tint);
+  border: 1px solid var(--tint-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.cycle-calendar-banner p { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--ink); }
+
+/* Compact, self-contained calendar - deliberately not sharing classes with
+   .date-picker-* (the modal date picker used for logging workouts), which
+   is tuned for a 320px-wide modal, not a full-width card. */
+.card-title-row.cycle-title-row { justify-content: space-between; }
+.cycle-cal-legend {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 14px;
+  font-size: 10.5px;
+  color: var(--muted-2);
+  white-space: nowrap;
+}
+.cycle-cal-legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f4436c;
+  display: inline-block;
+}
+/* A definite width, not just max-width: as a flex item this would
+   otherwise shrink-wrap to content, and a 1fr grid only expands to fill a
+   definite container width - without it the whole calendar collapses down
+   to its cells' min-content size instead of the intended 160px. */
+.cycle-cal-wrap { width: 160px; flex: 0 0 auto; margin: 0 auto; }
+.cycle-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.cycle-cal-nav {
+  background: none;
+  border: none;
+  color: var(--muted-2);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+  transition: background .15s ease, color .15s ease;
+}
+.cycle-cal-nav:hover { background: var(--surface-2); color: var(--ink); }
+.cycle-cal-weekdays, .cycle-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+.cycle-cal-weekdays {
+  margin-bottom: 2px;
+  font-size: 7px;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+  text-transform: uppercase;
+}
+.cycle-cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--ink);
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: default;
+}
+.cycle-cal-day.today { box-shadow: 0 0 0 1.5px var(--accent-dark) inset; }
+.cycle-cal-day.period { background: rgba(244, 67, 108, .22); color: #f4436c; }
+.cycle-cal-day.selectable { cursor: pointer; transition: background .15s ease; }
+.cycle-cal-day.selectable:hover { background: var(--surface-2); }
+.cycle-cal-day:disabled { color: var(--muted-2); opacity: .35; cursor: not-allowed; }
+
+.cycle-cal-log-hint {
+  margin: 8px 0 0;
+  font-size: 9.5px;
+  line-height: 1.4;
+  color: var(--muted-2);
+  text-align: center;
+}
+.cycle-cal-log-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.cycle-cal-log-actions button {
+  flex: 1;
+  grid-column: unset;
+  width: auto;
+  margin-top: 0;
+  padding: 8px;
+  font-size: 12px;
+}
 
 .primary {
   grid-column: 1 / -1;

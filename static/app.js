@@ -441,17 +441,28 @@ document.getElementById("view-profile-btn").addEventListener("click", () => {
 // ---------------- Your Cycle ----------------
 // No per-user cycle length is collected, so this estimates every cycle as
 // a standard 28 days from the last period date - the simplified 4-phase
-// model most consumer cycle-tracking apps use absent more history.
+// model most consumer cycle-tracking apps use absent more history. Period
+// (menstrual phase) length IS per-user, adjustable via the Log Period
+// button, so the phase boundaries are computed fresh from currentUser
+// rather than a fixed array - call getCyclePhases() once per render and
+// reuse that same array/objects (each call builds new objects, so a phase
+// object from one call won't === one from another).
 const CYCLE_LENGTH_DAYS = 28;
-const CYCLE_PHASES = [
-  { key: "menstrual", label: "Menstrual Phase", startDay: 1, endDay: 5, color: "#f4436c" },
-  { key: "follicular", label: "Follicular Phase", startDay: 6, endDay: 13, color: "#17c993" },
-  { key: "ovulation", label: "Ovulation Phase", startDay: 14, endDay: 14, color: "#f5a623" },
-  { key: "luteal", label: "Luteal Phase", startDay: 15, endDay: 28, color: "#22d3ee" },
-];
+const DEFAULT_PERIOD_DAYS = 5;
+
+function getCyclePhases() {
+  const periodDays = (currentUser && currentUser.period_length_days) || DEFAULT_PERIOD_DAYS;
+  return [
+    { key: "menstrual", label: "Menstrual Phase", startDay: 1, endDay: periodDays, color: "#f4436c" },
+    { key: "follicular", label: "Follicular Phase", startDay: periodDays + 1, endDay: 13, color: "#17c993" },
+    { key: "ovulation", label: "Ovulation Phase", startDay: 14, endDay: 14, color: "#f5a623" },
+    { key: "luteal", label: "Luteal Phase", startDay: 15, endDay: 28, color: "#22d3ee" },
+  ];
+}
 
 function cyclePhaseForDay(day) {
-  return CYCLE_PHASES.find(p => day >= p.startDay && day <= p.endDay) || CYCLE_PHASES[CYCLE_PHASES.length - 1];
+  const phases = getCyclePhases();
+  return phases.find(p => day >= p.startDay && day <= p.endDay) || phases[phases.length - 1];
 }
 
 // Cycle day (1-28) for an arbitrary date, not just today - shared by the
@@ -473,24 +484,40 @@ function cyclePhaseForDate(dateStr) {
 }
 
 function renderCycleTab() {
-  const emptyEl = document.getElementById("cycle-empty");
-  const summaryEl = document.getElementById("cycle-summary");
+  renderCycleCalendar();
+
+  // Kept in sync here (not left as static HTML) since period length is
+  // per-user and adjustable via Log Period - a fixed "Day 1-5" would go
+  // stale the moment someone changes it.
+  const phasesForList = getCyclePhases();
+  const menstrualPhase = phasesForList.find(p => p.key === "menstrual");
+  const follicularPhase = phasesForList.find(p => p.key === "follicular");
+  document.getElementById("cycle-phase-days-menstrual").textContent =
+    menstrualPhase.startDay === menstrualPhase.endDay ? `Day ${menstrualPhase.startDay}` : `Day ${menstrualPhase.startDay}-${menstrualPhase.endDay}`;
+  document.getElementById("cycle-phase-days-follicular").textContent = `Day ${follicularPhase.startDay}-${follicularPhase.endDay}`;
+
+  const currentBlock = document.getElementById("cycle-current-block");
+  const nextBlock = document.getElementById("cycle-next-block");
   const noteEl = document.getElementById("cycle-estimate-note");
   const cycleDay = cycleDayForDate(todayStr);
   if (cycleDay == null) {
-    emptyEl.hidden = false;
-    summaryEl.hidden = true;
+    currentBlock.hidden = true;
+    nextBlock.hidden = true;
     noteEl.hidden = true;
     document.querySelectorAll(".cycle-phase-card").forEach(c => c.classList.remove("active"));
     return;
   }
-  emptyEl.hidden = true;
-  summaryEl.hidden = false;
+  currentBlock.hidden = false;
+  nextBlock.hidden = false;
   noteEl.hidden = false;
 
-  const currentPhase = cyclePhaseForDay(cycleDay);
-  const currentIndex = CYCLE_PHASES.indexOf(currentPhase);
-  const nextPhase = CYCLE_PHASES[(currentIndex + 1) % CYCLE_PHASES.length];
+  // Looked up against one phases array (not cyclePhaseForDay's own internal
+  // call) so currentPhase is === one of this array's own objects - needed
+  // for indexOf to find it below.
+  const phases = getCyclePhases();
+  const currentPhase = phases.find(p => cycleDay >= p.startDay && cycleDay <= p.endDay) || phases[phases.length - 1];
+  const currentIndex = phases.indexOf(currentPhase);
+  const nextPhase = phases[(currentIndex + 1) % phases.length];
   const daysUntilNext = nextPhase.startDay > cycleDay
     ? nextPhase.startDay - cycleDay
     : (CYCLE_LENGTH_DAYS - cycleDay) + nextPhase.startDay;
@@ -507,7 +534,141 @@ function renderCycleTab() {
   document.querySelectorAll(".cycle-phase-card").forEach(c => c.classList.toggle("active", c.dataset.phase === currentPhase.key));
 }
 
-document.getElementById("cycle-add-date-btn").addEventListener("click", showProfile);
+// ---------------- Period calendar ----------------
+// Normally a read-only month view marking every projected menstrual-phase
+// day - reuses cyclePhaseForDate so it never drifts from the phase math
+// already driving the summary above and the History dots. Log Period
+// switches it into a logging mode instead: the projected marks clear and
+// day cells become individually toggleable - tap an unselected day to add
+// it, tap a selected one to remove it. The very first tap (starting from
+// an empty selection) also auto-fills forward to the user's usual period
+// length as a convenience - today obviously isn't the end of a period that
+// starts today - which the user can then freely add to or remove days
+// from. Only the *first* tap is restricted to today-or-earlier (you can't
+// say your period will begin in the future); once at least one day is
+// selected, any day (past or future) can be toggled. Save submits the
+// selection's min..max span as last_period_date + period_length_days,
+// since that's all the backend model can represent - a day deselected from
+// the middle of an otherwise-contiguous run won't be reflected as a gap
+// once saved, only shrinking the ends actually changes what's stored.
+let cycleCalViewYear, cycleCalViewMonth;
+let periodLogging = false;
+let periodLogDates = new Set();
+
+function addDaysIso(iso, days) {
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function renderCycleCalendar() {
+  if (cycleCalViewYear == null) {
+    const d = new Date(todayStr + "T00:00:00");
+    cycleCalViewYear = d.getFullYear();
+    cycleCalViewMonth = d.getMonth();
+  }
+
+  const hasPeriodDate = !!(currentUser && currentUser.last_period_date);
+  document.getElementById("cycle-calendar-banner").hidden = hasPeriodDate || periodLogging;
+  document.getElementById("cycle-log-period-btn").hidden = periodLogging;
+  document.getElementById("cycle-cal-log-hint").hidden = !periodLogging;
+  document.getElementById("cycle-cal-log-actions").hidden = !periodLogging;
+
+  document.getElementById("cycle-cal-month-label").textContent = new Date(cycleCalViewYear, cycleCalViewMonth, 1)
+    .toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+  const grid = document.getElementById("cycle-cal-grid");
+  grid.innerHTML = "";
+  const firstDay = new Date(cycleCalViewYear, cycleCalViewMonth, 1).getDay();
+  const daysInMonth = new Date(cycleCalViewYear, cycleCalViewMonth + 1, 0).getDate();
+  for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement("span"));
+  for (let day = 1; day <= daysInMonth; day++) {
+    const iso = `${cycleCalViewYear}-${String(cycleCalViewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const cell = document.createElement("button");
+    cell.type = "button";
+    cell.textContent = day;
+    cell.className = "cycle-cal-day";
+    if (iso === todayStr) cell.classList.add("today");
+    if (periodLogging) {
+      if (periodLogDates.size === 0 && iso > todayStr) {
+        cell.disabled = true;
+      } else {
+        cell.classList.add("selectable");
+        cell.addEventListener("click", () => selectPeriodLogDay(iso));
+      }
+      if (periodLogDates.has(iso)) cell.classList.add("period");
+    } else if (hasPeriodDate) {
+      // Not disabled here (unlike a future day during logging) - just a
+      // plain inert button with no click handler, so it reads as normal
+      // text rather than the dimmed :disabled style.
+      const phase = cyclePhaseForDate(iso);
+      if (phase && phase.key === "menstrual") cell.classList.add("period");
+    }
+    grid.appendChild(cell);
+  }
+}
+
+document.getElementById("cycle-cal-prev").addEventListener("click", () => {
+  cycleCalViewMonth--; if (cycleCalViewMonth < 0) { cycleCalViewMonth = 11; cycleCalViewYear--; }
+  renderCycleCalendar();
+});
+document.getElementById("cycle-cal-next").addEventListener("click", () => {
+  cycleCalViewMonth++; if (cycleCalViewMonth > 11) { cycleCalViewMonth = 0; cycleCalViewYear++; }
+  renderCycleCalendar();
+});
+document.getElementById("cycle-calendar-add-date-btn").addEventListener("click", showProfile);
+
+// ---------------- Log Period ----------------
+function selectPeriodLogDay(iso) {
+  if (periodLogDates.has(iso)) {
+    periodLogDates.delete(iso);
+  } else {
+    const startingFresh = periodLogDates.size === 0;
+    periodLogDates.add(iso);
+    if (startingFresh) {
+      // Convenience auto-fill for the common case (today obviously isn't
+      // the end of a period that starts today) - the user is then free to
+      // toggle any of these back off, or add more days, before Save.
+      const usualLength = (currentUser && currentUser.period_length_days) || DEFAULT_PERIOD_DAYS;
+      for (let i = 1; i < usualLength; i++) periodLogDates.add(addDaysIso(iso, i));
+    }
+  }
+  renderCycleCalendar();
+}
+
+document.getElementById("cycle-log-period-btn").addEventListener("click", () => {
+  periodLogging = true;
+  periodLogDates = new Set();
+  renderCycleCalendar();
+});
+
+document.getElementById("cycle-cal-log-cancel").addEventListener("click", () => {
+  periodLogging = false;
+  periodLogDates = new Set();
+  renderCycleCalendar();
+});
+
+document.getElementById("cycle-cal-log-save").addEventListener("click", async () => {
+  if (periodLogDates.size === 0) {
+    toast("Tap at least one day first");
+    return;
+  }
+  const sorted = [...periodLogDates].sort();
+  const start = sorted[0];
+  const end = sorted[sorted.length - 1];
+  const periodLengthDays = Math.round((new Date(end + "T00:00:00") - new Date(start + "T00:00:00")) / 86400000) + 1;
+  try {
+    const res = await api.put(`/api/user/${currentUserId}/period`, { last_period_date: start, period_length_days: periodLengthDays });
+    currentUser.last_period_date = res.last_period_date;
+    currentUser.period_length_days = res.period_length_days;
+    periodLogging = false;
+    periodLogDates = new Set();
+    toast("Period logged");
+    renderCycleTab();
+  } catch (err) {
+    toast(err.message);
+  }
+});
 
 document.getElementById("profile-back").addEventListener("click", () => {
   document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
@@ -2034,7 +2195,7 @@ function renderPhaseLegend() {
   }
   legend.hidden = false;
   const allPill = `<button type="button" class="phase-legend-item phase-filter-btn${historyPhaseFilter === null ? " active" : ""}" data-phase="">All</button>`;
-  const phasePills = CYCLE_PHASES.map(p =>
+  const phasePills = getCyclePhases().map(p =>
     `<button type="button" class="phase-legend-item phase-filter-btn${historyPhaseFilter === p.key ? " active" : ""}" data-phase="${p.key}"><span class="phase-dot" style="background:${p.color}"></span>${p.label}</button>`
   ).join("");
   legend.innerHTML = allPill + phasePills;
@@ -2060,7 +2221,7 @@ function renderWorkoutTable() {
 
   const emptyEl = document.getElementById("history-empty");
   if (historyPhaseFilter && pageWorkouts.length === 0) {
-    const phase = CYCLE_PHASES.find(p => p.key === historyPhaseFilter);
+    const phase = getCyclePhases().find(p => p.key === historyPhaseFilter);
     emptyEl.textContent = `No workouts logged during your ${phase.label} yet.`;
     emptyEl.hidden = false;
   } else {
@@ -2221,7 +2382,7 @@ function renderHormoneReferenceChart() {
   // Luteal's band is stretched to the plot's right edge rather than to
   // xFor(29) (which doesn't exist - day 28 is the cycle's last day) so it
   // doesn't fall a half-day short of the axis.
-  CYCLE_PHASES.forEach(p => {
+  getCyclePhases().forEach(p => {
     const x1 = xFor(p.startDay);
     const x2 = p.key === "luteal" ? plotRight : xFor(p.endDay + 1);
     // Same opacity as the phase-colored area fill on the Your Performance
@@ -2507,7 +2668,7 @@ function renderPerformanceChart(series) {
 
   if (tracksCycle) {
     legendEl.hidden = false;
-    legendEl.innerHTML = CYCLE_PHASES.map(p =>
+    legendEl.innerHTML = getCyclePhases().map(p =>
       `<span class="phase-legend-item"><span class="phase-dot" style="background:${p.color}"></span>${p.label}</span>`
     ).join("");
   } else {
@@ -2723,7 +2884,7 @@ function computePRPhaseBreakdown(history) {
   });
 
   const byPhase = {};
-  CYCLE_PHASES.forEach(p => { byPhase[p.key] = []; });
+  getCyclePhases().forEach(p => { byPhase[p.key] = []; });
 
   Object.keys(byExercise).forEach(name => {
     const rows = byExercise[name];
@@ -2768,8 +2929,9 @@ function renderPRPhaseBreakdown(history) {
   emptyEl.hidden = true;
   contentEl.hidden = false;
 
-  const maxCount = Math.max(...CYCLE_PHASES.map(p => byPhase[p.key].length), 1);
-  contentEl.innerHTML = CYCLE_PHASES.map(p => {
+  const phases = getCyclePhases();
+  const maxCount = Math.max(...phases.map(p => byPhase[p.key].length), 1);
+  contentEl.innerHTML = phases.map(p => {
     const items = byPhase[p.key];
     const pct = items.length ? Math.max((items.length / maxCount) * 100, 6) : 2;
     const names = items.length
