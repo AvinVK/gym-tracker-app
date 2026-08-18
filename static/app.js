@@ -219,6 +219,14 @@ async function refreshStreak() {
   document.getElementById("streak-info-milestone-start").textContent = s.milestone_start;
   document.getElementById("streak-info-milestone-step").textContent = s.milestone_step;
   document.getElementById("streak-info-max-shields").textContent = s.max_shields;
+
+  const powerStat = document.getElementById("cycle-power-stat");
+  const hasPeriodDate = !!(currentUser && currentUser.last_period_date);
+  powerStat.hidden = !hasPeriodDate || !s.period_power;
+  if (hasPeriodDate && s.period_power) {
+    document.getElementById("cycle-power-text").textContent =
+      `What a Diva! Went ${s.period_power} day${s.period_power === 1 ? "" : "s"} to the gym during periods.`;
+  }
 }
 
 function hideAllAuthModals() {
@@ -570,7 +578,7 @@ function renderCycleCalendar() {
 
   const hasPeriodDate = !!(currentUser && currentUser.last_period_date);
   document.getElementById("cycle-calendar-banner").hidden = hasPeriodDate || periodLogging;
-  document.getElementById("cycle-log-period-btn").hidden = periodLogging;
+  document.getElementById("cycle-log-period-btn").hidden = periodLogging || !hasPeriodDate;
   document.getElementById("cycle-cal-log-hint").hidden = !periodLogging;
   document.getElementById("cycle-cal-log-actions").hidden = !periodLogging;
 
@@ -665,6 +673,7 @@ document.getElementById("cycle-cal-log-save").addEventListener("click", async ()
     periodLogDates = new Set();
     toast("Period logged");
     renderCycleTab();
+    refreshStreak();
   } catch (err) {
     toast(err.message);
   }

@@ -21,6 +21,15 @@ capped at MAX_SHIELDS. Milestone progress is scoped to the *current* streak
 resets too (shields already banked are not taken away, only the progress
 toward earning the next one).
 
+A week that overlaps the user's period (per cycle.py's projection from
+last_period_date) gets the same steady-hold treatment as a shielded week,
+but for free - no shield spent, nothing persisted. It's recomputed live
+every call, same as everything else here. This is naturally bounded, not a
+loophole: a period only overlaps at most 2 of the ~4 streak-weeks in any
+28-day cycle, so a genuinely inactive stretch still burns through real
+shields and eventually breaks the streak on the non-period weeks in
+between.
+
 Nothing about the streak is stored as a running counter - a user's
 workout_log dates can be added, edited, or backfilled for a past date at
 any time, so the only source of truth is the actual set of logged dates.
@@ -29,6 +38,8 @@ are recomputed from that set (plus the persisted record of which weeks
 were already healed by a shield) every time compute_streak_status() runs.
 """
 from datetime import date, timedelta
+
+from cycle import week_overlaps_period
 
 MAX_SHIELDS = 3
 MIN_VISITS_PER_WEEK = 4
@@ -64,12 +75,15 @@ def compute_streak_status(db, user_id, today=None):
     today = today or date.today()
 
     user = db.execute(
-        "SELECT shield_count, shield_milestone_progress, longest_streak FROM users WHERE id = ?",
+        "SELECT shield_count, shield_milestone_progress, longest_streak, last_period_date, "
+        "period_length_days FROM users WHERE id = ?",
         (user_id,),
     ).fetchone()
     shield_count = user["shield_count"]
     milestone_progress = user["shield_milestone_progress"]
     longest_streak = user["longest_streak"]
+    last_period = date.fromisoformat(user["last_period_date"]) if user["last_period_date"] else None
+    period_length_days = user["period_length_days"]
 
     log_dates = [date.fromisoformat(r["date"]) for r in db.execute(
         "SELECT DISTINCT date FROM workout_log WHERE user_id = ?", (user_id,)
@@ -133,6 +147,13 @@ def compute_streak_status(db, user_id, today=None):
             # time this happens to get recomputed, however late, before
             # collapsing to 0 once shields ran out - a confusing climb-then-
             # crash with no real activity behind it.
+            pass
+        elif earliest_week and wk >= earliest_week and week_overlaps_period(wk_date, last_period, period_length_days):
+            # Free pass, not a shield use: a week she fell short on because
+            # it overlapped her period shouldn't cost a banked shield, and
+            # shouldn't need one either. Same earliest_week floor as a real
+            # shield use, for the same reason - never manufacture weeks
+            # before the account's first-ever logged one.
             pass
         elif earliest_week and wk >= earliest_week and shield_count > 0:
             shield_count -= 1

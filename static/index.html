@@ -102,6 +102,7 @@
       <li><strong>Your week, your days.</strong> Your streak week runs on a 7-day cycle starting from the weekday you first logged a visit - not a fixed calendar week.</li>
       <li><strong>Shields protect you.</strong> Fall short in a week and a shield automatically covers it, holding your streak steady instead of resetting it to zero (it won't go up that week, since nothing was logged - but it won't drop either).</li>
       <li><strong>Earning shields.</strong> Everyone starts with 0. Reach a <strong id="streak-info-milestone-start">3</strong>-week streak to earn your first shield, then another every <strong id="streak-info-milestone-step">4</strong> weeks after that, up to a max of <strong id="streak-info-max-shields">3</strong>.</li>
+      <li><strong>Period weeks are covered.</strong> If a week overlaps your period (set in Your Cycle), a shortfall that week is covered automatically - free, no shield spent.</li>
     </ul>
     <button type="button" class="primary" id="streak-info-close">Got it</button>
   </div>
@@ -344,38 +345,48 @@
       </div>
 
       <div class="cycle-layout">
-        <div class="cycle-summary-block" id="cycle-current-block" hidden>
-          <span class="cycle-summary-label">Current Phase</span>
-          <span class="cycle-summary-value" id="cycle-current-phase">-</span>
-          <span class="cycle-summary-sub" id="cycle-current-detail"></span>
-        </div>
+        <div class="cycle-cal-col">
+          <div class="cycle-cal-wrap">
+            <div class="cycle-cal-top-row">
+              <button type="button" class="edit-link-btn cycle-log-period-btn" id="cycle-log-period-btn">Log Period</button>
+            </div>
+            <div class="cycle-cal-header">
+              <button type="button" class="cycle-cal-nav" id="cycle-cal-prev" aria-label="Previous month">&#8249;</button>
+              <span id="cycle-cal-month-label"></span>
+              <button type="button" class="cycle-cal-nav" id="cycle-cal-next" aria-label="Next month">&#8250;</button>
+            </div>
+            <div class="cycle-cal-weekdays">
+              <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+            </div>
+            <div class="cycle-cal-grid" id="cycle-cal-grid"></div>
+            <p class="cycle-cal-log-hint" id="cycle-cal-log-hint" hidden>Tap the day it started - today, or a past date if you missed logging it. We'll fill in the next few days for you; tap any day to add or remove it.</p>
+            <div class="cycle-cal-log-actions" id="cycle-cal-log-actions" hidden>
+              <button type="button" class="secondary" id="cycle-cal-log-cancel">Cancel</button>
+              <button type="button" class="primary" id="cycle-cal-log-save">Save</button>
+            </div>
+          </div>
 
-        <div class="cycle-cal-wrap">
-          <div class="cycle-cal-header">
-            <button type="button" class="cycle-cal-nav" id="cycle-cal-prev" aria-label="Previous month">&#8249;</button>
-            <span id="cycle-cal-month-label"></span>
-            <button type="button" class="cycle-cal-nav" id="cycle-cal-next" aria-label="Next month">&#8250;</button>
-          </div>
-          <div class="cycle-cal-weekdays">
-            <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
-          </div>
-          <div class="cycle-cal-grid" id="cycle-cal-grid"></div>
-          <p class="cycle-cal-log-hint" id="cycle-cal-log-hint" hidden>Tap the day it started - today, or a past date if you missed logging it. We'll fill in the next few days for you; tap any day to add or remove it.</p>
-          <div class="cycle-cal-log-actions" id="cycle-cal-log-actions" hidden>
-            <button type="button" class="secondary" id="cycle-cal-log-cancel">Cancel</button>
-            <button type="button" class="primary" id="cycle-cal-log-save">Save</button>
-          </div>
-        </div>
+          <div class="cycle-summary-row">
+            <div class="cycle-summary-block" id="cycle-current-block" hidden>
+              <span class="cycle-summary-label">Current Phase</span>
+              <span class="cycle-summary-value" id="cycle-current-phase">-</span>
+              <span class="cycle-summary-sub" id="cycle-current-detail"></span>
+            </div>
 
-        <div class="cycle-summary-block cycle-summary-block-end" id="cycle-next-block" hidden>
-          <span class="cycle-summary-label">Next Phase</span>
-          <span class="cycle-summary-value" id="cycle-next-phase">-</span>
-          <span class="cycle-summary-sub" id="cycle-next-detail"></span>
-          <button type="button" class="edit-link-btn cycle-log-period-btn" id="cycle-log-period-btn">Log Period</button>
+            <div class="cycle-summary-block cycle-summary-block-end" id="cycle-next-block" hidden>
+              <span class="cycle-summary-label">Next Phase</span>
+              <span class="cycle-summary-value" id="cycle-next-phase">-</span>
+              <span class="cycle-summary-sub" id="cycle-next-detail"></span>
+            </div>
+          </div>
         </div>
       </div>
 
       <p class="cycle-estimate-note" id="cycle-estimate-note" hidden>Estimated from a standard 28-day cycle starting on your last period date.</p>
+      <div class="cycle-power-stat" id="cycle-power-stat" hidden>
+        <span aria-hidden="true">💪</span>
+        <span id="cycle-power-text">What a Diva! Went 0 days to the gym during periods.</span>
+      </div>
     </div>
 
     <div class="card">

@@ -11,6 +11,7 @@ from werkzeug.utils import secure_filename
 import config
 from db import close_db, get_db, init_db
 from streaks import compute_streak_status
+from cycle import compute_period_power
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
@@ -422,7 +423,9 @@ def get_streak():
     if err:
         return err
     db = get_db()
-    return jsonify(compute_streak_status(db, user_id))
+    status = compute_streak_status(db, user_id)
+    status["period_power"] = compute_period_power(db, user_id)
+    return jsonify(status)
 
 
 # ---------------------------------------------------------------
