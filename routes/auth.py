@@ -1,0 +1,206 @@
+"""Auth API: signup/login/logout, profile updates, period logging, avatar upload."""
+import os
+import uuid
+
+from flask import Blueprint, jsonify, request, session
+from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
+
+from db import get_db
+from helpers import get_current_user_id, is_future_date, require_login
+from paths import UPLOAD_DIR
+
+bp = Blueprint("auth", __name__)
+
+PIN_LENGTH = 4
+ALLOWED_AVATAR_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+# 1, not higher: the Your Cycle calendar lets a period be logged as a single
+# tapped day (Log Period -> tap one day -> Save), which is a legitimate,
+# easily-produced selection, not an input error.
+MIN_PERIOD_DAYS = 1
+MAX_PERIOD_DAYS = 10
+
+
+def _valid_pin(pin):
+    return isinstance(pin, str) and len(pin) == PIN_LENGTH and pin.isdigit()
+
+
+def _normalize_email(email):
+    return (email or "").strip().lower()
+
+
+def _capitalize_name(name):
+    """Only the first character — deliberately not .title(), which would
+    also force-capitalize every subsequent word (breaks names like
+    "van Dyke" or hyphenated/multi-word names)."""
+    name = (name or "").strip()
+    return name[:1].upper() + name[1:] if name else name
+
+
+def _valid_email(email):
+    # Deliberately loose — this isn't verified by a real email round-trip,
+    # just enough to catch obvious typos before it becomes the login key.
+    return bool(email) and "@" in email and "." in email.split("@")[-1]
+
+
+def _user_public_dict(row):
+    d = dict(row)
+    d.pop("password_hash", None)
+    d.pop("username", None)
+    return d
+
+
+@bp.route("/api/me", methods=["GET"])
+def get_me():
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify(None)
+    db = get_db()
+    row = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not row:
+        session.clear()
+        return jsonify(None)
+    return jsonify(_user_public_dict(row))
+
+
+@bp.route("/api/check-email", methods=["POST"])
+def check_email():
+    """Step 2 of the login wizard: does this email already have an account?
+    Drives whether the frontend shows the new-user setup step or the
+    returning-user PIN step next."""
+    data = request.get_json(force=True)
+    email = _normalize_email(data.get("email"))
+    if not _valid_email(email):
+        return jsonify({"error": "enter a valid email"}), 400
+    db = get_db()
+    row = db.execute("SELECT id, name FROM users WHERE email = ?", (email,)).fetchone()
+    if row:
+        return jsonify({"exists": True, "name": row["name"]})
+    return jsonify({"exists": False})
+
+
+@bp.route("/api/signup", methods=["POST"])
+def signup():
+    data = request.get_json(force=True)
+    name = _capitalize_name(data.get("name"))
+    email = _normalize_email(data.get("email"))
+    pin = data.get("pin") or ""
+    if not name:
+        return jsonify({"error": "name is required"}), 400
+    if not _valid_email(email):
+        return jsonify({"error": "enter a valid email"}), 400
+    if not _valid_pin(pin):
+        return jsonify({"error": f"PIN must be exactly {PIN_LENGTH} digits"}), 400
+    if data.get("last_period_date") and is_future_date(data["last_period_date"]):
+        return jsonify({"error": "last_period_date cannot be in the future"}), 400
+
+    db = get_db()
+    if db.execute("SELECT 1 FROM users WHERE email = ?", (email,)).fetchone():
+        return jsonify({"error": "that email is already registered"}), 409
+
+    cur = db.execute(
+        "INSERT INTO users (name, email, password_hash, age, last_period_date) VALUES (?, ?, ?, ?, ?)",
+        (name, email, generate_password_hash(pin), data.get("age"), data.get("last_period_date") or None),
+    )
+    db.commit()
+    session.clear()
+    session.permanent = True
+    session["user_id"] = cur.lastrowid
+    return jsonify({"id": cur.lastrowid}), 201
+
+
+@bp.route("/api/login", methods=["POST"])
+def login():
+    data = request.get_json(force=True)
+    email = _normalize_email(data.get("email"))
+    pin = data.get("pin") or ""
+    db = get_db()
+    row = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+    if not row or not row["password_hash"] or not check_password_hash(row["password_hash"], pin):
+        return jsonify({"error": "incorrect email or PIN"}), 401
+    session.clear()
+    session.permanent = True
+    session["user_id"] = row["id"]
+    return jsonify(_user_public_dict(row))
+
+
+@bp.route("/api/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return jsonify({"ok": True})
+
+
+@bp.route("/api/user/<int:user_id>", methods=["PUT"])
+def update_user(user_id):
+    current_id, err = require_login()
+    if err:
+        return err
+    if current_id != user_id:
+        return jsonify({"error": "forbidden"}), 403
+    data = request.get_json(force=True)
+    name = _capitalize_name(data.get("name"))
+    if not name:
+        return jsonify({"error": "name is required"}), 400
+    if data.get("last_period_date") and is_future_date(data["last_period_date"]):
+        return jsonify({"error": "last_period_date cannot be in the future"}), 400
+    db = get_db()
+    db.execute(
+        "UPDATE users SET name = ?, age = ?, last_period_date = ? WHERE id = ?",
+        (name, data.get("age"), data.get("last_period_date") or None, user_id),
+    )
+    db.commit()
+    return jsonify({"id": user_id})
+
+
+@bp.route("/api/user/<int:user_id>/period", methods=["PUT"])
+def log_period(user_id):
+    """Quick-action used by the "Log Period" button on the Your Cycle tab -
+    deliberately separate from update_user (which requires a full profile
+    payload incl. name) so logging a period start is a single lightweight
+    call, not a full profile resubmit."""
+    current_id, err = require_login()
+    if err:
+        return err
+    if current_id != user_id:
+        return jsonify({"error": "forbidden"}), 403
+    data = request.get_json(force=True)
+    last_period_date = (data.get("last_period_date") or "").strip()
+    if not last_period_date:
+        return jsonify({"error": "date is required"}), 400
+    if is_future_date(last_period_date):
+        return jsonify({"error": "date cannot be in the future"}), 400
+    try:
+        period_length_days = int(data.get("period_length_days"))
+    except (TypeError, ValueError):
+        return jsonify({"error": "period_length_days must be a number"}), 400
+    if not (MIN_PERIOD_DAYS <= period_length_days <= MAX_PERIOD_DAYS):
+        return jsonify({"error": f"period length must be between {MIN_PERIOD_DAYS} and {MAX_PERIOD_DAYS} days"}), 400
+    db = get_db()
+    db.execute(
+        "UPDATE users SET last_period_date = ?, period_length_days = ? WHERE id = ?",
+        (last_period_date, period_length_days, user_id),
+    )
+    db.commit()
+    return jsonify({"last_period_date": last_period_date, "period_length_days": period_length_days})
+
+
+@bp.route("/api/user/<int:user_id>/avatar", methods=["POST"])
+def upload_avatar(user_id):
+    current_id, err = require_login()
+    if err:
+        return err
+    if current_id != user_id:
+        return jsonify({"error": "forbidden"}), 403
+    file = request.files.get("avatar")
+    if not file or file.filename == "":
+        return jsonify({"error": "avatar file is required"}), 400
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in ALLOWED_AVATAR_EXTENSIONS:
+        return jsonify({"error": "unsupported file type"}), 400
+    filename = secure_filename(f"user{user_id}_{uuid.uuid4().hex}.{ext}")
+    file.save(os.path.join(UPLOAD_DIR, filename))
+    avatar_url = f"/uploads/{filename}"
+    db = get_db()
+    db.execute("UPDATE users SET avatar = ? WHERE id = ?", (avatar_url, user_id))
+    db.commit()
+    return jsonify({"avatar": avatar_url})

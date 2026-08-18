@@ -1,8 +1,32 @@
-# Clock It (local app)
+# Clock It
 
-A small local web app: Flask backend + SQLite database + a plain HTML/JS frontend.
-Replaces the spreadsheet version with a real cascading dropdown (pick a muscle group,
-only see exercises for that muscle) and a proper database instead of formulas.
+A workout tracker built as a Flask + SQLite backend with a plain HTML/JS frontend,
+wrapped with [Capacitor](https://capacitorjs.com/) so it also ships as a native
+Android/iOS app. Originally replaced a workout-log spreadsheet; has since grown into
+a small multi-user fitness app with streaks and menstrual-cycle-aware tracking.
+
+## What's inside
+
+- **Accounts** — email + 4-digit PIN login (no passwords to remember), with an
+  avatar photo and a profile (name, age, optional period info).
+- **Log Workout** — record a gym visit (date, energy level, pre-workout meal) and
+  log the exercises done that day. The exercise picker cascades from muscle group,
+  server-filtered so you only see exercises for the group you picked, from a shared
+  library of curated + imported exercises with reference images.
+- **History** — browse past visits, and edit or delete a day's logged sets after the
+  fact. Edits, additions and deletions are tracked per set (with an "Edited"/"Added"
+  badge and a snapshot of the previous value) so a day's log shows its own history,
+  not just its current state. Sets that beat a previous best are tagged as PRs.
+- **Streaks** — a weekly (not daily) streak: log enough visits in a week and it
+  counts. Streak shields, earned as the streak grows, automatically cover a week
+  that falls short instead of resetting you to zero. Weeks that overlap a logged
+  period get the same free pass, no shield spent.
+- **Your Cycle** — an opt-in menstrual cycle calendar: log period start dates, see
+  the current/next cycle phase, a chart of the typical hormone pattern across the
+  cycle, and how many gym visits landed on a period day this month.
+- **Your Performance** — PR progress charts per exercise, an energy-vs-time chart,
+  and a PRs-by-cycle-phase breakdown for users with cycle tracking on.
+- **Diet** — placeholder tab, not built yet.
 
 ## Run it
 
@@ -15,19 +39,24 @@ python app.py
 Then open **http://localhost:5000** in a browser.
 
 The database file `gym_tracker.db` is created automatically on first run, pre-seeded
-with the same exercise plan (Chest / Back / Shoulders / Legs / Biceps / Triceps) you
-already had. Delete `gym_tracker.db` at any time to reset to a blank database — it
-will be recreated with the seed data on the next run.
+with a starter exercise library. Delete it at any time to reset to a blank database —
+it will be recreated with the seed data on the next run.
 
-## What's inside
+## Project layout
 
-- **Exercise Plan tab** — add/remove exercises, grouped by Target Muscle. Add a brand
-  new muscle group just by typing it in the "Target Muscle" field.
-- **Log Workout tab** — record a gym visit (date, muscle group, start/end time —
-  duration is calculated automatically) and log the exercises done that day. The
-  Exercise dropdown only shows exercises belonging to whichever muscle group you pick
-  — this is real server-side filtering, not a spreadsheet formula trick.
-- **History tab** — view and delete past workout visits and exercise entries.
+```
+app.py          Flask app factory: config, secret key, blueprint registration
+paths.py        Shared BASE_DIR/STATIC_DIR/UPLOAD_DIR constants
+helpers.py      Small helpers shared across route blueprints (login/session, date checks)
+config.py       Branch-aware PORT/DB_NAME defaults (so main and dev can run side by side)
+db.py           SQLite schema, migrations, and connection handling
+streaks.py      Weekly streak + shield calculation
+cycle.py        Shared menstrual-cycle date math (used by streaks.py and the API)
+routes/         One blueprint per API area (auth, workout log, exercise log, exercise
+                plan, streak, deploy webhook, frontend)
+static/         The frontend: index.html, app.js, exercise images, uploaded avatars
+android/, ios/  Capacitor native app projects
+```
 
 ## Notes
 
@@ -35,4 +64,7 @@ will be recreated with the seed data on the next run.
   copying that one file.
 - This runs on one machine at a time (whoever has the Flask server running). It's not
   designed to be exposed to the internet as-is.
-- No build step, no Node — just Python's standard library + Flask.
+- No frontend build step — just Python's standard library + Flask on the backend, and
+  plain HTML/JS (no framework, no bundler) on the frontend.
+- The Android/iOS apps are Capacitor wrappers around the same web frontend, pointed at
+  a deployed instance of this server rather than bundling their own copy.
