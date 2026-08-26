@@ -138,7 +138,7 @@ function renderDatePickerGrid() {
       btn.addEventListener("click", () => {
         setDateFieldValue(dpActiveField.container, iso);
         const hiddenInput = dpActiveField.container.querySelector("input[type=hidden]");
-        if (hiddenInput.id === "workout-date" && iso !== todayStr) {
+        if (hiddenInput.id === "log-date-hidden" && iso !== todayStr) {
           toast("You're logging a previous workout");
         }
         closeDatePicker();
@@ -189,31 +189,21 @@ let currentUser = null;
 let authDraft = { name: "", email: "" };
 
 function showGreeting(name) {
-  document.getElementById("user-greeting-text").textContent = `Hi, ${name}`;
-  document.getElementById("user-menu").hidden = false;
+  // Kept as a no-op-ish helper (the topbar greeting it used to fill no
+  // longer exists - the Today screen's own greeting is populated by
+  // renderTodayScreen) so callers elsewhere don't need to change.
 }
 
 const WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
+// Cached so the Today screen can re-render (e.g. re-trigger the ring
+// animation on every tab entry, see switchTab) without re-fetching.
+let latestStreakData = null;
+
 async function refreshStreak() {
   const s = await api.get("/api/streak");
   if (!s || s.error) return;
-  document.getElementById("streak-count-text").textContent = s.current_streak;
-  document.getElementById("streak-current-value").textContent = `${s.current_streak} week${s.current_streak === 1 ? "" : "s"}`;
-  document.getElementById("streak-best-value").textContent = `${s.longest_streak} week${s.longest_streak === 1 ? "" : "s"}`;
-  document.getElementById("streak-week-progress-value").textContent = `${s.visits_this_week} / ${s.visits_needed} visits`;
-  const pct = Math.min(100, (s.visits_this_week / s.visits_needed) * 100);
-  document.getElementById("streak-week-progress-fill").style.width = `${pct}%`;
-  const shieldIcons = Array.from({ length: s.max_shields }, (_, i) =>
-    i < s.shield_count ? "🛡️" : '<span class="shield-spent">🛡️</span>'
-  ).join(" ");
-  document.getElementById("streak-shields-icons").innerHTML = shieldIcons;
-  const startIdx = WEEKDAY_NAMES.indexOf(s.week_start_day);
-  const endDay = WEEKDAY_NAMES[(startIdx + 6) % 7];
-  const anchorNote = document.getElementById("streak-week-anchor-note");
-  anchorNote.textContent = s.next_shield_at
-    ? `Your streak week runs ${s.week_start_day}-${endDay}. Next shield at a ${s.next_shield_at}-week streak.`
-    : `Your streak week runs ${s.week_start_day}-${endDay}. Shields full.`;
+  latestStreakData = s;
 
   document.getElementById("streak-info-visits-needed").textContent = s.visits_needed;
   document.getElementById("streak-info-milestone-start").textContent = s.milestone_start;
@@ -226,6 +216,66 @@ async function refreshStreak() {
   if (hasPeriodDate && s.period_power) {
     document.getElementById("cycle-power-text").textContent =
       `What a Diva! Went ${s.period_power} day${s.period_power === 1 ? "" : "s"} to the gym during periods.`;
+  }
+
+  if (document.getElementById("maintab-today").classList.contains("active")) {
+    renderTodayStreakCard(false);
+  }
+}
+
+// Streak ring circumference: 2*PI*46 (see the SVG's r=46 in index.html).
+const STREAK_RING_CIRCUMFERENCE = 289;
+
+// animateFromZero: true when the Today screen was just entered (see
+// switchTab) - the ring transitions in from 0 per the design spec; false
+// for a plain data refresh (e.g. after logging a period), which just jumps
+// straight to the current value with no animation.
+function renderTodayStreakCard(animateFromZero) {
+  const s = latestStreakData;
+  const ring = document.getElementById("today-streak-ring-progress");
+  const countEl = document.getElementById("today-streak-ring-count");
+  const targetEl = document.getElementById("today-streak-ring-target");
+  const headlineEl = document.getElementById("today-streak-headline");
+  const metaEl = document.getElementById("today-streak-meta");
+  const pipsEl = document.getElementById("today-streak-pips");
+  if (!s) return;
+
+  const n = Math.max(0, s.visits_needed - s.visits_this_week);
+  const headline = n === 0 ? "Streak locked in this week"
+    : n === 1 ? "One more visit keeps<br>the streak"
+    : `${n} more visits keep<br>the streak`;
+  // Grab the (i) button before wiping headlineEl's own innerHTML - it lives
+  // inside headlineEl in the source HTML, so overwriting innerHTML first
+  // would detach it from the document entirely, and getElementById would
+  // never find it again to re-append.
+  const infoBtn = document.getElementById("today-streak-info-btn");
+  headlineEl.innerHTML = headline + " ";
+  headlineEl.appendChild(infoBtn);
+
+  countEl.textContent = s.visits_this_week;
+  targetEl.textContent = `of ${s.visits_needed}`;
+
+  const shieldGlyphs = Array.from({ length: s.shield_count }, () => "&#128737;&#65039;").join("");
+  metaEl.innerHTML = `<span>&#128293; ${s.current_streak}-week streak</span>` +
+    (shieldGlyphs ? `<span class="dot-sep">&middot;</span><span>${shieldGlyphs}</span>` : "");
+
+  pipsEl.innerHTML = Array.from({ length: s.visits_needed }, (_, i) =>
+    `<span class="today-streak-pip${i < s.visits_this_week ? " filled" : ""}"></span>`
+  ).join("");
+
+  const reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const pct = Math.min(1, s.visits_this_week / s.visits_needed);
+  const targetDash = `${pct * STREAK_RING_CIRCUMFERENCE} ${STREAK_RING_CIRCUMFERENCE}`;
+  if (animateFromZero && !reducedMotion) {
+    ring.style.transition = "none";
+    ring.setAttribute("stroke-dasharray", `0 ${STREAK_RING_CIRCUMFERENCE}`);
+    requestAnimationFrame(() => {
+      ring.style.transition = "";
+      requestAnimationFrame(() => ring.setAttribute("stroke-dasharray", targetDash));
+    });
+  } else {
+    ring.style.transition = "none";
+    ring.setAttribute("stroke-dasharray", targetDash);
   }
 }
 
@@ -261,16 +311,12 @@ async function onLoggedIn(user, { isNewSignup = false } = {}) {
   }
 
   hideAllAuthModals();
-  document.getElementById("user-menu-dropdown").hidden = true;
-  showGreeting(user.name);
   refreshStreak();
 
   await muscleOptionsReady;
   await restoreDraft(); // this user's own draft, if any; also resets restoringDraft when done
 
-  if (document.querySelector('.tab-btn[data-tab="history"]').classList.contains("active")) {
-    loadHistory();
-  }
+  switchTab("today");
 }
 
 document.getElementById("form-auth-name").addEventListener("submit", (e) => {
@@ -360,8 +406,6 @@ document.getElementById("form-auth-login").addEventListener("submit", async (e) 
 });
 
 document.getElementById("logout-btn").addEventListener("click", async () => {
-  document.getElementById("user-menu-dropdown").hidden = true;
-  document.getElementById("streak-dropdown").hidden = true;
   document.getElementById("streak-info-modal").hidden = true;
   await api.post("/api/logout", {});
   currentUser = null;
@@ -369,7 +413,6 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
   authDraft = { name: "", email: "" };
   restoringDraft = true;
   resetWorkoutFlowUI();
-  document.getElementById("user-menu").hidden = true;
   document.getElementById("form-auth-name").reset();
   showAuthStep("auth-name-modal");
 });
@@ -386,32 +429,10 @@ async function checkAuth() {
 const muscleOptionsReady = loadMuscleOptions();
 checkAuth();
 
-// ---------------- User menu / Profile ----------------
-const userMenuDropdown = document.getElementById("user-menu-dropdown");
-const streakDropdown = document.getElementById("streak-dropdown");
-
-document.getElementById("user-greeting-btn").addEventListener("click", (e) => {
-  e.stopPropagation();
-  streakDropdown.hidden = true;
-  userMenuDropdown.hidden = !userMenuDropdown.hidden;
-});
-
-document.getElementById("streak-badge-btn").addEventListener("click", (e) => {
-  e.stopPropagation();
-  userMenuDropdown.hidden = true;
-  streakDropdown.hidden = !streakDropdown.hidden;
-});
-
-document.addEventListener("click", () => {
-  userMenuDropdown.hidden = true;
-  streakDropdown.hidden = true;
-});
-
 // ---------------- Streak info modal ----------------
 const streakInfoModal = document.getElementById("streak-info-modal");
-document.getElementById("streak-info-btn").addEventListener("click", (e) => {
+document.getElementById("today-streak-info-btn").addEventListener("click", (e) => {
   e.stopPropagation();
-  streakDropdown.hidden = true;
   streakInfoModal.hidden = false;
 });
 document.getElementById("streak-info-close").addEventListener("click", () => { streakInfoModal.hidden = true; });
@@ -421,15 +442,16 @@ streakInfoModal.addEventListener("click", (e) => { if (e.target === streakInfoMo
 // anyone who hasn't uploaded their own picture yet.
 function renderProfileAvatar() {
   const img = document.getElementById("profile-avatar-img");
-  img.src = (currentUser && currentUser.avatar) || "default-avatar.png";
+  img.src = (currentUser && currentUser.avatar) || "default-avatar.jpeg";
+  const todayImg = document.getElementById("today-avatar-img");
+  if (todayImg) todayImg.src = (currentUser && currentUser.avatar) || "default-avatar.jpeg";
 }
 
-function showProfile() {
-  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-  document.querySelectorAll(".main-tab-panel").forEach(p => p.classList.remove("active"));
-  document.getElementById("tab-profile").classList.add("active");
-
+// ---------------- Profile (edit modal, opened from Today's avatar) ----------------
+// Editing profile fields moved off the Your Body tab and behind a tap on
+// the Today screen's avatar - Your Body is now just body-performance data
+// (Strength by phase / Fuel), not account settings.
+function openProfileEditModal() {
   document.getElementById("profile-name").value = currentUser.name || "";
   document.getElementById("profile-age").value = currentUser.age ?? "";
   const tracksCycle = !!currentUser.last_period_date;
@@ -437,14 +459,122 @@ function showProfile() {
   document.getElementById("profile-period-date-label").hidden = !tracksCycle;
   setDateFieldValue(document.getElementById("profile-last-period").closest(".date-field"), currentUser.last_period_date || "");
   renderProfileAvatar();
+  document.getElementById("profile-edit-modal").hidden = false;
+}
+document.getElementById("today-avatar-img").addEventListener("click", openProfileEditModal);
+document.getElementById("today-avatar-img").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openProfileEditModal(); }
+});
+function closeProfileEditModal() { document.getElementById("profile-edit-modal").hidden = true; }
+document.getElementById("profile-edit-cancel").addEventListener("click", closeProfileEditModal);
+document.getElementById("profile-edit-modal").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) closeProfileEditModal();
+});
+
+// ---------------- Your Body tab ----------------
+function renderYouTab() {
+  document.getElementById("card-pending-exercises").hidden = !currentUser.is_admin;
+  if (currentUser.is_admin) loadPendingExercises();
+
+  renderCyclePerfSection();
 }
 
-wireCycleOptIn(document.getElementById("profile-track-cycle"), document.getElementById("profile-period-date-label"));
+// ---------------- Pending exercise approvals (admin only) ----------------
+// The other side of the propose flow in the option picker (see
+// handleProposeExercise/finalizeNewExercise) - a name that didn't
+// substring-match and wasn't a semantic "did you mean" match lands here for
+// review. Approving/rejecting relabels any sets already logged under the
+// raw text server-side (see routes/exercise_plan.py), so this doesn't need
+// to touch exercise_log itself.
+async function loadPendingExercises() {
+  const list = document.getElementById("pending-exercises-list");
+  const empty = document.getElementById("pending-exercises-empty");
+  const pending = await api.get("/api/exercise-plan/pending");
+  if (!Array.isArray(pending) || !pending.length) {
+    list.innerHTML = "";
+    empty.hidden = false;
+    return;
+  }
+  empty.hidden = true;
+  list.innerHTML = pending.map(p => `
+    <div class="pending-exercise-row" data-id="${p.id}">
+      <div class="pending-exercise-meta">
+        Proposed by ${escapeHtml(p.proposed_by_name)} &middot; ${escapeHtml((p.proposed_at || "").slice(0, 10))}
+      </div>
+      <div class="pending-exercise-fields">
+        <label>Exercise name
+          <input type="text" class="pe-exercise" value="${escapeHtml(p.exercise)}">
+        </label>
+        <label>Muscle group
+          <select class="pe-muscle">
+            ${availableMuscles.map(m => `<option value="${escapeHtml(m)}"${m === p.target_muscle ? " selected" : ""}>${escapeHtml(m)}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+      <div class="pending-exercise-actions">
+        <button type="button" class="primary pe-approve">Approve</button>
+        <button type="button" class="secondary pe-reject-toggle">Reject / Redirect</button>
+      </div>
+      <div class="pending-exercise-reject-panel" hidden>
+        <p class="field-hint">Leave blank to just discard the proposal, or point her existing logged sets at an exercise that already exists.</p>
+        <label>Redirect to muscle group
+          <select class="pe-resolved-muscle">
+            <option value="">(none - just discard)</option>
+            ${availableMuscles.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join("")}
+          </select>
+        </label>
+        <label>Redirect to exercise name
+          <input type="text" class="pe-resolved-exercise" placeholder="exact existing exercise name">
+        </label>
+        <div class="pending-exercise-actions">
+          <button type="button" class="danger pe-reject-confirm">Confirm Reject</button>
+          <button type="button" class="secondary pe-reject-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>`).join("");
+}
 
-document.getElementById("view-profile-btn").addEventListener("click", () => {
-  userMenuDropdown.hidden = true;
-  showProfile();
+document.getElementById("pending-exercises-list").addEventListener("click", async (e) => {
+  const row = e.target.closest(".pending-exercise-row");
+  if (!row) return;
+  const id = row.dataset.id;
+
+  if (e.target.closest(".pe-approve")) {
+    try {
+      await api.post(`/api/exercise-plan/pending/${id}/approve`, {
+        exercise: row.querySelector(".pe-exercise").value.trim(),
+        target_muscle: row.querySelector(".pe-muscle").value,
+      });
+      toast("Exercise approved");
+      loadPendingExercises();
+    } catch (err) {
+      toast(err.message);
+    }
+    return;
+  }
+  if (e.target.closest(".pe-reject-toggle")) {
+    row.querySelector(".pending-exercise-reject-panel").hidden = false;
+    return;
+  }
+  if (e.target.closest(".pe-reject-cancel")) {
+    row.querySelector(".pending-exercise-reject-panel").hidden = true;
+    return;
+  }
+  if (e.target.closest(".pe-reject-confirm")) {
+    try {
+      await api.post(`/api/exercise-plan/pending/${id}/reject`, {
+        resolved_muscle: row.querySelector(".pe-resolved-muscle").value,
+        resolved_exercise: row.querySelector(".pe-resolved-exercise").value.trim(),
+      });
+      toast("Proposal rejected");
+      loadPendingExercises();
+    } catch (err) {
+      toast(err.message);
+    }
+  }
 });
+
+wireCycleOptIn(document.getElementById("profile-track-cycle"), document.getElementById("profile-period-date-label"));
 
 // ---------------- Your Cycle ----------------
 // No per-user cycle length is collected, so this estimates every cycle as
@@ -624,7 +754,7 @@ document.getElementById("cycle-cal-next").addEventListener("click", () => {
   cycleCalViewMonth++; if (cycleCalViewMonth > 11) { cycleCalViewMonth = 0; cycleCalViewYear++; }
   renderCycleCalendar();
 });
-document.getElementById("cycle-calendar-add-date-btn").addEventListener("click", showProfile);
+document.getElementById("cycle-calendar-add-date-btn").addEventListener("click", () => switchTab("you"));
 
 // ---------------- Log Period ----------------
 function selectPeriodLogDay(iso) {
@@ -679,16 +809,6 @@ document.getElementById("cycle-cal-log-save").addEventListener("click", async ()
   }
 });
 
-document.getElementById("profile-back").addEventListener("click", () => {
-  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-  document.getElementById("tab-log").classList.add("active");
-  document.querySelector('.tab-btn[data-tab="log"]').classList.add("active");
-  document.querySelectorAll(".main-tab-btn").forEach(b => b.classList.remove("active"));
-  document.querySelector('.main-tab-btn[data-maintab="workout"]').classList.add("active");
-  document.querySelectorAll(".main-tab-panel").forEach(p => p.classList.remove("active"));
-  document.getElementById("maintab-workout").classList.add("active");
-});
-
 document.getElementById("form-profile").addEventListener("submit", async (e) => {
   e.preventDefault();
   if (document.getElementById("profile-track-cycle").checked && !document.getElementById("profile-last-period").value) {
@@ -701,7 +821,12 @@ document.getElementById("form-profile").addEventListener("submit", async (e) => 
     await api.put(`/api/user/${currentUser.id}`, body);
     currentUser = { ...currentUser, ...body };
     showGreeting(currentUser.name);
+    closeProfileEditModal();
     toast("Profile updated");
+    // Opened from - and always closes back to - Today, so refresh it in
+    // place (name/avatar in the greeting, cycle strip if tracking changed)
+    // rather than requiring a manual tab switch to see the change land.
+    if (activeTab === "today") renderTodayScreen();
   } catch (err) {
     toast(err.message);
   }
@@ -724,35 +849,29 @@ document.getElementById("profile-avatar-input").addEventListener("change", async
   }
 });
 
-// ---------------- Tabs ----------------
-document.querySelectorAll(".main-tab-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".main-tab-btn").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll(".main-tab-panel").forEach(p => p.classList.remove("active"));
-    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-    btn.classList.add("active");
-    document.getElementById("maintab-" + btn.dataset.maintab).classList.add("active");
-    if (btn.dataset.maintab === "workout") {
-      const activeSubTab = document.querySelector('.tabs .tab-btn.active') || document.querySelector('.tabs .tab-btn[data-tab="log"]');
-      activeSubTab.classList.add("active");
-      document.getElementById("tab-" + activeSubTab.dataset.tab).classList.add("active");
-      if (activeSubTab.dataset.tab === "history") loadHistory();
-    } else if (btn.dataset.maintab === "cycle") {
-      renderCycleTab();
-    } else if (btn.dataset.maintab === "performance") {
-      renderPerformanceTab();
-    }
-  });
-});
+// ---------------- Tabs (bottom nav) ----------------
+// Replaces the old two-level data-maintab + data-tab state (see the design
+// handoff's "State Management" section) with a single activeTab covering
+// all five bottom-nav destinations.
+let activeTab = "today";
 
-document.querySelectorAll(".tab-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-    btn.classList.add("active");
-    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
-    if (btn.dataset.tab === "history") loadHistory();
+function switchTab(name) {
+  activeTab = name;
+  document.querySelectorAll(".bottom-nav-item").forEach(b => b.classList.toggle("active", b.dataset.maintab === name));
+  document.querySelectorAll(".main-tab-panel").forEach(p => {
+    const isActive = p.id === "maintab-" + name;
+    p.classList.toggle("active", isActive);
+    p.hidden = !isActive;
   });
+  if (name === "today") renderTodayScreen();
+  else if (name === "log") renderLogScreen();
+  else if (name === "history") loadHistory();
+  else if (name === "cycle") renderCycleTab();
+  else if (name === "you") renderYouTab();
+}
+
+document.querySelectorAll(".bottom-nav-item").forEach(btn => {
+  btn.addEventListener("click", () => switchTab(btn.dataset.maintab));
 });
 
 // ---------------- Muscle options (exercise log) ----------------
@@ -1001,6 +1120,19 @@ function initMealTimingField(container) {
 document.querySelectorAll("[data-meal-timing-field]").forEach(initMealTimingField);
 
 // ---------------- Custom option picker (muscle group / exercise dropdowns) ----------------
+// Exercise names were always seed data until the new-exercise proposal flow
+// (see renderOptionPickerList/proposeNewExercise) let a user's own typed
+// text into this list and into the admin approval queue - escaping is what
+// keeps a name like "<img onerror=...>" inert instead of executing.
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 const opModal = document.getElementById("option-picker-modal");
 const opTitle = document.getElementById("op-title");
 const opSearch = document.getElementById("op-search");
@@ -1066,14 +1198,24 @@ function renderOptionPickerList(container, { showAll, query } = {}) {
 
   const images = container.__images || {};
   if (!visible.length) {
-    opList.innerHTML = `<p class="option-picker-empty">No matches</p>`;
+    // The exercise field is the only picker that can propose a brand new
+    // catalog entry (see addExerciseBlock/onBlockMuscleChange) - the
+    // muscle-group and Performance-tab exercise pickers only ever choose
+    // among exercises that already exist.
+    if (q && container.__allowPropose) {
+      opList.innerHTML = `
+        <p class="option-picker-empty">No matches for "${escapeHtml(query)}"</p>
+        <button type="button" class="option-picker-add-btn" data-query="${escapeHtml(query)}">+ Add "${escapeHtml(query)}" as a new exercise</button>`;
+    } else {
+      opList.innerHTML = `<p class="option-picker-empty">No matches</p>`;
+    }
     return;
   }
   let html = visible
     .map(o => {
       const imgUrl = images[o] && images[o][0];
       const thumb = imgUrl ? `<img class="option-picker-thumb" src="${imgUrl}" alt="" loading="lazy">` : "";
-      return `<button type="button" class="option-picker-item${o === current ? " selected" : ""}" data-value="${o}">${thumb}<span>${o}</span></button>`;
+      return `<button type="button" class="option-picker-item${o === current ? " selected" : ""}" data-value="${escapeHtml(o)}">${thumb}<span>${escapeHtml(o)}</span></button>`;
     })
     .join("");
   if (!q && visible === defaultOptions && options.length > defaultOptions.length) {
@@ -1121,6 +1263,22 @@ opList.addEventListener("click", (e) => {
     renderOptionPickerList(opActiveContainer, { showAll: true });
     return;
   }
+  const addBtn = e.target.closest(".option-picker-add-btn");
+  if (addBtn) {
+    handleProposeExercise(opActiveContainer, addBtn.dataset.query);
+    return;
+  }
+  const candidateBtn = e.target.closest(".option-picker-candidate-item");
+  if (candidateBtn) {
+    setOptionFieldValue(opActiveContainer, candidateBtn.dataset.value);
+    closeOptionPicker();
+    return;
+  }
+  const notMatchBtn = e.target.closest(".option-picker-not-a-match");
+  if (notMatchBtn) {
+    finalizeNewExercise(opActiveContainer, notMatchBtn.dataset.query);
+    return;
+  }
   const btn = e.target.closest(".option-picker-item");
   if (!btn) return;
   setOptionFieldValue(opActiveContainer, btn.dataset.value);
@@ -1133,47 +1291,118 @@ function initOptionField(container) {
   container.querySelector(".option-field-btn").addEventListener("click", () => openOptionPicker(container));
 }
 
-// ---------------- Workout Log ----------------
-let savedWorkoutId = null;
-
-document.getElementById("workout-date").addEventListener("change", (e) => {
-  setDateFieldValue(document.getElementById("exlog-date").closest(".date-field"), e.target.value);
-});
-
-document.getElementById("workout-edit-btn").addEventListener("click", () => {
-  document.getElementById("form-workout").querySelectorAll("input, select, button").forEach(el => el.disabled = false);
-  document.getElementById("workout-edit-btn").hidden = true;
-});
-
-document.getElementById("form-workout").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const body = Object.fromEntries(fd.entries());
-  if (!body.date) {
-    toast("Please select a date");
-    return;
-  }
+// A name typed here never blocks logging - it's usable immediately either
+// way (see handleProposeExercise). What's still open is only whether it
+// joins the shared catalog: a strong semantic match to an existing exercise
+// asks her to confirm rather than silently merging (two genuinely different
+// exercises can share enough wording to look alike - see matching.py), and
+// anything she says is new goes to the admin approval queue while she keeps
+// working uninterrupted.
+async function handleProposeExercise(container, query) {
+  const muscle = container.__muscle;
+  opList.innerHTML = `<p class="option-picker-empty">Checking for a match...</p>`;
+  let candidates = [];
   try {
-    if (savedWorkoutId) {
-      await api.put(`/api/workout-log/${savedWorkoutId}`, body);
-      toast("Workout updated");
-    } else {
-      const res = await api.post("/api/workout-log", body);
-      savedWorkoutId = res.id;
-      toast("Workout logged");
-    }
-    refreshStreak();
-    e.target.querySelectorAll("input, select, button").forEach(el => el.disabled = true);
-    document.getElementById("card-exlog").hidden = false;
-    document.getElementById("workout-edit-btn").hidden = false;
-    writeDraft({ workout: body, workoutSubmitted: true, workoutId: savedWorkoutId, exlogDate: body.date, exercises: collectExerciseBlocksDraft() });
+    const res = await api.post("/api/exercise-plan/candidates", { muscle, name: query });
+    candidates = res.candidates || [];
   } catch (err) {
     toast(err.message);
   }
-});
+  if (opActiveContainer !== container) return; // picker was closed while the request was in flight
+  if (candidates.length) {
+    opList.innerHTML = `
+      <p class="option-picker-empty">Did you mean one of these?</p>
+      ${candidates.map(c => `<button type="button" class="option-picker-item option-picker-candidate-item" data-value="${escapeHtml(c.exercise)}"><span>${escapeHtml(c.exercise)}</span></button>`).join("")}
+      <button type="button" class="option-picker-not-a-match" data-query="${escapeHtml(query)}">No, "${escapeHtml(query)}" is a different exercise</button>`;
+  } else {
+    finalizeNewExercise(container, query);
+  }
+}
+
+async function finalizeNewExercise(container, query) {
+  const muscle = container.__muscle;
+  try {
+    const res = await api.post("/api/exercise-plan/propose", { muscle, name: query });
+    if (opActiveContainer !== container) return;
+    if (container.__options && !container.__options.includes(res.exercise)) {
+      container.__options = [...container.__options, res.exercise];
+    }
+    // The exercise-change listener (see addExerciseBlock) picks the Reps-vs-
+    // Time layout from block.__exerciseTypes, populated from the muscle's
+    // existing catalog before this exercise even existed - without this, a
+    // brand-new Cardio proposal would silently fall back to "strength" and
+    // render Reps/Weight fields instead of Duration/Level.
+    const block = container.closest(".exercise-block");
+    if (block) {
+      block.__exerciseTypes = block.__exerciseTypes || {};
+      block.__exerciseTypes[res.exercise] = res.type || "strength";
+    }
+    setOptionFieldValue(container, res.exercise);
+    closeOptionPicker();
+    toast(res.status === "pending"
+      ? `Added "${res.exercise}" - logged now, pending approval to join the shared list`
+      : `Using "${res.exercise}"`);
+  } catch (err) {
+    toast(err.message);
+  }
+}
+
+// ---------------- Workout Log (one-screen log, 2b) ----------------
+// The old two-step flow asked for the visit's date/energy/meal/notes via
+// its own "Save Visit" form before exercises could be logged at all - the
+// single-screen redesign collects the same fields through the session
+// strip instead and creates/updates the workout_log row lazily (see
+// ensureVisitSaved), the first time anything actually needs it to exist.
+let savedWorkoutId = null;
+let logSessionDate = todayStr;
+let sessionFields = { energy_level: "", pre_workout_meal: "", hours_since_meal: "", notes: "" };
+let currentExerciseIndex = -1;
+// exercise -> [{reps,weight}|{duration,level}] from the most recent *other*
+// session, cached per exercise for the Sets card's "Last time: ..." line
+// and drawn from the same exercise-log history checkForPR already caches.
+let lastSessionFor = {};
+
+function currentSessionBody() {
+  return {
+    date: logSessionDate,
+    energy_level: sessionFields.energy_level || null,
+    pre_workout_meal: sessionFields.pre_workout_meal || "",
+    hours_since_meal: sessionFields.hours_since_meal || null,
+    notes: sessionFields.notes || "",
+  };
+}
+
+// Creates the visit row on first use, updates it on every later call - the
+// backend's exercise-log endpoint requires a workout_log row for the date
+// to already exist (see routes/exercise_log.py), which used to be the
+// user's own explicit "Save Visit" press; here it's implicit. Several
+// session-strip chips (and Done) can all call this in quick succession
+// without awaiting each other - chained onto visitSaveChain so a second
+// call always sees the first one's savedWorkoutId before deciding
+// POST-vs-PUT, instead of racing it and creating a duplicate visit row.
+let visitSaveChain = Promise.resolve();
+function ensureVisitSaved() {
+  visitSaveChain = visitSaveChain.then(() => ensureVisitSavedNow());
+  return visitSaveChain;
+}
+async function ensureVisitSavedNow() {
+  const body = currentSessionBody();
+  try {
+    if (savedWorkoutId) {
+      await api.put(`/api/workout-log/${savedWorkoutId}`, body);
+    } else {
+      const res = await api.post("/api/workout-log", body);
+      savedWorkoutId = res.id;
+    }
+    refreshStreak();
+  } catch (err) {
+    toast(err.message);
+  }
+  saveWorkoutDraft();
+}
 
 // ---------------- Exercise Log ----------------
-const exercisesContainer = document.getElementById("exlog-exercises");
+const exercisesContainer = document.getElementById("log-exercises-container");
 
 function renumberExerciseBlocks() {
   exercisesContainer.querySelectorAll(".exercise-block").forEach((block, i) => {
@@ -1251,6 +1480,24 @@ async function getExerciseHistory() {
 // full page load (a fresh session for PR-spotting purposes).
 const notifiedPRs = new Set();
 
+// Small "PR" badge on the row itself (see the 2b set-row spec) mirroring
+// row.dataset.prValue - kept in sync from every place that sets/clears it
+// rather than baked into checkForPR alone, so guardPrEdit's own clears
+// (an edit that erases the PR) update the badge too.
+function syncPrBadge(row) {
+  let badge = row.querySelector(".set-pr-badge");
+  if (row.dataset.prValue != null) {
+    if (!badge) {
+      badge = document.createElement("span");
+      badge.className = "set-pr-badge";
+      badge.textContent = "PR";
+      row.querySelector(".set-remove")?.insertAdjacentElement("beforebegin", badge);
+    }
+  } else if (badge) {
+    badge.remove();
+  }
+}
+
 // PR metric is weight for strength sets, duration for cardio sets - Level
 // is a subjective 1-10 rating and Speed only exists for some exercises, so
 // duration is the one metric every cardio exercise actually has.
@@ -1259,7 +1506,7 @@ async function checkForPR(block, row, exerciseName, isCardio) {
   const metricKey = isCardio ? "duration_minutes" : "weight_kg";
   const inputSelector = isCardio ? ".set-duration" : ".set-weight";
   const value = parseFloat(row.querySelector(inputSelector)?.value);
-  if (isNaN(value) || value <= 0) { delete row.dataset.prValue; return; }
+  if (isNaN(value) || value <= 0) { delete row.dataset.prValue; syncPrBadge(row); return; }
 
   const history = await getExerciseHistory();
   let priorBest = 0;
@@ -1270,7 +1517,7 @@ async function checkForPR(block, row, exerciseName, isCardio) {
       priorBest = Math.max(priorBest, x[metricKey]);
     }
   });
-  if (!hasHistory) { delete row.dataset.prValue; return; } // nothing to beat yet - logging an exercise for the first time isn't a "PR"
+  if (!hasHistory) { delete row.dataset.prValue; syncPrBadge(row); return; } // nothing to beat yet - logging an exercise for the first time isn't a "PR"
 
   // Also beat any other not-yet-saved set for the same exercise already
   // entered in this block this session, not just what's already on the
@@ -1294,6 +1541,7 @@ async function checkForPR(block, row, exerciseName, isCardio) {
   } else {
     delete row.dataset.prValue;
   }
+  syncPrBadge(row);
 }
 
 // If this row's current field value was already recorded as a PR, changing
@@ -1307,25 +1555,80 @@ async function guardPrEdit(row, newValue, unit) {
     `This set was recorded as your new PR of ${prValue}${unit} — change it to ${newValue}${unit}?`,
     "Yes, Change It"
   );
-  if (ok) delete row.dataset.prValue; // re-evaluated fresh by checkForPR right after
+  if (ok) { delete row.dataset.prValue; syncPrBadge(row); } // re-evaluated fresh by checkForPR right after
   return ok;
 }
 
 // Switches a cardio block's 2nd set field between "level" (generic 1-10
 // intensity wheel-picker) and "speed" (plain Speed (km/h) stepper) - the
-// small SPD switch on each set row (see addSetRow) lets the user pick
-// whichever matches what their machine actually shows, for any cardio
-// exercise, not just exercises the app happens to know about. Same
-// rebuild-only-when-needed guard as applyExerciseType/applyExtraField -
-// the switch itself is redrawn fresh by addSetRow on every rebuild, so
-// there's no separate toggle state to sync here.
+// Level/Speed toggle in the sets header (see addExerciseBlock) lets the
+// user pick whichever matches what their machine actually shows, for any
+// cardio exercise, not just exercises the app happens to know about. It's
+// one toggle per block, not per set, since an exercise is tracked one way
+// or the other for the whole set list.
 function applyLevelMode(block, mode) {
   const prevMode = block.dataset.levelMode || "level";
   block.dataset.levelMode = mode;
-  if (mode === prevMode) return;
-  const hadSets = block.querySelectorAll(".set-row").length > 0;
-  block.querySelector(".ex-sets").innerHTML = "";
-  if (hadSets) addSetRow(block);
+  if (mode !== prevMode) {
+    const captured = captureSetRows(block);
+    block.querySelector(".ex-sets").innerHTML = "";
+    restoreSetRows(block, captured);
+  }
+  updateLevelModeToggle(block);
+}
+
+// Syncs the sets-header Level/Speed toggle's visibility and active state.
+// Hidden for non-cardio blocks and for exercises where Speed is already
+// shown permanently as the extra field (see EXERCISE_EXTRA_FIELDS) - there's
+// nothing left to toggle since Speed's already on the row.
+function updateLevelModeToggle(block) {
+  const toggle = block.querySelector(".set-level-mode-toggle");
+  if (!toggle) return;
+  const isCardio = block.dataset.exerciseType === "cardio";
+  const speedIsExtra = EXERCISE_EXTRA_FIELDS[block.querySelector(".ex-exercise").value] === CARDIO_SPEED_FIELD;
+  toggle.hidden = !(isCardio && !speedIsExtra);
+  const mode = block.dataset.levelMode || "level";
+  toggle.querySelectorAll(".set-level-mode-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.mode === mode));
+}
+
+// Snapshots each set row's field values before a rebuild (see
+// applyLevelMode/applyExtraField/applyExerciseType below) so switching
+// Level<->Speed, adding/dropping an extra field, or flipping Reps<->Time
+// only loses the fields that are genuinely incompatible with the new set
+// shape (e.g. Reps when switching to Duration+Level) instead of collapsing
+// every row down to a single blank one.
+function captureSetRows(block) {
+  return [...block.querySelectorAll(".set-row")].map(row => ({
+    reps: row.querySelector(".set-reps")?.value || "",
+    weight: row.querySelector(".set-weight")?.value || "",
+    duration: row.querySelector(".set-duration")?.value || "",
+    level: row.querySelector(".set-level")?.value || "",
+    speed: row.querySelector(".set-speed")?.value || "",
+    extra: row.querySelector(".set-extra")?.value || "",
+  }));
+}
+
+// Rebuilds one row per captured entry (instead of always collapsing to
+// one), carrying over whichever fields still exist on the new row shape.
+function restoreSetRows(block, captured) {
+  captured.forEach(data => {
+    const row = addSetRow(block);
+    const reps = row.querySelector(".set-reps");
+    if (reps && data.reps) reps.value = data.reps;
+    const weight = row.querySelector(".set-weight");
+    if (weight && data.weight) {
+      weight.value = data.weight;
+      row.querySelector(".set-bodyweight-btn")?.classList.toggle("active", data.weight === "0");
+    }
+    const duration = row.querySelector(".set-duration");
+    if (duration && data.duration) duration.value = data.duration;
+    const level = row.querySelector(".set-level");
+    if (level && data.level) level.value = data.level;
+    const speed = row.querySelector(".set-speed");
+    if (speed && data.speed) speed.value = data.speed;
+    const extra = row.querySelector(".set-extra");
+    if (extra && data.extra) extra.value = data.extra;
+  });
 }
 
 // Rebuilds the sets list when the currently-selected exercise's extra field
@@ -1339,10 +1642,12 @@ function applyExtraField(block) {
   const prevKey = block.dataset.extraFieldKey || "";
   const newKey = extraField ? extraField.key : "";
   block.dataset.extraFieldKey = newKey;
-  if (newKey === prevKey) return;
-  const hadSets = block.querySelectorAll(".set-row").length > 0;
-  block.querySelector(".ex-sets").innerHTML = "";
-  if (hadSets) addSetRow(block);
+  if (newKey !== prevKey) {
+    const captured = captureSetRows(block);
+    block.querySelector(".ex-sets").innerHTML = "";
+    restoreSetRows(block, captured);
+  }
+  updateLevelModeToggle(block);
 }
 
 function updateSetTypeToggle(block) {
@@ -1363,10 +1668,12 @@ function applyExerciseType(block, type) {
   const prevType = block.dataset.exerciseType || "strength";
   block.dataset.exerciseType = type;
   updateSetTypeToggle(block);
-  if (type === prevType) return;
-  const hadSets = block.querySelectorAll(".set-row").length > 0;
-  block.querySelector(".ex-sets").innerHTML = "";
-  if (hadSets) addSetRow(block);
+  if (type !== prevType) {
+    const captured = captureSetRows(block);
+    block.querySelector(".ex-sets").innerHTML = "";
+    restoreSetRows(block, captured);
+  }
+  updateLevelModeToggle(block);
 }
 
 function addSetRow(block, { copyLast = false } = {}) {
@@ -1382,17 +1689,11 @@ function addSetRow(block, { copyLast = false } = {}) {
   // doesn't keep rendering a stray Speed/Inclination field alongside
   // Reps+Weight.
   const extraField = isCardio ? EXERCISE_EXTRA_FIELDS[exerciseName] : null;
-  // Exercises where Speed is the extra field (see EXERCISE_EXTRA_FIELDS)
-  // already show it permanently, so there's nothing left for the Level/
-  // Speed toggle to do - skip rendering it rather than offering a toggle
-  // to a state ("speed" as the 2nd field too) that would just duplicate
-  // the extra field.
-  const speedIsExtra = extraField === CARDIO_SPEED_FIELD;
   const row = document.createElement("div");
   row.className = "set-row" + (extraField ? " has-extra" : "");
   const extraLabelHtml = extraField ? `<span class="set-row-label set-row-label-3">${extraField.label}</span>` : "";
   const extraHtml = extraField ? `
-    <div class="stepper set-extra-field" data-step="${extraField.step}" data-min="${extraField.min}">
+    <div class="stepper set-extra-field stepper-labeled" data-step="${extraField.step}" data-min="${extraField.min}">
       <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease ${extraField.label}">&minus;</button>
       <input type="number" class="set-extra stepper-input" min="${extraField.min}" step="${extraField.step}" placeholder="${extraField.placeholder || ""}" aria-label="${extraField.label}">
       <button type="button" class="stepper-btn stepper-plus" aria-label="Increase ${extraField.label}">+</button>
@@ -1401,59 +1702,54 @@ function addSetRow(block, { copyLast = false } = {}) {
   // or a plain Speed stepper when the block's Level/Speed toggle is set to
   // Speed (see applyLevelMode).
   const levelHtml = levelOverride ? `
-    <div class="stepper set-speed-field" data-step="${levelOverride.step}" data-min="${levelOverride.min}">
+    <div class="stepper set-speed-field stepper-labeled" data-step="${levelOverride.step}" data-min="${levelOverride.min}">
       <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease ${levelOverride.label}">&minus;</button>
       <input type="number" class="set-speed stepper-input" min="${levelOverride.min}" step="${levelOverride.step}" placeholder="${levelOverride.placeholder || ""}" aria-label="${levelOverride.label}">
       <button type="button" class="stepper-btn stepper-plus" aria-label="Increase ${levelOverride.label}">+</button>
     </div>` : `
-    <div class="stepper stepper-level" data-step="1" data-min="1" data-max="10">
+    <div class="stepper stepper-level stepper-labeled" data-step="1" data-min="1" data-max="10">
       <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease intensity level">&minus;</button>
-      <input type="number" class="set-level stepper-input" min="1" max="10" step="1" placeholder="0" aria-label="Intensity level, 1 to 10">
+      <input type="number" class="set-level stepper-input" min="1" max="10" step="1" placeholder="LEVEL" aria-label="Intensity level, 1 to 10">
       <button type="button" class="stepper-btn stepper-plus" aria-label="Increase intensity level">+</button>
     </div>`;
   row.innerHTML = isCardio ? `
     <span class="set-row-label set-row-label-1">Duration (min)</span>
-    <span class="set-number"></span>
     <span class="set-row-label set-row-label-2">${levelOverride ? levelOverride.label : "Level"}</span>
-    ${speedIsExtra ? "" : `
-    <button type="button" class="set-speed-toggle-btn" aria-label="Track by speed instead of intensity level">
-      <span class="speed-toggle-switch" aria-hidden="true"></span>SPD
-    </button>`}
     ${extraLabelHtml}
-    <div class="stepper stepper-duration" data-step="5" data-min="0">
-      <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease duration">&minus;</button>
-      <input type="number" class="set-duration stepper-input" min="0" step="5" placeholder="0" aria-label="Duration in minutes">
-      <button type="button" class="stepper-btn stepper-plus" aria-label="Increase duration">+</button>
+    <div class="set-row-top">
+      <span class="set-number"></span>
+      <button type="button" class="set-remove" aria-label="Remove set">&minus;</button>
     </div>
-    ${levelHtml}
-    ${extraHtml}
-    <button type="button" class="set-remove" aria-label="Remove set">&minus;</button>` : `
+    <div class="set-row-steppers">
+      <div class="stepper stepper-duration stepper-labeled" data-step="5" data-min="0">
+        <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease duration">&minus;</button>
+        <input type="number" class="set-duration stepper-input" min="0" step="5" placeholder="MIN" aria-label="Duration in minutes">
+        <button type="button" class="stepper-btn stepper-plus" aria-label="Increase duration">+</button>
+      </div>
+      ${levelHtml}
+      ${extraHtml}
+    </div>` : `
     <span class="set-row-label set-row-label-1">Reps</span>
-    <span class="set-number"></span>
     <span class="set-row-label set-row-label-2">Weight (kg)</span>
-    <button type="button" class="set-bodyweight-btn" aria-label="No added weight - bodyweight only">
-      <span class="bw-switch" aria-hidden="true"></span>BW
-    </button>
-    ${extraLabelHtml}
-    <div class="stepper stepper-reps" data-step="2" data-min="1">
-      <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease reps">&minus;</button>
-      <input type="number" class="set-reps stepper-input" min="1" placeholder="0" aria-label="Reps" required>
-      <button type="button" class="stepper-btn stepper-plus" aria-label="Increase reps">+</button>
+    <div class="set-row-top">
+      <span class="set-number"></span>
+      <button type="button" class="set-bodyweight-btn" aria-label="No added weight - bodyweight only">
+        <span class="bw-switch" aria-hidden="true"></span>BW
+      </button>
+      <button type="button" class="set-remove" aria-label="Remove set">&minus;</button>
     </div>
-    <div class="stepper stepper-weight" data-step="2.5" data-min="0">
-      <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease weight">&minus;</button>
-      <input type="number" step="0.5" class="set-weight stepper-input" placeholder="kg" aria-label="Weight in kg">
-      <button type="button" class="stepper-btn stepper-plus" aria-label="Increase weight">+</button>
-    </div>
-    ${extraHtml}
-    <button type="button" class="set-remove" aria-label="Remove set">&minus;</button>`;
-  if (isCardio && !speedIsExtra) {
-    const speedToggleBtn = row.querySelector(".set-speed-toggle-btn");
-    speedToggleBtn.classList.toggle("active", !!levelOverride);
-    speedToggleBtn.addEventListener("click", () => {
-      applyLevelMode(block, levelOverride ? "level" : "speed");
-    });
-  }
+    <div class="set-row-steppers">
+      <div class="stepper stepper-reps stepper-labeled" data-step="2" data-min="1">
+        <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease reps">&minus;</button>
+        <input type="number" class="set-reps stepper-input" min="1" placeholder="REPS" aria-label="Reps" required>
+        <button type="button" class="stepper-btn stepper-plus" aria-label="Increase reps">+</button>
+      </div>
+      <div class="stepper stepper-weight stepper-labeled" data-step="2.5" data-min="0">
+        <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease weight">&minus;</button>
+        <input type="number" step="0.5" class="set-weight stepper-input" placeholder="KG" aria-label="Weight in kg">
+        <button type="button" class="stepper-btn stepper-plus" aria-label="Increase weight">+</button>
+      </div>
+    </div>`;
   if (copyLast && lastRow) {
     if (isCardio) {
       row.querySelector(".set-duration").value = lastRow.querySelector(".set-duration")?.value || "";
@@ -1711,8 +2007,13 @@ function initVoiceSetButton(block) {
 // initVoiceSetButton's pattern (safety timer, listening/disabled state) but
 // just appends the transcript to the note text instead of parsing it.
 function initNoteMicButton(block) {
-  const btn = block.querySelector(".note-mic-btn");
-  const input = block.querySelector(".ex-notes");
+  initNoteMicButtonGeneric(block.querySelector(".note-mic-btn"), block.querySelector(".ex-notes"));
+}
+
+// Generalized for any text input outside an exercise block too - the
+// session note/meal modals (see renderSessionStrip) reuse this same
+// dictation behavior on their own plain inputs.
+function initNoteMicButtonGeneric(btn, input) {
   if (!SpeechRecognitionCtor) {
     btn.disabled = true;
     btn.title = "Voice input isn't supported in this browser";
@@ -1764,7 +2065,7 @@ function initNoteMicButton(block) {
 // per-block toggle the user controls directly (see applyLevelMode), not
 // something baked into the exercise. Also stored in the per-set `attributes`
 // JSON, same mechanism as EXERCISE_EXTRA_FIELDS.
-const CARDIO_SPEED_FIELD = { key: "speed_kmh", label: "Speed (km/h)", step: 0.5, min: 0, placeholder: "0" };
+const CARDIO_SPEED_FIELD = { key: "speed_kmh", label: "Speed (km/h)", step: 0.5, min: 0, placeholder: "KM/H" };
 
 // Exercises where Speed is the obviously-right starting point (a treadmill
 // has no meaningful "intensity level") - just picks the toggle's initial
@@ -1808,6 +2109,7 @@ async function onBlockMuscleChange(block) {
     return;
   }
   const exercises = await api.get(`/api/exercises-by-muscle/${encodeURIComponent(muscle)}`);
+  exField.__muscle = muscle;
   block.__exerciseTypes = Object.fromEntries(exercises.map(ex => [ex.exercise, ex.type]));
   const exerciseImages = Object.fromEntries(exercises.map(ex => [ex.exercise, ex.images]));
   // setOptionFieldOptions resets the exercise value (silently, no "change"
@@ -1871,6 +2173,10 @@ function addExerciseBlock(container = exercisesContainer) {
           <button type="button" class="set-type-btn" data-type="strength">Reps</button>
           <button type="button" class="set-type-btn" data-type="cardio">Time</button>
         </div>
+        <div class="set-level-mode-toggle" role="group" aria-label="Track intensity by level or speed" hidden>
+          <button type="button" class="set-level-mode-btn" data-mode="level">Level</button>
+          <button type="button" class="set-level-mode-btn" data-mode="speed">Speed</button>
+        </div>
       </div>
       <div class="ex-sets"></div>
       <div class="set-actions">
@@ -1887,6 +2193,11 @@ function addExerciseBlock(container = exercisesContainer) {
     </label>`;
 
   block.querySelectorAll("[data-option-field]").forEach(initOptionField);
+  // Only this field can propose a brand new catalog entry (see
+  // renderOptionPickerList/handleProposeExercise) - the muscle-group field
+  // and the Performance tab's exercise field only ever pick among exercises
+  // that already exist.
+  block.querySelector(".ex-exercise-field").__allowPropose = true;
   populateMuscleSelect(block.querySelector(".ex-muscle-field"));
   block.querySelector(".ex-muscle").addEventListener("change", () => {
     if (restoringDraft) return; // restoreDraft() awaits its own explicit call instead
@@ -1905,6 +2216,10 @@ function addExerciseBlock(container = exercisesContainer) {
     btn.addEventListener("click", () => applyExerciseType(block, btn.dataset.type));
   });
   updateSetTypeToggle(block);
+  block.querySelectorAll(".set-level-mode-btn").forEach(btn => {
+    btn.addEventListener("click", () => applyLevelMode(block, btn.dataset.mode));
+  });
+  updateLevelModeToggle(block);
   initVoiceSetButton(block);
   initNoteMicButton(block);
   block.querySelector(".exercise-remove").addEventListener("click", () => {
@@ -1917,14 +2232,17 @@ function addExerciseBlock(container = exercisesContainer) {
     else collapseExerciseBlock(block);
   });
 
-  if (container === exercisesContainer) {
-    // Adding a new exercise means you're done with the earlier ones for now
-    // - collapse them down to a summary bar so the form doesn't just keep
-    // growing. A no-op on the very first block (nothing in the container
-    // yet). Also runs during draft restore's addExerciseBlock() loop, which
-    // is what leaves only the last restored exercise expanded.
-    exercisesContainer.querySelectorAll(".exercise-block").forEach(collapseExerciseBlock);
-  }
+  // Collapsing every other block on add is dead weight from the old
+  // multi-exercise-visible-at-once form (back when .exercise-block-header
+  // wasn't hidden) - the chip row is what keeps things compact now, and
+  // every block reaching this line already gets .log-set-block added by
+  // its caller right after, whose header is hidden regardless of collapsed
+  // state. Worse than dead: it used to run unconditionally, including on
+  // the currently *active*, visible block - collapsing it hid its whole
+  // .full content (see the CSS), so opening the "+" picker and canceling
+  // out of it (never reaching setActiveExerciseIndex(), the only place
+  // that un-collapses) left the exercise you were looking at with its sets
+  // seemingly gone until you switched chips away and back.
   container.appendChild(block);
   if (container === exercisesContainer) {
     renumberExerciseBlocks();
@@ -1949,9 +2267,6 @@ function addExerciseBlock(container = exercisesContainer) {
   return block;
 }
 
-document.getElementById("exlog-add-exercise").addEventListener("click", () => addExerciseBlock());
-addExerciseBlock();
-
 // weight_kg=0 is the bodyweight sentinel (see the BW toggle in addSetRow,
 // which sets the input's value to the string "0") - `parseFloat(...) ||
 // null` would collapse that back to null since 0 is falsy in JS, silently
@@ -1961,77 +2276,580 @@ function parseWeightKg(str) {
   return str === "" ? null : parseFloat(str);
 }
 
-document.getElementById("form-exercise-log").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const date = e.target.elements["date"].value;
-  const exercises = [...exercisesContainer.querySelectorAll(".exercise-block")].map(block => {
-    const isCardio = block.dataset.exerciseType === "cardio";
-    const exerciseName = block.querySelector(".ex-exercise").value;
-    const levelOverride = block.dataset.levelMode === "speed" ? CARDIO_SPEED_FIELD : null;
-    const extraField = EXERCISE_EXTRA_FIELDS[exerciseName];
-    const notes = block.querySelector(".ex-notes").value;
-    return {
-      muscle_group: block.querySelector(".ex-muscle").value,
-      exercise: exerciseName,
-      sets: [...block.querySelectorAll(".set-row")].map((row, i) => {
-        const set = isCardio ? {
-          duration_minutes: parseFloat(row.querySelector(".set-duration").value) || null,
-          ...(levelOverride
-            ? { [levelOverride.key]: parseFloat(row.querySelector(".set-speed").value) || null }
-            : { intensity_level: parseInt(row.querySelector(".set-level").value, 10) || null }),
-        } : {
-          reps: parseInt(row.querySelector(".set-reps").value, 10) || null,
-          weight_kg: parseWeightKg(row.querySelector(".set-weight").value),
-        };
-        if (extraField) {
-          const v = parseFloat(row.querySelector(".set-extra").value);
-          if (!isNaN(v)) set[extraField.key] = v;
-        }
-        // One note per exercise, not per set - only the first set carries
-        // it (each exercise_log row still has its own `notes` column, but
-        // the rest are just left blank rather than duplicating the text).
-        if (i === 0) set.notes = notes;
-        return set;
-      }),
-    };
-  });
-  if (!(await confirmModal(`Do you want to save these exercises for ${date}?`))) {
+async function submitExerciseLog() {
+  const date = logSessionDate;
+  const exercises = [...exercisesContainer.querySelectorAll(".exercise-block")]
+    .filter(block => block.querySelector(".ex-exercise").value)
+    .map(block => {
+      const isCardio = block.dataset.exerciseType === "cardio";
+      const exerciseName = block.querySelector(".ex-exercise").value;
+      const levelOverride = block.dataset.levelMode === "speed" ? CARDIO_SPEED_FIELD : null;
+      const extraField = EXERCISE_EXTRA_FIELDS[exerciseName];
+      const notes = block.querySelector(".ex-notes").value;
+      const sets = [...block.querySelectorAll(".set-row")]
+        .map(row => {
+          const set = isCardio ? {
+            duration_minutes: parseFloat(row.querySelector(".set-duration").value) || null,
+            ...(levelOverride
+              ? { [levelOverride.key]: parseFloat(row.querySelector(".set-speed").value) || null }
+              : { intensity_level: parseInt(row.querySelector(".set-level").value, 10) || null }),
+          } : {
+            reps: parseInt(row.querySelector(".set-reps").value, 10) || null,
+            weight_kg: parseWeightKg(row.querySelector(".set-weight").value),
+          };
+          if (extraField) {
+            const v = parseFloat(row.querySelector(".set-extra").value);
+            if (!isNaN(v)) set[extraField.key] = v;
+          }
+          return set;
+        })
+        // A row added via "Log set"/"+ Add Set" but never actually filled
+        // in isn't a real set - drop it here rather than saving a phantom
+        // zero/null entry. Weight alone doesn't count (legitimately 0 for
+        // bodyweight) - reps (or duration, for cardio) is what makes a set
+        // real.
+        .filter(set => isCardio ? set.duration_minutes != null : set.reps != null);
+      // One note per exercise, not per set - only the first (real) set
+      // carries it (each exercise_log row still has its own `notes`
+      // column, but the rest are just left blank rather than duplicating
+      // the text).
+      if (sets.length) sets[0].notes = notes;
+      return { muscle_group: block.querySelector(".ex-muscle").value, exercise: exerciseName, sets };
+    })
+    // An exercise with zero real sets is exactly the "added the chip but
+    // never actually logged anything" case - drop the whole exercise
+    // rather than saving it with an empty sets array.
+    .filter(ex => ex.sets.length > 0);
+  if (!exercises.length) {
+    switchTab("today");
     return;
   }
   try {
+    await ensureVisitSaved();
     await api.post("/api/exercise-log", { date, exercises });
     exerciseHistoryCache = null; // stale after this submit - refetch next time a PR check needs it
-    toast("Exercises logged");
-    resetWorkoutFlowUI();
+    toast("Workout logged");
     clearDraft();
+    resetWorkoutFlowUI();
+    switchTab("today");
   } catch (err) {
     toast(err.message);
   }
-});
+}
 
 // Shared by "finished logging exercises" and "switching to a different
-// profile": wipes the Log Workout / Log Exercises UI back to its blank
-// starting state. Does NOT touch localStorage drafts itself — callers
-// decide whether that draft should be cleared (flow finished) or left
-// alone (just switching away, might switch back later).
+// profile": wipes the Log screen back to its blank starting state. Does
+// NOT touch localStorage drafts itself — callers decide whether that draft
+// should be cleared (flow finished) or left alone (just switching away,
+// might switch back later).
 function resetWorkoutFlowUI() {
-  const workoutForm = document.getElementById("form-workout");
-  document.getElementById("form-exercise-log").reset();
   exercisesContainer.innerHTML = "";
-  addExerciseBlock();
-  workoutForm.reset();
-  workoutForm.querySelectorAll("input, select, button").forEach(el => el.disabled = false);
-  document.getElementById("card-exlog").hidden = true;
-  document.getElementById("workout-edit-btn").hidden = true;
+  currentExerciseIndex = -1;
   savedWorkoutId = null;
-  // Defaults to today rather than blank — most visits are logged the same
-  // day, so this saves a tap for the common case (see the date picker's
-  // click handler for the "logging a previous workout" prompt when
-  // someone deliberately picks an earlier date instead).
-  setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), todayStr);
-  setDateFieldValue(document.getElementById("exlog-date").closest(".date-field"), todayStr);
-  workoutForm.querySelectorAll(".energy-field").forEach(f => setEnergyFieldValue(f, ""));
-  workoutForm.querySelectorAll(".meal-timing-field").forEach(f => setMealTimingFieldValue(f, ""));
+  logSessionDate = todayStr;
+  sessionFields = { energy_level: "", pre_workout_meal: "", hours_since_meal: "", notes: "" };
+  stopRestTimer();
+  renderLogExerciseChips();
+  setActiveExerciseIndex(-1);
+  renderSessionStrip();
+}
+
+// ---------------- Log screen chrome (2b) ----------------
+
+// setEnergyFieldValue always dispatches a "change" event, even when called
+// programmatically here just to refresh the chip's label - without this
+// guard, every renderSessionStrip() call (including the one inside
+// resetWorkoutFlowUI, right after savedWorkoutId is cleared) would trip
+// the energy input's own "change" listener below and call
+// ensureVisitSaved() again, creating a stray blank visit row.
+let renderingSessionStrip = false;
+
+function renderSessionStrip() {
+  renderingSessionStrip = true;
+  const energyField = document.querySelector("#session-strip .energy-field");
+  setEnergyFieldValue(energyField, sessionFields.energy_level || "");
+  renderingSessionStrip = false;
+  const mealBtn = document.getElementById("log-meal-btn");
+  const mealValueEl = mealBtn.querySelector(".meal-timing-field-value");
+  if (sessionFields.pre_workout_meal || sessionFields.hours_since_meal) {
+    const parts = [];
+    if (sessionFields.pre_workout_meal) parts.push(sessionFields.pre_workout_meal);
+    if (sessionFields.hours_since_meal) parts.push(formatMealTimingLabel(sessionFields.hours_since_meal));
+    mealValueEl.textContent = `\u{1F37D}️ ${parts.join(" · ")}`;
+    mealValueEl.classList.remove("placeholder");
+  } else {
+    mealValueEl.textContent = "\u{1F37D} Add fuel";
+    mealValueEl.classList.add("placeholder");
+  }
+  const noteChip = document.getElementById("log-note-chip");
+  noteChip.textContent = sessionFields.notes ? `\u{1F4DD} ${sessionFields.notes}` : "+ Note";
+  noteChip.classList.toggle("chip-add", !sessionFields.notes);
+  noteChip.classList.toggle("filled", !!sessionFields.notes);
+}
+
+// The energy field auto-wires itself (see the [data-energy-field] loop
+// near initEnergyField) - this just mirrors its value into sessionFields
+// and syncs the visit row once it settles.
+document.getElementById("log-energy-input").addEventListener("change", (e) => {
+  if (renderingSessionStrip) return;
+  sessionFields.energy_level = e.target.value;
+  ensureVisitSaved();
+});
+
+document.getElementById("log-meal-btn").addEventListener("click", () => {
+  const modal = document.getElementById("session-meal-modal");
+  document.getElementById("session-meal-input").value = sessionFields.pre_workout_meal || "";
+  modal.hidden = false;
+});
+document.getElementById("session-meal-cancel").addEventListener("click", () => { document.getElementById("session-meal-modal").hidden = true; });
+document.getElementById("session-meal-modal").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.hidden = true;
+});
+document.getElementById("session-meal-next").addEventListener("click", () => {
+  sessionFields.pre_workout_meal = document.getElementById("session-meal-input").value.trim();
+  document.getElementById("session-meal-modal").hidden = true;
+  // Chains straight into the existing hours-since-eating wheel - one chip,
+  // two fields, per the design handoff (they're both "when/what did you
+  // eat", so they belong behind the same affordance).
+  openMealTimingPicker(document.getElementById("log-meal-field"));
+});
+document.getElementById("log-meal-timing-input").addEventListener("change", (e) => {
+  sessionFields.hours_since_meal = e.target.value;
+  renderSessionStrip();
+  ensureVisitSaved();
+});
+initNoteMicButtonGeneric(document.getElementById("session-meal-mic-btn"), document.getElementById("session-meal-input"));
+
+document.getElementById("log-note-chip").addEventListener("click", () => {
+  document.getElementById("session-note-input").value = sessionFields.notes || "";
+  document.getElementById("session-note-modal").hidden = false;
+});
+document.getElementById("session-note-cancel").addEventListener("click", () => { document.getElementById("session-note-modal").hidden = true; });
+document.getElementById("session-note-modal").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.hidden = true;
+});
+document.getElementById("session-note-save").addEventListener("click", () => {
+  sessionFields.notes = document.getElementById("session-note-input").value.trim();
+  document.getElementById("session-note-modal").hidden = true;
+  renderSessionStrip();
+  ensureVisitSaved();
+});
+initNoteMicButtonGeneric(document.getElementById("session-note-mic-btn"), document.getElementById("session-note-input"));
+
+// Session date lives as text in the header subtitle (see updateLogHeader) -
+// tapping it opens the same shared date-picker modal every other date
+// field uses, via a detached carrier element (never inserted into the DOM)
+// instead of a visible .date-field, since there's nothing to show here
+// beyond the subtitle text itself.
+const logDateCarrier = document.createElement("div");
+logDateCarrier.innerHTML = `<input type="hidden" id="log-date-hidden"><span class="date-field-value"></span>`;
+const logDateHiddenInput = logDateCarrier.querySelector("input");
+logDateHiddenInput.addEventListener("change", () => {
+  logSessionDate = logDateHiddenInput.value || todayStr;
+  savedWorkoutId = null; // switching dates means a different (or not-yet-existing) visit row
+  updateLogHeader();
+  saveWorkoutDraft();
+});
+document.getElementById("log-header-subtitle").addEventListener("click", () => {
+  logDateHiddenInput.value = logSessionDate;
+  openDatePicker({ container: logDateCarrier, max: todayStr });
+});
+
+function updateLogHeader() {
+  const blocks = [...exercisesContainer.querySelectorAll(".exercise-block")].filter(b => b.querySelector(".ex-exercise").value);
+  const muscles = [...new Set(blocks.map(b => b.querySelector(".ex-muscle").value).filter(Boolean))];
+  document.getElementById("log-header-title").textContent = muscles.length ? muscles.join(" & ") : "New workout";
+  const phase = cyclePhaseForDate(logSessionDate);
+  const dateLabel = logSessionDate === todayStr ? "Today" : formatDateDisplay(logSessionDate);
+  const parts = [dateLabel];
+  if (phase) parts.push(phase.label.replace(" Phase", ""));
+  if (blocks.length) parts.push(`exercise ${Math.max(currentExerciseIndex, 0) + 1} of ${blocks.length}`);
+  document.getElementById("log-header-subtitle").textContent = parts.join(" · ");
+}
+
+async function updateSetsCardLastTime(exerciseName) {
+  const el = document.getElementById("sets-card-last-time");
+  if (!exerciseName) { el.textContent = ""; return; }
+  const history = await getExerciseHistory();
+  const rows = history.filter(x => x.exercise === exerciseName && x.date !== logSessionDate);
+  if (!rows.length) { el.textContent = ""; return; }
+  const lastDate = [...new Set(rows.map(x => x.date))].sort().pop();
+  const lastSets = rows.filter(x => x.date === lastDate).sort((a, b) => (a.set_number || 0) - (b.set_number || 0));
+  lastSessionFor[exerciseName] = lastSets;
+  const isCardio = lastSets[0].duration_minutes != null && lastSets[0].reps == null;
+  const summary = lastSets.map(s => isCardio ? `${s.duration_minutes}min` : `${s.reps}×${s.weight_kg}`).join(", ");
+  el.textContent = `Last time: ${summary}`;
+}
+
+function renderLogExerciseChips() {
+  const chipsEl = document.getElementById("log-exercise-chips");
+  const allBlocks = [...exercisesContainer.children];
+  const named = allBlocks
+    .map((b, i) => ({ b, i }))
+    .filter(({ b }) => b.querySelector(".ex-exercise").value);
+  // With zero exercises, the big "+ Add Exercise" button in the empty sets
+  // card (see setActiveExerciseIndex) already covers this affordance - a
+  // lone "+" chip up here too would just be a redundant, less-visible copy
+  // of the same action.
+  if (!named.length) {
+    chipsEl.hidden = true;
+    chipsEl.innerHTML = "";
+    return;
+  }
+  chipsEl.hidden = false;
+  const chips = named
+    .map(({ b, i }) => `<button type="button" class="chip${i === currentExerciseIndex ? " chip-active" : ""}" data-index="${i}">${escapeHtml(b.querySelector(".ex-exercise").value)}</button>`)
+    .join("");
+  chipsEl.innerHTML = chips + `<button type="button" class="chip chip-add" id="log-add-exercise-chip">+</button>`;
+  chipsEl.querySelectorAll(".chip[data-index]").forEach(chip => {
+    chip.addEventListener("click", () => setActiveExerciseIndex(parseInt(chip.dataset.index, 10)));
+  });
+  document.getElementById("log-add-exercise-chip").addEventListener("click", promptAddExercise);
+}
+
+function setActiveExerciseIndex(i) {
+  currentExerciseIndex = i;
+  const blocks = [...exercisesContainer.children];
+  blocks.forEach((b, idx) => { b.hidden = idx !== i; });
+  const active = blocks[i];
+  const emptyEl = document.getElementById("sets-card-empty");
+  if (active) {
+    emptyEl.hidden = true;
+    exercisesContainer.hidden = false;
+    // addExerciseBlock() collapses every *other* block whenever a new one
+    // is added (see its own container===exercisesContainer branch) - that
+    // stuck .collapsed class hides this block's whole .full content
+    // (.sets-header/.ex-sets/.set-actions, see the CSS), so switching back
+    // to it via its chip showed an empty Sets card even though its sets
+    // were still there in the DOM, just display:none'd. Always expand the
+    // block being activated to guarantee that never lingers.
+    expandExerciseBlock(active);
+    updateSetsCardLastTime(active.querySelector(".ex-exercise").value);
+  } else {
+    emptyEl.hidden = false;
+    exercisesContainer.hidden = true;
+    document.getElementById("sets-card-last-time").textContent = "";
+  }
+  renderLogExerciseChips();
+  updateLogHeader();
+}
+
+function waitForChange(el) {
+  return new Promise(resolve => {
+    el.addEventListener("change", () => resolve(el.value), { once: true });
+  });
+}
+
+// The "+" chip's flow: muscle picker, then (once picked) the exercise
+// picker for that muscle - the same cascade the old per-block dropdowns
+// used, just driven from outside the block instead of inline in it.
+async function promptAddExercise() {
+  await muscleOptionsReady;
+  if (!availableMuscles.length) { toast("Still loading exercises..."); return; }
+  const block = addExerciseBlock();
+  block.classList.add("log-set-block");
+  block.hidden = true;
+  const muscleField = block.querySelector(".ex-muscle-field");
+  const exerciseField = block.querySelector(".ex-exercise-field");
+  const muscleHidden = block.querySelector(".ex-muscle");
+  const exerciseHidden = block.querySelector(".ex-exercise");
+
+  openOptionPicker(muscleField);
+  const muscle = await waitForChange(muscleHidden);
+  if (!muscle) { block.remove(); return; }
+  await onBlockMuscleChange(block);
+  if (!exerciseField.__options || !exerciseField.__options.length) {
+    toast("No exercises for this muscle yet");
+    block.remove();
+    return;
+  }
+  openOptionPicker(exerciseField);
+  const exercise = await waitForChange(exerciseHidden);
+  if (!exercise) { block.remove(); return; }
+
+  block.hidden = false;
+  addSetRow(block);
+  currentExerciseIndex = [...exercisesContainer.children].indexOf(block);
+  setActiveExerciseIndex(currentExerciseIndex);
+  saveExerciseDraft();
+}
+
+// ---------------- Rest timer (2b footer button) ----------------
+const REST_DURATION = 90;
+let restRemaining = 0;
+let restInterval = null;
+
+function updateRestButtonUI() {
+  const label = document.getElementById("log-footer-btn-label");
+  const fill = document.getElementById("log-footer-btn-fill");
+  if (restRemaining > 0) {
+    const m = Math.floor(restRemaining / 60), s = restRemaining % 60;
+    label.textContent = `Rest ${m}:${String(s).padStart(2, "0")}`;
+    fill.style.width = `${((REST_DURATION - restRemaining) / REST_DURATION) * 100}%`;
+  } else {
+    label.textContent = "Start rest";
+    fill.style.width = "0%";
+  }
+}
+
+function stopRestTimer() {
+  clearInterval(restInterval);
+  restInterval = null;
+  restRemaining = 0;
+  updateRestButtonUI();
+}
+
+function startRestTimer() {
+  clearInterval(restInterval);
+  restRemaining = REST_DURATION;
+  updateRestButtonUI();
+  restInterval = setInterval(() => {
+    restRemaining--;
+    if (restRemaining <= 0) { stopRestTimer(); return; }
+    updateRestButtonUI();
+  }, 1000);
+}
+
+document.getElementById("log-footer-btn").addEventListener("click", () => {
+  startRestTimer();
+});
+
+document.getElementById("log-close-btn").addEventListener("click", () => switchTab("today"));
+document.getElementById("log-done-btn").addEventListener("click", submitExerciseLog);
+document.getElementById("log-add-exercise-btn").addEventListener("click", promptAddExercise);
+
+function renderLogScreen() {
+  renderSessionStrip();
+  renderLogExerciseChips();
+  updateLogHeader();
+}
+
+// ---------------- Today screen (2a) ----------------
+function todayGreetingCopy() {
+  const hour = new Date().getHours();
+  const part = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
+  const name = (currentUser && currentUser.name) ? currentUser.name.split(" ")[0] : "";
+  return `${part}${name ? `, ${name}` : ""}`;
+}
+
+// Cycle-phase insight sentence for the Today strip - one short template per
+// phase, filled from the same computePRPhaseBreakdown() the Cycle tab's
+// "Where your PRs happen" card uses, so the two never disagree.
+const TODAY_PHASE_INSIGHT_TEMPLATES = {
+  menstrual: (n, total) => `Your body is resetting — <strong>${n} of your ${total} PRs</strong> landed in this phase.`,
+  follicular: (n, total) => `Estrogen is climbing — <strong>${n} of your ${total} PRs</strong> landed in this phase. Good week to push weight.`,
+  ovulation: (n, total) => `You're near your peak — <strong>${n} of your ${total} PRs</strong> landed in this phase.`,
+  luteal: (n, total) => `Energy may dip late this phase — <strong>${n} of your ${total} PRs</strong> landed here.`,
+};
+
+async function renderTodayCycleStrip() {
+  const wrap = document.getElementById("today-cycle-card-wrap");
+  if (!currentUser || !currentUser.last_period_date) { wrap.hidden = true; return; }
+  const cycleDay = cycleDayForDate(todayStr);
+  const phases = getCyclePhases();
+  const currentPhase = phases.find(p => cycleDay >= p.startDay && cycleDay <= p.endDay) || phases[phases.length - 1];
+  wrap.hidden = false;
+  document.getElementById("today-cycle-day").textContent = `Cycle day ${cycleDay}`;
+  const phaseEl = document.getElementById("today-cycle-phase");
+  phaseEl.textContent = currentPhase.label.replace(" Phase", "");
+  phaseEl.style.color = currentPhase.color;
+
+  // Fixed day-order layout (menstrual always starts day 1, luteal always
+  // ends day 28) - "past"/"future" relative to today is just a day-range
+  // comparison, no phase-order wraparound to worry about within one bar.
+  const barEl = document.getElementById("today-phase-bar");
+  barEl.innerHTML = phases.map(p => {
+    const upcomingOpacity = p.key === "luteal" ? ".25" : ".35";
+    if (p.key === currentPhase.key) {
+      const elapsed = cycleDay - p.startDay + 1;
+      const remaining = p.endDay - cycleDay;
+      let html = `<div class="today-phase-bar-seg" style="flex:${elapsed};background:${p.color};opacity:1"></div>`;
+      if (remaining > 0) html += `<div class="today-phase-bar-seg" style="flex:${remaining};background:${p.color};opacity:${upcomingOpacity}"></div>`;
+      return html;
+    }
+    const opacity = p.endDay < currentPhase.startDay ? "1" : upcomingOpacity;
+    return `<div class="today-phase-bar-seg" style="flex:${p.endDay - p.startDay + 1};background:${p.color};opacity:${opacity}"></div>`;
+  }).join("");
+
+  const history = await getExerciseHistory();
+  const byPhase = computePRPhaseBreakdown(history);
+  const total = Object.values(byPhase).reduce((sum, arr) => sum + arr.length, 0);
+  const n = byPhase[currentPhase.key].length;
+  const insightEl = document.getElementById("today-cycle-insight");
+  if (total > 0) {
+    insightEl.innerHTML = TODAY_PHASE_INSIGHT_TEMPLATES[currentPhase.key](n, total);
+    insightEl.querySelector("strong").style.color = currentPhase.color;
+  } else {
+    insightEl.textContent = "";
+  }
+
+  const currentIndex = phases.indexOf(currentPhase);
+  const nextPhase = phases[(currentIndex + 1) % phases.length];
+  const daysUntilNext = nextPhase.startDay > cycleDay ? nextPhase.startDay - cycleDay : (CYCLE_LENGTH_DAYS - cycleDay) + nextPhase.startDay;
+  document.getElementById("today-cycle-footnote").textContent =
+    `${nextPhase.label.replace(" Phase", "")} in ${daysUntilNext} day${daysUntilNext === 1 ? "" : "s"}`;
+}
+
+async function renderTodayLastSession() {
+  const emptyEl = document.getElementById("today-last-session-empty");
+  const cardEl = document.getElementById("today-last-session-card");
+  const repeatBtn = document.getElementById("today-cta-repeat");
+  let workouts = [];
+  try { workouts = await api.get("/api/workout-log"); } catch (err) { /* stays empty */ }
+  if (!workouts.length) {
+    emptyEl.hidden = false;
+    cardEl.hidden = true;
+    repeatBtn.hidden = true;
+    return;
+  }
+  const last = workouts[0]; // ORDER BY date DESC, id DESC
+  emptyEl.hidden = true;
+  cardEl.hidden = false;
+
+  const history = await getExerciseHistory();
+  const dayRows = history.filter(x => x.date === last.date);
+  const prDaysByDate = computePRDaysByDate(history);
+  const hasPr = (prDaysByDate.get(last.date) || new Set()).size > 0;
+
+  document.getElementById("today-last-session-title").textContent = formatMuscles(last.muscles) || "Rest day";
+  document.getElementById("today-last-session-pr-tag").hidden = !hasPr;
+
+  const setCount = dayRows.length;
+  const bestWeight = dayRows.reduce((max, x) => x.weight_kg != null ? Math.max(max, x.weight_kg) : max, 0);
+  const statsEl = document.getElementById("today-last-session-stats");
+  const statParts = [`<span>Sets <strong>${setCount}</strong></span>`];
+  if (bestWeight > 0) statParts.push(`<span>Best <strong>${bestWeight} kg</strong></span>`);
+  if (last.energy_level != null) statParts.push(`<span>Energy <strong>${formatEnergyCompact(last.energy_level)}</strong></span>`);
+  statsEl.innerHTML = statParts.join("");
+
+  const daysAgo = Math.round((new Date(todayStr + "T00:00:00") - new Date(last.date + "T00:00:00")) / 86400000);
+  const relDate = daysAgo === 0 ? "Today" : daysAgo === 1 ? "Yesterday" : `${daysAgo} days ago`;
+  const phase = cyclePhaseForDate(last.date);
+  const metaParts = [relDate];
+  if (phase) metaParts.push(phase.label.replace(" Phase", ""));
+  if (last.notes) metaParts.push(`“${last.notes}”`);
+  document.getElementById("today-last-session-meta").textContent = metaParts.join(" · ");
+
+  const groups = groupExerciseLogs(dayRows);
+  repeatBtn.hidden = groups.length === 0;
+  repeatBtn.textContent = `Repeat ${formatMuscles(last.muscles) || "last"} day`;
+  repeatBtn.onclick = () => startLogSession({ repeatFrom: groups });
+}
+
+// Resolves once `el.hidden` becomes true - lets code that opens one of the
+// existing picker modals imperatively (rather than via their own button
+// click) wait for the user to finish with it (Done or Cancel, either way),
+// same as waitForChange() does for the option-picker cascade.
+function waitUntilHidden(el) {
+  return new Promise(resolve => {
+    if (el.hidden) { resolve(); return; }
+    const obs = new MutationObserver(() => {
+      if (el.hidden) { obs.disconnect(); resolve(); }
+    });
+    obs.observe(el, { attributes: true, attributeFilter: ["hidden"] });
+  });
+}
+
+// Before a fresh "Start today's workout" drops the user into the Log
+// screen, walk them through the same energy / meal-name / meal-timing
+// pickers the session-strip chips use inline - just moved earlier so it
+// reads as a quick check-in rather than something to remember to fill in
+// later. Reuses the real session-strip elements and their existing "change"
+// listeners (see renderSessionStrip et al.) so values persist exactly as
+// they already do when set from the chips themselves.
+async function promptSessionFeelAndFood() {
+  const energyField = document.querySelector("#session-strip .energy-field");
+  openEnergyPicker(energyField);
+  await waitUntilHidden(epModal);
+
+  document.getElementById("session-meal-input").value = sessionFields.pre_workout_meal || "";
+  document.getElementById("session-meal-modal").hidden = false;
+  await waitUntilHidden(document.getElementById("session-meal-modal"));
+  // "Next" on the meal-name modal chains straight into the hours-since
+  // wheel (see the session-meal-next handler) - "Cancel" doesn't, so only
+  // wait on it if it's actually open.
+  if (!mtpModal.hidden) await waitUntilHidden(mtpModal);
+
+  renderSessionStrip();
+  ensureVisitSaved();
+}
+
+// Starts (or re-enters) the Log screen. opts.repeatFrom, when given, is a
+// list of {muscle_group, exercise, sets} groups (see groupExerciseLogs)
+// from the most recent visit, prefilled as a head start rather than a
+// blank screen - see the design handoff's "Repeat ..." button.
+async function startLogSession({ repeatFrom } = {}) {
+  // Never stomps a session already in progress (e.g. restored from an
+  // earlier interrupted draft, or just switched away from and back) -
+  // only prefills from the last visit when the log screen is genuinely
+  // empty, and otherwise just navigates there as-is.
+  const alreadyInProgress = exercisesContainer.children.length > 0;
+  if (repeatFrom && repeatFrom.length && !alreadyInProgress) {
+    for (const group of repeatFrom) {
+      const block = addExerciseBlock();
+      block.classList.add("log-set-block");
+      block.hidden = true;
+      setOptionFieldValue(block.querySelector(".ex-muscle-field"), group.muscle_group);
+      await onBlockMuscleChange(block);
+      setOptionFieldValue(block.querySelector(".ex-exercise-field"), group.exercise);
+      group.sets.forEach(s => {
+        const row = addSetRow(block);
+        row.querySelector(".set-reps") && (row.querySelector(".set-reps").value = s.reps ?? "");
+        row.querySelector(".set-weight") && (row.querySelector(".set-weight").value = s.weight_kg ?? "");
+        row.querySelector(".set-duration") && (row.querySelector(".set-duration").value = s.duration_minutes ?? "");
+      });
+    }
+    currentExerciseIndex = 0;
+    setActiveExerciseIndex(0);
+  }
+  switchTab("log");
+}
+
+document.getElementById("today-cta-start").addEventListener("click", async () => {
+  const alreadyInProgress = exercisesContainer.children.length > 0;
+  const fieldsAlreadySet = sessionFields.energy_level || sessionFields.pre_workout_meal || sessionFields.hours_since_meal;
+  if (!alreadyInProgress && !fieldsAlreadySet) await promptSessionFeelAndFood();
+  startLogSession();
+});
+document.getElementById("today-cta-rest").addEventListener("click", () => {
+  toast("Noted — rest is part of the plan.");
+});
+document.getElementById("today-all-history-link").addEventListener("click", () => switchTab("history"));
+
+async function renderTodayScreen() {
+  const now = new Date();
+  document.getElementById("today-date").textContent = now.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long" }).toUpperCase();
+  document.getElementById("today-greeting-title").textContent = todayGreetingCopy();
+  renderProfileAvatar();
+
+  if (latestStreakData) renderTodayStreakCard(true);
+  else await refreshStreak().then(() => renderTodayStreakCard(true));
+
+  renderTodayCycleStrip();
+  renderTodayLastSession();
+  renderTodayCtaState();
+}
+
+// The CTA otherwise looks identical whether or not a workout is already
+// mid-flight (exercises added via the Log screen's "X" close button, or a
+// restored draft from a killed app/tab) - without this, there's no way to
+// tell "Start today's workout" will actually resume something rather than
+// begin fresh. Swaps in "Continue" copy plus a small hint pill whenever
+// there's anything to resume.
+function renderTodayCtaState() {
+  const namedCount = [...exercisesContainer.children].filter(b => b.querySelector(".ex-exercise").value).length;
+  const hasSessionFields = !!(sessionFields.energy_level || sessionFields.pre_workout_meal || sessionFields.hours_since_meal || sessionFields.notes);
+  const inProgress = namedCount > 0 || hasSessionFields;
+  document.getElementById("today-cta-start-label").textContent = inProgress ? "Continue today's workout" : "Start today's workout";
+  const hint = document.getElementById("today-cta-hint");
+  if (inProgress) {
+    hint.hidden = false;
+    hint.textContent = namedCount > 0
+      ? `Workout in progress — ${namedCount} exercise${namedCount === 1 ? "" : "s"} added, not yet saved`
+      : "Workout in progress — not yet saved";
+  } else {
+    hint.hidden = true;
+  }
 }
 
 // ---------------- History ----------------
@@ -2153,27 +2971,95 @@ function formatMuscles(muscles) {
   return muscles ? muscles.split(",").join(", ") : "";
 }
 
-function workoutRowView(w) {
-  const phase = cyclePhaseForDate(w.date);
+function formatHistoryCardDate(iso) {
+  return new Date(iso + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
+// Groups same-day rows together (see ensureVisitSaved - reopening the log
+// screen later the same day creates a second workout_log row rather than
+// reusing the first), so the history list clubs them into one card per
+// date instead of showing near-duplicate cards with identical muscles.
+function groupWorkoutsByDate(workouts) {
+  const groups = [];
+  const byDate = new Map();
+  workouts.forEach(w => {
+    let group = byDate.get(w.date);
+    if (!group) {
+      group = { date: w.date, sessions: [] };
+      byDate.set(w.date, group);
+      groups.push(group);
+    }
+    group.sessions.push(w);
+  });
+  return groups;
+}
+
+function sessionMetaHtml(w) {
+  const editedBadge = w.edited_at ? `<span class="edited-badge">Edited</span>` : "";
+  const metaParts = [];
+  if (w.energy_level != null) metaParts.push(`Energy <strong>${w.energy_level}/10</strong>`);
+  if (w.notes) metaParts.push(`<span class="history-card-note">&ldquo;${w.notes}&rdquo;</span>`);
+  return { editedBadge, metaHtml: metaParts.length ? `<p class="history-card-meta">${metaParts.join(" &middot; ")}</p>` : "" };
+}
+
+function workoutCardView(group) {
+  const { date, sessions } = group;
+  const phase = cyclePhaseForDate(date);
   const dot = phase ? `<span class="phase-dot" style="background:${phase.color}" title="${phase.label}"></span>` : "";
-  const editedBadge = w.edited_at ? `<span class="edited-badge">Edited ${formatEditedAt(w.edited_at)}</span>` : "";
-  const prMuscles = currentPRDaysByDate.get(w.date);
+  const prMuscles = currentPRDaysByDate.get(date);
   const prTags = prMuscles
     ? [...prMuscles].map(m => `<span class="pr-day-tag">${m}-PR</span>`).join("")
     : "";
+  const muscles = formatMuscles(sessions[0].muscles) || "&mdash;";
+
+  if (sessions.length === 1) {
+    const w = sessions[0];
+    const { editedBadge, metaHtml } = sessionMetaHtml(w);
+    return `
+      <div class="history-card clickable-row" data-date="${date}" data-id="${w.id}">
+        <div class="history-card-top">
+          <span class="date-with-phase">${dot}${formatHistoryCardDate(date)}</span>
+          <span class="history-card-badges">${prTags}${editedBadge}</span>
+        </div>
+        <h3 class="history-card-muscles">${muscles}</h3>
+        ${metaHtml}
+        <div class="history-card-actions">
+          <button class="edit-btn" data-id="${w.id}">Edit</button>
+        </div>
+      </div>`;
+  }
+
+  const sessionRows = sessions.map((w, i) => {
+    const { editedBadge, metaHtml } = sessionMetaHtml(w);
+    return `
+      <div class="history-session-row" data-id="${w.id}">
+        <div class="history-session-row-top">
+          <span class="history-session-label">Session ${sessions.length - i}</span>
+          ${editedBadge}
+        </div>
+        ${metaHtml || `<p class="history-card-meta history-card-meta-empty">No details logged</p>`}
+        <div class="history-card-actions">
+          <button class="edit-btn" data-id="${w.id}">Edit</button>
+        </div>
+      </div>`;
+  }).join("");
+
   return `
-    <tr class="clickable-row" data-date="${w.date}" data-id="${w.id}">
-      <td data-label="Date"><span class="date-with-phase-wrap"><span class="date-with-phase">${dot}${w.date}</span>${prTags}${editedBadge}</span></td><td data-label="Muscles Targeted">${formatMuscles(w.muscles)}</td><td data-label="Energy Level">${w.energy_level ?? ""}</td><td data-label="Notes">${w.notes || ""}</td>
-      <td class="row-actions">
-        <button class="edit-btn" data-id="${w.id}">Edit</button>
-      </td>
-    </tr>`;
+    <div class="history-card clickable-row" data-date="${date}">
+      <div class="history-card-top">
+        <span class="date-with-phase">${dot}${formatHistoryCardDate(date)}</span>
+        <span class="history-card-badges">${prTags}</span>
+      </div>
+      <h3 class="history-card-muscles">${muscles}</h3>
+      <p class="history-card-meta history-sessions-count">${sessions.length} sessions logged that day</p>
+      <div class="history-sessions">${sessionRows}</div>
+    </div>`;
 }
 
-function workoutRowEdit(w) {
+function sessionEditRow(w) {
   return `
-    <tr data-id="${w.id}">
-      <td data-label="Date">
+    <div class="history-session-row history-session-edit" data-id="${w.id}">
+      <div class="history-card-edit-row">
         <div class="date-field" data-max="today">
           <button type="button" class="date-field-btn">
             <span class="date-field-value">${formatDateDisplay(w.date)}</span>
@@ -2181,15 +3067,36 @@ function workoutRowEdit(w) {
           </button>
           <input type="hidden" class="edit-date" value="${w.date}">
         </div>
-      </td>
-      <td data-label="Muscles Targeted">${formatMuscles(w.muscles)}</td>
-      <td data-label="Energy Level">${energyFieldHtml("edit-energy", w.energy_level)}</td>
-      <td data-label="Notes"><input type="text" class="edit-notes" value="${w.notes || ""}"></td>
-      <td class="row-actions">
+        ${energyFieldHtml("edit-energy", w.energy_level)}
+      </div>
+      <input type="text" class="edit-notes" placeholder="Notes" value="${w.notes || ""}">
+      <div class="history-card-actions">
         <button class="save-btn" data-id="${w.id}">Save</button>
         <button class="cancel-btn" data-id="${w.id}">Cancel</button>
-      </td>
-    </tr>`;
+      </div>
+    </div>`;
+}
+
+function workoutCardEdit(w) {
+  return `
+    <div class="history-card" data-id="${w.id}">
+      <div class="history-card-edit-row">
+        <div class="date-field" data-max="today">
+          <button type="button" class="date-field-btn">
+            <span class="date-field-value">${formatDateDisplay(w.date)}</span>
+            <span class="date-field-icon" aria-hidden="true">📅</span>
+          </button>
+          <input type="hidden" class="edit-date" value="${w.date}">
+        </div>
+        ${energyFieldHtml("edit-energy", w.energy_level)}
+      </div>
+      <h3 class="history-card-muscles">${formatMuscles(w.muscles) || "&mdash;"}</h3>
+      <input type="text" class="edit-notes" placeholder="Notes" value="${w.notes || ""}">
+      <div class="history-card-actions">
+        <button class="save-btn" data-id="${w.id}">Save</button>
+        <button class="cancel-btn" data-id="${w.id}">Cancel</button>
+      </div>
+    </div>`;
 }
 
 // Doubles as both the phase-color legend and the history filter: each pill
@@ -2220,8 +3127,8 @@ function renderWorkoutTable() {
   const pageWorkouts = historyPhaseFilter
     ? currentWorkouts.filter(w => cyclePhaseForDate(w.date)?.key === historyPhaseFilter)
     : currentWorkouts.filter(w => weekIndexFor(w.date) === historyPage);
-  const wBody = document.querySelector("#table-workout-log tbody");
-  wBody.innerHTML = pageWorkouts.map(workoutRowView).join("");
+  const wBody = document.getElementById("history-list");
+  wBody.innerHTML = groupWorkoutsByDate(pageWorkouts).map(workoutCardView).join("");
   bindWorkoutRowEvents();
   renderPhaseLegend();
 
@@ -2258,22 +3165,27 @@ document.getElementById("history-pager-older").addEventListener("click", () => {
 });
 
 function bindWorkoutRowEvents() {
-  const wBody = document.querySelector("#table-workout-log tbody");
-  wBody.querySelectorAll("tr.clickable-row").forEach(row => {
-    row.addEventListener("click", () => showExerciseDetail(row.dataset.date));
+  const wBody = document.getElementById("history-list");
+  wBody.querySelectorAll(".history-card.clickable-row").forEach(card => {
+    card.addEventListener("click", () => showExerciseDetail(card.dataset.date));
   });
   wBody.querySelectorAll(".edit-btn").forEach(btn => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const w = currentWorkouts.find(x => x.id == btn.dataset.id);
-      btn.closest("tr").outerHTML = workoutRowEdit(w);
+      const sessionRow = btn.closest(".history-session-row");
+      if (sessionRow) {
+        sessionRow.outerHTML = sessionEditRow(w);
+      } else {
+        btn.closest(".history-card").outerHTML = workoutCardEdit(w);
+      }
       bindWorkoutEditRowEvents(w.id);
     });
   });
 }
 
 function bindWorkoutEditRowEvents(id) {
-  const row = document.querySelector(`#table-workout-log tbody tr[data-id="${id}"]`);
+  const row = document.querySelector(`#history-list .history-card[data-id="${id}"], #history-list .history-session-row[data-id="${id}"]`);
   initDateField(row.querySelector(".date-field"));
   initEnergyField(row.querySelector(".energy-field"));
   row.querySelector(".save-btn").addEventListener("click", async (e) => {
@@ -2303,10 +3215,10 @@ async function loadHistory() {
   await showWorkoutLog();
 }
 
-// ---- Your Performance tab: PR progression chart ----
+// Shared chart canvas size - originally the Your Performance tab's PR
+// chart, now also the hormone reference chart's (see PERF_CHART_H below).
 const PERF_CHART_W = 600;
 const PERF_CHART_H = 260;
-const PERF_PAD = { left: 46, right: 16, top: 20, bottom: 30 };
 
 function svgEl(tag, attrs) {
   const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
@@ -2553,10 +3465,6 @@ function computeYAxis(values) {
   return { yMin, yMax, step };
 }
 
-function formatPerfDate(dateStr) {
-  return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
 // exercise_log.edited_at is stamped server-side via SQLite's datetime('now'),
 // a "YYYY-MM-DD HH:MM:SS" UTC string - append "Z" so Date parses it as UTC
 // and converts to the viewer's local time instead of misreading it as local.
@@ -2565,29 +3473,45 @@ function formatEditedAt(sqlUtcString) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+// ---- Cycle tab: "Strength by phase" chart ----
+// This is deliberately the same date-on-the-x-axis, phase-colored-fill
+// chart the old standalone "Your Performance" tab used (renderPerformanceChart) -
+// a cycle-day x-axis (1-28, ignoring calendar gaps between sessions) was
+// tried here and replaced back to this on user feedback: plotting by actual
+// date, with each line/fill segment tinted by that date's cycle phase, reads
+// better than bucketing everything onto a 28-day ruler.
+const CYCLE_PERF_CHART_W = 340;
+const CYCLE_PERF_CHART_H = 200;
+const CYCLE_PERF_PAD = { left: 34, right: 20, top: 28, bottom: 28 };
+
+let cyclePerfExercise = null;
+
+function formatPerfDate(dateStr) {
+  return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 // Color for a single point's date, reusing the same CYCLE_PHASES colors as
-// the History phase dots and Your Cycle cards - e.g. a menstrual-phase
-// point gets the same pink used everywhere else for "menstrual". Falls
-// back to plain accent purple when cycle tracking is off (no phase to
-// color by), so the chart still renders sensibly for a user like kohal.
+// the History phase dots and Your Cycle cards. Falls back to plain accent
+// purple when cycle tracking is off (no phase to color by), so the chart
+// still renders sensibly without cycle tracking.
 function colorForDate(dateStr) {
   const phase = cyclePhaseForDate(dateStr);
   return phase ? phase.color : "#6d5ef8";
 }
 
-function renderPerformanceChart(series) {
-  const svg = document.getElementById("perf-chart");
-  const wrap = document.getElementById("perf-chart-wrap");
-  const tooltip = document.getElementById("perf-tooltip");
-  const legendEl = document.getElementById("perf-phase-legend");
+function renderCyclePerfChart(series, exerciseName) {
+  const svg = document.getElementById("cycle-perf-chart");
+  const tooltip = document.getElementById("cycle-perf-tooltip");
+  const legendEl = document.getElementById("cycle-perf-phase-legend");
   svg.innerHTML = "";
   tooltip.hidden = true;
+  document.getElementById("cycle-perf-exercise-name").textContent = exerciseName;
 
   const { unit, points } = series;
-  if (points.length === 0) { legendEl.hidden = true; return; }
+  if (!points.length) { legendEl.hidden = true; return; }
 
-  const plotLeft = PERF_PAD.left, plotRight = PERF_CHART_W - PERF_PAD.right;
-  const plotTop = PERF_PAD.top, plotBottom = PERF_CHART_H - PERF_PAD.bottom;
+  const plotLeft = CYCLE_PERF_PAD.left, plotRight = CYCLE_PERF_CHART_W - CYCLE_PERF_PAD.right;
+  const plotTop = CYCLE_PERF_PAD.top, plotBottom = CYCLE_PERF_CHART_H - CYCLE_PERF_PAD.bottom;
   const plotW = plotRight - plotLeft, plotH = plotBottom - plotTop;
 
   const { yMin, yMax, step } = computeYAxis(points.map(p => p.value));
@@ -2596,19 +3520,18 @@ function renderPerformanceChart(series) {
   const dateSpan = Math.max(maxDate - minDate, 1);
 
   const xFor = i => points.length === 1 ? plotLeft + plotW / 2 : plotLeft + ((dates[i] - minDate) / dateSpan) * plotW;
-  const yFor = v => plotTop + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+  const yFor = v => plotTop + plotH - ((v - yMin) / (yMax - yMin || 1)) * plotH;
 
   const segColors = points.map(p => colorForDate(p.date));
   const tracksCycle = points.some(p => cyclePhaseForDate(p.date));
 
-  // Area fill first (bottom of the stack) so the gridlines drawn next
-  // still show through the translucent fill instead of hiding under it.
-  // One quad per consecutive pair of points (not one shape per phase run) -
-  // grouping same-phase points into a single run left a gap wherever a
-  // single differently-phased point sat between two runs, since nothing
-  // then connected it to its neighbors. Per-segment coloring is always
-  // contiguous: every pair of adjacent points gets its own colored quad,
-  // and adjacent quads share an edge so there's never a break in the fill.
+  // Area fill first (bottom of the stack) so the gridlines drawn next still
+  // show through the translucent fill instead of hiding under it. One quad
+  // per consecutive pair of points (not one shape per phase run) - grouping
+  // same-phase points into a single run left a gap wherever a single
+  // differently-phased point sat between two runs. Per-segment coloring is
+  // always contiguous: every pair of adjacent points gets its own colored
+  // quad, and adjacent quads share an edge so there's never a break.
   for (let i = 0; i < points.length - 1; i++) {
     const x1 = xFor(i), x2 = xFor(i + 1);
     const y1 = yFor(points[i].value), y2 = yFor(points[i + 1].value);
@@ -2616,7 +3539,7 @@ function renderPerformanceChart(series) {
     svg.appendChild(svgEl("path", { d, fill: segColors[i], "fill-opacity": "0.28", stroke: "none" }));
   }
 
-  // Y gridlines + labels - clean rounded numbers per the mark spec.
+  // Y gridlines + labels - clean rounded numbers.
   for (let v = yMin; v <= yMax + 0.001; v += step) {
     const y = yFor(v);
     svg.appendChild(svgEl("line", { class: "perf-gridline", x1: plotLeft, x2: plotRight, y1: y, y2: y }));
@@ -2632,15 +3555,13 @@ function renderPerformanceChart(series) {
     xTickIndices.add(Math.round((i / (xTickCount - 1 || 1)) * (points.length - 1)));
   }
   xTickIndices.forEach(i => {
-    const label = svgEl("text", { class: "perf-axis-label", x: xFor(i), y: PERF_CHART_H - 8, "text-anchor": "middle" });
+    const label = svgEl("text", { class: "perf-axis-label", x: xFor(i), y: CYCLE_PERF_CHART_H - 8, "text-anchor": "middle" });
     label.textContent = formatPerfDate(points[i].date);
     svg.appendChild(label);
   });
 
   // Line: same per-segment coloring as the area fill, for the same
-  // never-a-gap reason - each 2-point segment is its own <path>, colored
-  // by its starting point, so a lone differently-phased point still
-  // connects to both neighbors instead of floating disconnected.
+  // never-a-gap reason.
   for (let i = 0; i < points.length - 1; i++) {
     const d = `M${xFor(i)},${yFor(points[i].value)} L${xFor(i + 1)},${yFor(points[i + 1].value)}`;
     svg.appendChild(svgEl("path", { class: "perf-line", d, stroke: segColors[i] }));
@@ -2650,16 +3571,15 @@ function renderPerformanceChart(series) {
   });
 
   // Dashed ring on every point with an edit behind it (any of that date's
-  // sets), distinct from drawMarker's solid current-value/PR rings below -
-  // this can land on any point, not just those two special ones.
+  // sets), distinct from drawMarker's solid current-value/PR rings below.
   points.forEach((p, i) => {
     if (!p.editedAt) return;
     svg.appendChild(svgEl("circle", { class: "perf-edited-ring", cx: xFor(i), cy: yFor(p.value), r: 6 }));
   });
 
   // Direct-label only the two moments that matter - current value and the
-  // all-time PR (same point when she's currently at her peak) - never a
-  // number on every dot.
+  // all-time PR (same point when currently at peak) - never a number on
+  // every dot.
   let maxIndex = 0;
   points.forEach((p, i) => { if (p.value > points[maxIndex].value) maxIndex = i; });
   const lastIndex = points.length - 1;
@@ -2677,8 +3597,10 @@ function renderPerformanceChart(series) {
 
   if (tracksCycle) {
     legendEl.hidden = false;
+    // Abbreviated (no " Phase" suffix) so all 4 fit on the one line the
+    // card's width allows - see #cycle-perf-phase-legend's forced nowrap.
     legendEl.innerHTML = getCyclePhases().map(p =>
-      `<span class="phase-legend-item"><span class="phase-dot" style="background:${p.color}"></span>${p.label}</span>`
+      `<span class="phase-legend-item"><span class="phase-dot" style="background:${p.color}"></span>${p.label.replace(" Phase", "")}</span>`
     ).join("");
   } else {
     legendEl.hidden = true;
@@ -2687,6 +3609,7 @@ function renderPerformanceChart(series) {
   // Hover: crosshair snaps to the nearest point on X; one tooltip shows
   // that point's date + value. The hit target is the whole plot area, not
   // just the 3px dots, so the pointer only has to be roughly on target.
+  const wrap = svg.closest(".cycle-perf-chart-card");
   const crosshair = svgEl("line", { class: "perf-crosshair", x1: 0, x2: 0, y1: plotTop, y2: plotBottom });
   svg.appendChild(crosshair);
   const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent" });
@@ -2730,7 +3653,7 @@ function renderPerformanceChart(series) {
   }
   hitRect.addEventListener("pointermove", (e) => {
     const svgRect = svg.getBoundingClientRect();
-    const scaleX = PERF_CHART_W / svgRect.width;
+    const scaleX = CYCLE_PERF_CHART_W / svgRect.width;
     const localX = (e.clientX - svgRect.left) * scaleX;
     let nearest = 0, nearestDist = Infinity;
     points.forEach((p, i) => {
@@ -2742,139 +3665,50 @@ function renderPerformanceChart(series) {
   hitRect.addEventListener("pointerleave", hideTooltip);
 }
 
-// One point per workout_log row that has an energy_level logged - carries
-// the same row's pre-workout meal fields along for the tooltip, since
-// that's what makes this chart useful (not just the energy number alone).
-function computeEnergySeries(workoutLog) {
-  return workoutLog
-    .filter(w => w.energy_level != null)
-    .map(w => ({
-      date: w.date,
-      value: Number(w.energy_level),
-      meal: w.pre_workout_meal || null,
-      hoursSinceMeal: w.hours_since_meal,
-    }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+async function chooseCyclePerfExercise() {
+  const history = await getExerciseHistory();
+  const exercises = [...new Set(history.map(x => x.exercise))].sort();
+  if (!exercises.length) return;
+  // A detached field object (never inserted into the DOM) drives the
+  // shared option-picker modal the same way the log screen's date field
+  // does - there's no visible dropdown button here, just the "Change" link.
+  // Needs the same .option-field-btn/.option-field-value shape the real
+  // muscle/exercise fields have (see addExerciseBlock) - setOptionFieldOptions
+  // and openOptionPicker both look up a real ".option-field-btn" button
+  // inside the container, not just a bare hidden input + value span.
+  const field = document.createElement("div");
+  field.dataset.title = "Exercise";
+  field.innerHTML = `<button type="button" class="option-field-btn"><span class="option-field-value placeholder">Select...</span></button><input type="hidden">`;
+  const hidden = field.querySelector("input[type=hidden]");
+  hidden.value = cyclePerfExercise || "";
+  setOptionFieldOptions(field, exercises);
+  hidden.addEventListener("change", () => {
+    cyclePerfExercise = hidden.value;
+    renderCyclePerfSection();
+  }, { once: true });
+  openOptionPicker(field);
 }
+document.getElementById("cycle-perf-change-btn").addEventListener("click", chooseCyclePerfExercise);
+initTogglePopover(document.getElementById("cycle-perf-info-btn"), document.getElementById("cycle-perf-info-popover"));
 
-function formatHoursSinceMeal(hours) {
-  if (hours == null) return null;
-  if (hours < 1) return `${Math.round(hours * 60)} min before the gym`;
-  const rounded = Math.round(hours * 2) / 2; // nearest half hour
-  return `${rounded} hour${rounded === 1 ? "" : "s"} before the gym`;
-}
-
-// Energy is always 1-10 (the picker's own range), so unlike the PR chart
-// this never needs computeYAxis - the axis is fixed regardless of the
-// data's actual spread.
-function renderEnergyChart(points) {
-  const svg = document.getElementById("energy-chart");
-  const wrap = document.getElementById("energy-chart-wrap");
-  const tooltip = document.getElementById("energy-tooltip");
-  const emptyEl = document.getElementById("energy-chart-empty");
-  svg.innerHTML = "";
-  tooltip.hidden = true;
-
-  if (points.length === 0) {
-    wrap.hidden = true;
-    emptyEl.hidden = false;
-    return;
-  }
-  wrap.hidden = false;
-  emptyEl.hidden = true;
-
-  const plotLeft = PERF_PAD.left, plotRight = PERF_CHART_W - PERF_PAD.right;
-  const plotTop = PERF_PAD.top, plotBottom = PERF_CHART_H - PERF_PAD.bottom;
-  const plotW = plotRight - plotLeft, plotH = plotBottom - plotTop;
-
-  const dates = points.map(p => new Date(p.date + "T00:00:00").getTime());
-  const minDate = dates[0], maxDate = dates[dates.length - 1];
-  const dateSpan = Math.max(maxDate - minDate, 1);
-
-  const xFor = i => points.length === 1 ? plotLeft + plotW / 2 : plotLeft + ((dates[i] - minDate) / dateSpan) * plotW;
-  const yFor = v => plotTop + plotH - ((v - 1) / 9) * plotH;
-
-  const segColors = points.map(p => colorForDate(p.date));
-
-  for (let v = 2; v <= 10; v += 2) {
-    const y = yFor(v);
-    svg.appendChild(svgEl("line", { class: "perf-gridline", x1: plotLeft, x2: plotRight, y1: y, y2: y }));
-    const label = svgEl("text", { class: "perf-axis-label", x: plotLeft - 8, y: y + 4, "text-anchor": "end" });
-    label.textContent = String(v);
-    svg.appendChild(label);
-  }
-
-  const xTickCount = Math.min(points.length, 5);
-  const xTickIndices = new Set();
-  for (let i = 0; i < xTickCount; i++) {
-    xTickIndices.add(Math.round((i / (xTickCount - 1 || 1)) * (points.length - 1)));
-  }
-  xTickIndices.forEach(i => {
-    const label = svgEl("text", { class: "perf-axis-label", x: xFor(i), y: PERF_CHART_H - 8, "text-anchor": "middle" });
-    label.textContent = formatPerfDate(points[i].date);
-    svg.appendChild(label);
+// Average energy per cycle phase, keyed by phase.key - feeds the "Avg
+// Energy" line in each PRs-by-phase row below. A phase with no
+// energy-logged workouts maps to null rather than 0, so the row can tell
+// "no data" apart from "logged a real low energy".
+function computeEnergyByPhase(workoutLog) {
+  const sums = {}, counts = {};
+  workoutLog.forEach(w => {
+    if (w.energy_level == null) return;
+    const phase = cyclePhaseForDate(w.date);
+    if (!phase) return;
+    sums[phase.key] = (sums[phase.key] || 0) + Number(w.energy_level);
+    counts[phase.key] = (counts[phase.key] || 0) + 1;
   });
-
-  for (let i = 0; i < points.length - 1; i++) {
-    const d = `M${xFor(i)},${yFor(points[i].value)} L${xFor(i + 1)},${yFor(points[i + 1].value)}`;
-    svg.appendChild(svgEl("path", { class: "perf-line", d, stroke: segColors[i] }));
-  }
-  points.forEach((p, i) => {
-    svg.appendChild(svgEl("circle", { cx: xFor(i), cy: yFor(p.value), r: 3, fill: segColors[i] }));
+  const byPhase = {};
+  getCyclePhases().forEach(p => {
+    byPhase[p.key] = counts[p.key] ? { value: sums[p.key] / counts[p.key], count: counts[p.key] } : null;
   });
-
-  const crosshair = svgEl("line", { class: "perf-crosshair", x1: 0, x2: 0, y1: plotTop, y2: plotBottom });
-  svg.appendChild(crosshair);
-  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent" });
-  svg.appendChild(hitRect);
-
-  function showTooltip(i, clientX, clientY) {
-    const p = points[i];
-    tooltip.innerHTML = "";
-    const valueEl = document.createElement("div");
-    valueEl.className = "perf-tooltip-value";
-    valueEl.textContent = `Energy: ${p.value}/10`;
-    tooltip.appendChild(valueEl);
-    const mealEl = document.createElement("div");
-    mealEl.className = "perf-tooltip-date";
-    mealEl.textContent = p.meal ? `Ate: ${p.meal}` : "No meal logged";
-    tooltip.appendChild(mealEl);
-    const timingLabel = formatHoursSinceMeal(p.hoursSinceMeal);
-    if (timingLabel) {
-      const timingEl = document.createElement("div");
-      timingEl.className = "perf-tooltip-date";
-      timingEl.textContent = timingLabel.charAt(0).toUpperCase() + timingLabel.slice(1);
-      tooltip.appendChild(timingEl);
-    }
-    const dateEl = document.createElement("div");
-    dateEl.className = "perf-tooltip-date";
-    const phase = cyclePhaseForDate(p.date);
-    dateEl.textContent = phase ? `${formatPerfDate(p.date)} — ${phase.label}` : formatPerfDate(p.date);
-    tooltip.appendChild(dateEl);
-    const wrapRect = wrap.getBoundingClientRect();
-    tooltip.style.left = `${clientX - wrapRect.left}px`;
-    tooltip.style.top = `${clientY - wrapRect.top - 12}px`;
-    tooltip.hidden = false;
-    crosshair.setAttribute("x1", xFor(i));
-    crosshair.setAttribute("x2", xFor(i));
-    crosshair.style.opacity = 1;
-  }
-  function hideTooltip() {
-    tooltip.hidden = true;
-    crosshair.style.opacity = 0;
-  }
-  hitRect.addEventListener("pointermove", (e) => {
-    const svgRect = svg.getBoundingClientRect();
-    const scaleX = PERF_CHART_W / svgRect.width;
-    const localX = (e.clientX - svgRect.left) * scaleX;
-    let nearest = 0, nearestDist = Infinity;
-    points.forEach((p, i) => {
-      const d = Math.abs(xFor(i) - localX);
-      if (d < nearestDist) { nearestDist = d; nearest = i; }
-    });
-    showTooltip(nearest, e.clientX, e.clientY);
-  });
-  hitRect.addEventListener("pointerleave", hideTooltip);
+  return byPhase;
 }
 
 // For each exercise, takes whichever metric (weight or duration) has more
@@ -2921,16 +3755,126 @@ function computePRPhaseBreakdown(history) {
 // A horizontal bar per phase (count of exercises whose all-time PR landed
 // in that phase) is the right form for "compare a count across a few
 // categories" - a line chart is for trend over time, not this. Bar length
-// is relative to the phase with the most PRs; the exercise names ride
-// along underneath each bar since "how many" alone doesn't answer "which
-// ones" - the actual question being asked.
-function renderPRPhaseBreakdown(history) {
+// is relative to the phase with the most PRs. The exercise names that used
+// to run on underneath every bar as one comma-joined paragraph got
+// unreadable once a phase had more than a couple of PRs (e.g. 8 exercises
+// wrapping across several lines) - now that list is tucked behind a
+// tap-to-expand row instead, so the default view stays scannable and the
+// detail is still one tap away. Avg energy rides alongside the PR count
+// since it's the other half of "how did this phase go" - both are per-phase
+// summaries of the same underlying workout log, just different metrics.
+function renderPRPhaseBreakdown(history, workoutLog) {
   const byPhase = computePRPhaseBreakdown(history);
-  const totalCount = Object.values(byPhase).reduce((sum, arr) => sum + arr.length, 0);
+  const energyByPhase = computeEnergyByPhase(workoutLog);
+  const contentEl = document.getElementById("cycle-perf-prphase-content");
 
-  const emptyEl = document.getElementById("prphase-empty");
-  const contentEl = document.getElementById("prphase-content");
-  if (totalCount === 0) {
+  // Sorted by PR count descending, not the fixed menstrual->luteal order -
+  // that's the point of this card (see the design handoff).
+  const phases = [...getCyclePhases()].sort((a, b) => byPhase[b.key].length - byPhase[a.key].length);
+  const maxCount = Math.max(...phases.map(p => byPhase[p.key].length), 1);
+  contentEl.innerHTML = phases.map(p => {
+    const items = byPhase[p.key];
+    const energy = energyByPhase[p.key];
+    const pct = items.length ? Math.max((items.length / maxCount) * 100, 6) : 2;
+    const energyText = energy
+      ? `Avg Energy: ${energy.value.toFixed(1)}/10 <span class="prphase-energy-count">(${energy.count} workout${energy.count === 1 ? "" : "s"})</span>`
+      : "No energy logged yet";
+    const detailsHtml = items.length
+      ? `<div class="prphase-details" hidden><ul class="prphase-exercise-list">${
+          items.map(it => `<li class="prphase-exercise-item"><span>${it.name}</span><span class="prphase-exercise-value">${it.value} ${it.unit}</span></li>`).join("")
+        }</ul></div>`
+      : `<p class="prphase-exercises-empty">No PRs yet</p>`;
+    return `
+      <div class="prphase-row">
+        <button type="button" class="prphase-row-top${items.length ? " prphase-expandable" : ""}">
+          <span class="prphase-name"><span class="phase-dot" style="background:${p.color}"></span>${p.label}</span>
+          <span class="prphase-count">${items.length} PR${items.length === 1 ? "" : "s"}${items.length ? '<span class="prphase-chevron">&#9662;</span>' : ""}</span>
+        </button>
+        <div class="prphase-bar-track">
+          <div class="prphase-bar-fill" style="width:${pct}%; background:${p.color};"></div>
+        </div>
+        <p class="prphase-energy${energy ? "" : " placeholder"}">${energyText}</p>
+        ${detailsHtml}
+      </div>`;
+  }).join("");
+}
+
+document.getElementById("cycle-perf-prphase-content").addEventListener("click", (e) => {
+  const btn = e.target.closest(".prphase-expandable");
+  if (!btn) return;
+  const details = btn.closest(".prphase-row").querySelector(".prphase-details");
+  details.hidden = !details.hidden;
+  btn.classList.toggle("expanded", !details.hidden);
+});
+
+// Every set logged for one exercise, bucketed by the cycle phase its date
+// fell in (not just the single all-time-best per phase computePRPhaseBreakdown
+// tracks) - feeds the insight card's "peaked at ..." claim and its
+// "which phase has the most data for this exercise" heuristic.
+function computeExercisePhaseBests(history, exerciseName) {
+  const rows = history.filter(x => x.exercise === exerciseName);
+  const weightCount = rows.filter(x => x.weight_kg != null).length;
+  const durationCount = rows.filter(x => x.duration_minutes != null).length;
+  const metricKey = durationCount > weightCount ? "duration_minutes" : "weight_kg";
+  const unit = metricKey === "weight_kg" ? "kg" : "min";
+  const byPhase = {};
+  getCyclePhases().forEach(p => { byPhase[p.key] = []; });
+  rows.forEach(x => {
+    const v = x[metricKey];
+    if (v == null) return;
+    const phase = cyclePhaseForDate(x.date);
+    if (!phase) return;
+    byPhase[phase.key].push({ value: v, unit, date: x.date });
+  });
+  return byPhase;
+}
+
+function renderCyclePerfInsight(exerciseName, byPhaseForExercise, workoutLog) {
+  const cardEl = document.getElementById("cycle-perf-insight-card");
+  const cycleDay = cycleDayForDate(todayStr);
+  const phases = getCyclePhases();
+  const currentPhase = cycleDay != null ? (phases.find(p => cycleDay >= p.startDay && cycleDay <= p.endDay) || phases[phases.length - 1]) : null;
+
+  let bestPhaseEntry = null;
+  phases.forEach(p => {
+    const rows = byPhaseForExercise[p.key] || [];
+    if (rows.length && (!bestPhaseEntry || rows.length > bestPhaseEntry.rows.length)) bestPhaseEntry = { phase: p, rows };
+  });
+
+  // No confident claim to make - render nothing rather than filler (per the
+  // design handoff's explicit rule for this card).
+  if (!currentPhase || !bestPhaseEntry) { cardEl.hidden = true; return; }
+
+  const currentIndex = phases.indexOf(currentPhase);
+  const nextPhase = phases[(currentIndex + 1) % phases.length];
+  const daysUntilNext = nextPhase.startDay > cycleDay ? nextPhase.startDay - cycleDay : (CYCLE_LENGTH_DAYS - cycleDay) + nextPhase.startDay;
+  const best = bestPhaseEntry.rows.reduce((m, r) => Math.max(m, r.value), 0);
+  const unit = bestPhaseEntry.rows[0].unit;
+  const nextLabel = nextPhase.label.replace(" Phase", "").toLowerCase();
+
+  cardEl.hidden = false;
+  document.getElementById("cycle-perf-insight-body").textContent =
+    `You're ${daysUntilNext} day${daysUntilNext === 1 ? "" : "s"} from ${nextLabel}, where ${exerciseName} has peaked at ${best} ${unit}.`;
+
+  const energyByPhase = computeEnergyByPhase(workoutLog);
+  const e = energyByPhase[bestPhaseEntry.phase.key];
+  const footnoteEl = document.getElementById("cycle-perf-insight-footnote");
+  footnoteEl.hidden = !e;
+  if (e) {
+    footnoteEl.innerHTML = `Energy on ${bestPhaseEntry.phase.label.replace(" Phase", "").toLowerCase()} days averages <strong>${e.value.toFixed(1)}</strong>`;
+  }
+}
+
+async function renderCyclePerfSection() {
+  const emptyEl = document.getElementById("cycle-perf-empty");
+  const contentEl = document.getElementById("cycle-perf-content");
+  // Only needs exercise history, not cycle tracking - the chart itself
+  // (colorForDate) and its legend already degrade gracefully to an
+  // uncolored line when there's no cycle to plot against, same as the old
+  // standalone "Your Performance" tab this was ported from.
+  const history = await getExerciseHistory();
+  const exercises = [...new Set(history.map(x => x.exercise))].sort();
+  if (!exercises.length) {
     emptyEl.hidden = false;
     contentEl.hidden = true;
     return;
@@ -2938,72 +3882,18 @@ function renderPRPhaseBreakdown(history) {
   emptyEl.hidden = true;
   contentEl.hidden = false;
 
-  const phases = getCyclePhases();
-  const maxCount = Math.max(...phases.map(p => byPhase[p.key].length), 1);
-  contentEl.innerHTML = phases.map(p => {
-    const items = byPhase[p.key];
-    const pct = items.length ? Math.max((items.length / maxCount) * 100, 6) : 2;
-    const names = items.length
-      ? items.map(it => `${it.name} (${it.value} ${it.unit})`).join(", ")
-      : "No PRs yet";
-    return `
-      <div class="prphase-row">
-        <div class="prphase-row-top">
-          <span class="prphase-name"><span class="phase-dot" style="background:${p.color}"></span>${p.label}</span>
-          <span class="prphase-count">${items.length} PR${items.length === 1 ? "" : "s"}</span>
-        </div>
-        <div class="prphase-bar-track">
-          <div class="prphase-bar-fill" style="width:${pct}%; background:${p.color};"></div>
-        </div>
-        <p class="prphase-exercises">${names}</p>
-      </div>`;
-  }).join("");
-}
-
-async function renderPerformanceTab() {
-  const history = await getExerciseHistory();
-  const exercises = [...new Set(history.map(x => x.exercise))].sort();
-
-  const emptyEl = document.getElementById("perf-empty");
-  const contentEl = document.getElementById("perf-content");
-  if (exercises.length === 0) {
-    emptyEl.hidden = false;
-    contentEl.hidden = true;
-  } else {
-    emptyEl.hidden = true;
-    contentEl.hidden = false;
-
-    const field = document.querySelector(".perf-exercise-field");
-    setOptionFieldOptions(field, exercises);
-    const currentValue = field.querySelector("input[type=hidden]").value;
-    const selected = exercises.includes(currentValue) ? currentValue : exercises[0];
-    setOptionFieldValue(field, selected);
-    renderPerformanceChart(computeExerciseSeries(history, selected));
-
-    let workoutLog = [];
-    try {
-      workoutLog = await api.get("/api/workout-log");
-    } catch (err) { /* energy chart just shows its empty state */ }
-    renderEnergyChart(computeEnergySeries(workoutLog));
+  if (!cyclePerfExercise || !exercises.includes(cyclePerfExercise)) {
+    const counts = {};
+    history.forEach(x => { counts[x.exercise] = (counts[x.exercise] || 0) + 1; });
+    cyclePerfExercise = exercises.reduce((best, ex) => (counts[ex] > (counts[best] || 0) ? ex : best), exercises[0]);
   }
-  renderPRPhaseBreakdown(history);
+  renderCyclePerfChart(computeExerciseSeries(history, cyclePerfExercise), cyclePerfExercise);
+
+  let workoutLog = [];
+  try { workoutLog = await api.get("/api/workout-log"); } catch (err) { /* insight/PR-phase cards just show their empty states */ }
+  renderPRPhaseBreakdown(history, workoutLog);
+  renderCyclePerfInsight(cyclePerfExercise, computeExercisePhaseBests(history, cyclePerfExercise), workoutLog);
 }
-
-initOptionField(document.querySelector(".perf-exercise-field"));
-document.getElementById("perf-exercise-value").addEventListener("change", async (e) => {
-  const history = await getExerciseHistory();
-  renderPerformanceChart(computeExerciseSeries(history, e.target.value));
-});
-
-document.querySelectorAll("#perf-chart-switcher .chart-switch-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const key = btn.dataset.chart;
-    document.querySelectorAll("#perf-chart-switcher .chart-switch-btn").forEach(b => b.classList.toggle("active", b === btn));
-    document.querySelectorAll("#perf-content .chart-panel").forEach(panel => {
-      panel.hidden = panel.dataset.chartPanel !== key;
-    });
-  });
-});
 
 // ---- Exercise detail table ----
 // A row has either intensity_level or speed_kmh (extra_attributes),
@@ -3367,24 +4257,16 @@ function collectExerciseBlocksDraft() {
 
 function saveWorkoutDraft() {
   if (restoringDraft) return;
-  // Deliberately doesn't touch workoutSubmitted/workoutId: those only change
-  // on an actual save (see the submit handler), so editing an already-saved
-  // visit keeps updating the same row instead of drafting a duplicate.
-  const form = document.getElementById("form-workout");
-  writeDraft({ workout: Object.fromEntries(new FormData(form).entries()) });
+  writeDraft({ date: logSessionDate, sessionFields, workoutId: savedWorkoutId });
 }
 
 function saveExerciseDraft() {
   if (restoringDraft) return;
-  const draft = readDraft();
-  if (!draft || !draft.workoutSubmitted) return; // exercise card isn't open yet
-  writeDraft({ exlogDate: document.getElementById("exlog-date").value, exercises: collectExerciseBlocksDraft() });
+  writeDraft({ exercises: collectExerciseBlocksDraft() });
 }
 
-document.getElementById("form-workout").addEventListener("input", saveWorkoutDraft);
-document.getElementById("form-workout").addEventListener("change", saveWorkoutDraft);
-document.getElementById("card-exlog").addEventListener("input", saveExerciseDraft);
-document.getElementById("card-exlog").addEventListener("change", saveExerciseDraft);
+document.getElementById("log-exercises-container").addEventListener("input", saveExerciseDraft);
+document.getElementById("log-exercises-container").addEventListener("change", saveExerciseDraft);
 
 async function restoreDraft() {
   const draft = readDraft();
@@ -3394,66 +4276,53 @@ async function restoreDraft() {
   }
 
   try {
-    if (draft.workout) {
-      const w = draft.workout;
-      const form = document.getElementById("form-workout");
-      if (w.energy_level) setEnergyFieldValue(form.querySelector('[name="energy_level"]').closest(".energy-field"), w.energy_level);
-      if (w.pre_workout_meal) form.querySelector('[name="pre_workout_meal"]').value = w.pre_workout_meal;
-      if (w.hours_since_meal) setMealTimingFieldValue(form.querySelector('[name="hours_since_meal"]').closest(".meal-timing-field"), w.hours_since_meal);
-      if (w.notes) form.querySelector('[name="notes"]').value = w.notes;
-      if (w.date) setDateFieldValue(document.getElementById("workout-date").closest(".date-field"), w.date);
-    }
+    if (draft.date) logSessionDate = draft.date;
+    if (draft.sessionFields) sessionFields = { ...sessionFields, ...draft.sessionFields };
+    if (draft.workoutId) savedWorkoutId = draft.workoutId;
+    renderSessionStrip();
 
-    if (draft.workoutSubmitted) {
-      savedWorkoutId = draft.workoutId || null;
-      document.getElementById("form-workout").querySelectorAll("input, select, button").forEach(el => el.disabled = true);
-      document.getElementById("card-exlog").hidden = false;
-      document.getElementById("workout-edit-btn").hidden = false;
-
-      if (draft.exlogDate) {
-        setDateFieldValue(document.getElementById("exlog-date").closest(".date-field"), draft.exlogDate);
-      }
-
-      if (draft.exercises && draft.exercises.length) {
-        exercisesContainer.innerHTML = "";
-        for (const ex of draft.exercises) {
-          const block = addExerciseBlock();
-          if (ex.muscle_group) {
-            setOptionFieldValue(block.querySelector(".ex-muscle-field"), ex.muscle_group);
-            await onBlockMuscleChange(block);
-            setOptionFieldValue(block.querySelector(".ex-exercise-field"), ex.exercise || "");
-          }
-          block.dataset.exerciseType = ex.type || "strength";
-          updateSetTypeToggle(block);
-          block.dataset.levelMode = ex.levelMode || "level";
-          block.dataset.extraFieldKey = (EXERCISE_EXTRA_FIELDS[ex.exercise] || {}).key || "";
-          block.querySelector(".ex-notes").value = ex.notes || "";
-          const isCardio = block.dataset.exerciseType === "cardio";
-          block.querySelector(".ex-sets").innerHTML = "";
-          const sets = ex.sets && ex.sets.length ? ex.sets : [{}];
-          sets.forEach(() => addSetRow(block));
-          const rows = block.querySelectorAll(".set-row");
-          sets.forEach((s, i) => {
-            if (isCardio) {
-              rows[i].querySelector(".set-duration").value = s.duration_minutes || "";
-              const speedInput = rows[i].querySelector(".set-speed");
-              if (speedInput) speedInput.value = s.levelValue || "";
-              else rows[i].querySelector(".set-level").value = s.levelValue || "";
-            } else {
-              rows[i].querySelector(".set-reps").value = s.reps || "";
-              rows[i].querySelector(".set-weight").value = s.weight_kg || "";
-            }
-            const extraInput = rows[i].querySelector(".set-extra");
-            if (extraInput && s.extraValue != null) extraInput.value = s.extraValue;
-          });
+    if (draft.exercises && draft.exercises.length) {
+      exercisesContainer.innerHTML = "";
+      for (const ex of draft.exercises) {
+        const block = addExerciseBlock();
+        block.classList.add("log-set-block");
+        block.hidden = true;
+        if (ex.muscle_group) {
+          setOptionFieldValue(block.querySelector(".ex-muscle-field"), ex.muscle_group);
+          await onBlockMuscleChange(block);
+          setOptionFieldValue(block.querySelector(".ex-exercise-field"), ex.exercise || "");
         }
+        block.dataset.exerciseType = ex.type || "strength";
+        updateSetTypeToggle(block);
+        block.dataset.levelMode = ex.levelMode || "level";
+        block.dataset.extraFieldKey = (EXERCISE_EXTRA_FIELDS[ex.exercise] || {}).key || "";
+        updateLevelModeToggle(block);
+        block.querySelector(".ex-notes").value = ex.notes || "";
+        const isCardio = block.dataset.exerciseType === "cardio";
+        block.querySelector(".ex-sets").innerHTML = "";
+        const sets = ex.sets && ex.sets.length ? ex.sets : [{}];
+        sets.forEach(() => addSetRow(block));
+        const rows = block.querySelectorAll(".set-row");
+        sets.forEach((s, i) => {
+          if (isCardio) {
+            rows[i].querySelector(".set-duration").value = s.duration_minutes || "";
+            const speedInput = rows[i].querySelector(".set-speed");
+            if (speedInput) speedInput.value = s.levelValue || "";
+            else rows[i].querySelector(".set-level").value = s.levelValue || "";
+          } else {
+            rows[i].querySelector(".set-reps").value = s.reps || "";
+            rows[i].querySelector(".set-weight").value = s.weight_kg || "";
+          }
+          const extraInput = rows[i].querySelector(".set-extra");
+          if (extraInput && s.extraValue != null) extraInput.value = s.extraValue;
+        });
       }
-      toast("Restored your unsaved entry");
-    } else if (draft.workout && Object.values(draft.workout).some(v => v)) {
+      currentExerciseIndex = 0;
       toast("Restored your unsaved entry");
     }
   } finally {
     restoringDraft = false;
+    setActiveExerciseIndex(exercisesContainer.children.length ? 0 : -1);
   }
 }
 

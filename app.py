@@ -32,6 +32,10 @@ app.teardown_appcontext(close_db)
 app.secret_key = get_secret_key()
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+if config.is_dev():
+    # Flask's default 12-hour static-file cache is fine in production but
+    # actively harmful here - see config.is_dev()'s docstring.
+    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
 register_blueprints(app)
 

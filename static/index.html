@@ -168,145 +168,216 @@
   </div>
 </div>
 
-<header class="topbar">
-  <div class="topbar-glow" aria-hidden="true"></div>
-  <div class="user-menu" id="user-menu" hidden>
-    <div class="streak-menu">
-      <button type="button" class="streak-badge-btn" id="streak-badge-btn">
-        <span aria-hidden="true">🔥</span>
-        <span id="streak-count-text">0</span>
-      </button>
+<div id="session-note-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>Session note</h2>
+    <p class="modal-sub">How did today's session feel?</p>
+    <div class="note-field">
+      <input type="text" id="session-note-input" placeholder="optional">
+      <button type="button" class="secondary note-mic-btn" id="session-note-mic-btn" aria-label="Dictate note" title="Speak your note">🎤</button>
     </div>
-    <div class="streak-dropdown" id="streak-dropdown" hidden>
-      <div class="streak-dropdown-header">
-        <span class="streak-dropdown-title">Your Streak</span>
-        <button type="button" class="streak-info-btn" id="streak-info-btn" aria-label="How streaks and shields work">&#9432;</button>
-      </div>
-      <div class="streak-dropdown-row">
-        <span class="streak-dropdown-label">Current Streak</span>
-        <span class="streak-dropdown-value" id="streak-current-value">0 weeks</span>
-      </div>
-      <div class="streak-dropdown-row">
-        <span class="streak-dropdown-label">Best Streak</span>
-        <span class="streak-dropdown-value" id="streak-best-value">0 weeks</span>
-      </div>
-      <div class="streak-dropdown-row">
-        <span class="streak-dropdown-label">This Week</span>
-        <span class="streak-dropdown-value" id="streak-week-progress-value">0 / 4 visits</span>
-      </div>
-      <div class="streak-week-progress-bar"><div class="streak-week-progress-fill" id="streak-week-progress-fill"></div></div>
-      <div class="streak-dropdown-row">
-        <span class="streak-dropdown-label">Shields</span>
-        <span class="streak-shields" id="streak-shields-icons"></span>
-      </div>
-      <p class="streak-dropdown-note" id="streak-week-anchor-note">Your streak week runs Monday-Sunday.</p>
-    </div>
-    <button type="button" class="topbar-greeting" id="user-greeting-btn">
-      <span id="user-greeting-text"></span>
-      <span class="caret">&#9662;</span>
-    </button>
-    <div class="user-menu-dropdown" id="user-menu-dropdown" hidden>
-      <button type="button" id="view-profile-btn">View Profile</button>
-      <button type="button" id="logout-btn">Log Out</button>
+    <div class="confirm-actions">
+      <button type="button" class="secondary" id="session-note-cancel">Cancel</button>
+      <button type="button" class="primary" id="session-note-save">Save</button>
     </div>
   </div>
-  <h1><img class="topbar-icon" src="logo-mark.png" alt=""><span class="topbar-wordmark">Clock It</span></h1>
-  <p class="topbar-sub">Log it. Track it. Crush it.</p>
-</header>
+</div>
 
-<nav class="main-tabs">
-  <button class="main-tab-btn active" data-maintab="workout">Workout</button>
-  <button class="main-tab-btn" data-maintab="diet">Diet</button>
-  <button class="main-tab-btn" data-maintab="cycle">Your Cycle</button>
-  <button class="main-tab-btn" data-maintab="performance">Your Performance</button>
-</nav>
+<div id="session-meal-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>What did you eat?</h2>
+    <p class="modal-sub">Before today's session, if anything.</p>
+    <div class="note-field">
+      <input type="text" id="session-meal-input" placeholder="e.g. banana, protein shake">
+      <button type="button" class="secondary note-mic-btn" id="session-meal-mic-btn" aria-label="Dictate meal" title="Speak what you ate">🎤</button>
+    </div>
+    <div class="confirm-actions">
+      <button type="button" class="secondary" id="session-meal-cancel">Cancel</button>
+      <button type="button" class="primary" id="session-meal-next">Next</button>
+    </div>
+  </div>
+</div>
+
+<div id="profile-edit-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>Edit Profile</h2>
+    <div class="profile-avatar-row">
+      <img id="profile-avatar-img" class="profile-avatar" src="" alt="Profile picture">
+      <label class="secondary profile-upload-btn">
+        Change Photo
+        <input type="file" id="profile-avatar-input" accept="image/*" hidden>
+      </label>
+    </div>
+    <form id="form-profile" class="grid-form">
+      <label class="full">Name
+        <input type="text" name="name" id="profile-name" required>
+      </label>
+      <label>Age
+        <input type="number" name="age" id="profile-age" min="1" max="120">
+      </label>
+      <label class="full checkbox-field">
+        <input type="checkbox" id="profile-track-cycle">
+        <span>Track my menstrual cycle</span>
+      </label>
+      <p class="field-hint full">Turn this on and Clock It will show your current cycle phase and how it lines up with your workout performance in Your Cycle.</p>
+      <label class="full" id="profile-period-date-label" hidden>Last Period Date
+        <div class="date-field" data-date-field data-max="today">
+          <button type="button" class="date-field-btn">
+            <span class="date-field-value placeholder">dd-mm-yyyy</span>
+            <span class="date-field-icon" aria-hidden="true">📅</span>
+          </button>
+          <input type="hidden" name="last_period_date" id="profile-last-period">
+        </div>
+      </label>
+      <button type="submit" class="primary">Save Changes</button>
+      <button type="button" class="secondary" id="profile-edit-cancel">Cancel</button>
+    </form>
+  </div>
+</div>
 
 <main>
-  <!-- ================= WORKOUT ================= -->
-  <section id="maintab-workout" class="main-tab-panel active">
-  <nav class="tabs">
-    <button class="tab-btn active" data-tab="log">Log Workout</button>
-    <button class="tab-btn" data-tab="history">History</button>
-  </nav>
-
-  <!-- ================= LOG WORKOUT ================= -->
-  <section id="tab-log" class="tab-panel active">
-    <div class="card">
-      <div class="card-title-row">
-        <h2>Log a Gym Visit</h2>
-        <button type="button" class="edit-link-btn" id="workout-edit-btn" hidden>Edit</button>
+  <!-- ================= TODAY ================= -->
+  <section id="maintab-today" class="main-tab-panel active">
+    <div class="today-greeting">
+      <div class="today-greeting-glow" aria-hidden="true"></div>
+      <div class="today-greeting-text">
+        <p class="today-eyebrow" id="today-date"></p>
+        <h1 class="today-title" id="today-greeting-title">Hi</h1>
       </div>
-      <form id="form-workout" class="grid-form">
-        <label>Date
-          <div class="date-field" data-date-field data-max="today">
-            <button type="button" class="date-field-btn">
-              <span class="date-field-value placeholder">dd-mm-yyyy</span>
-              <span class="date-field-icon" aria-hidden="true">📅</span>
-            </button>
-            <input type="hidden" name="date" id="workout-date" required>
-          </div>
-        </label>
-        <label>Energy Level
-          <div class="energy-field" data-energy-field>
-            <button type="button" class="energy-field-btn">
-              <span class="energy-field-value placeholder">How do you feel?</span>
-              <span class="energy-field-icon" aria-hidden="true">⚡</span>
-            </button>
-            <input type="hidden" name="energy_level">
-          </div>
-        </label>
-        <label>What did you eat before the gym?
-          <input type="text" name="pre_workout_meal" placeholder="e.g. banana, protein shake">
-        </label>
-        <label>Time Since Eating
-          <div class="meal-timing-field" data-meal-timing-field>
-            <button type="button" class="meal-timing-field-btn">
-              <span class="meal-timing-field-value placeholder">How long ago?</span>
-              <span class="meal-timing-field-icon" aria-hidden="true">🍽️</span>
-            </button>
-            <input type="hidden" name="hours_since_meal">
-          </div>
-        </label>
-        <label class="full">Notes
-          <input type="text" name="notes" placeholder="optional">
-        </label>
-        <button type="submit" class="primary">Save Visit and Add Exercises Done</button>
-      </form>
+      <img class="today-avatar" id="today-avatar-img" src="" alt="Edit profile" role="button" tabindex="0">
     </div>
 
-    <div class="card" id="card-exlog" hidden>
-      <h2>Log Exercises Done</h2>
-      <form id="form-exercise-log" class="grid-form">
-        <label class="full">Date
-          <div class="date-field" data-date-field data-max="today">
-            <button type="button" class="date-field-btn">
-              <span class="date-field-value placeholder">dd-mm-yyyy</span>
-              <span class="date-field-icon" aria-hidden="true">📅</span>
-            </button>
-            <input type="hidden" name="date" id="exlog-date" required>
+    <div class="today-card-wrap">
+      <div class="today-streak-card">
+        <div class="today-streak-ring-wrap">
+          <svg class="today-streak-ring" id="today-streak-ring" viewBox="0 0 104 104" aria-hidden="true">
+            <defs>
+              <linearGradient id="today-streak-ring-gradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#f7b8c8"/>
+                <stop offset="100%" stop-color="#a9c4f7"/>
+              </linearGradient>
+            </defs>
+            <circle cx="52" cy="52" r="46" fill="none" stroke="#202020" stroke-width="9"/>
+            <circle id="today-streak-ring-progress" cx="52" cy="52" r="46" fill="none" stroke="url(#today-streak-ring-gradient)" stroke-width="9" stroke-linecap="round" stroke-dasharray="0 289"/>
+          </svg>
+          <div class="today-streak-ring-center">
+            <span class="today-streak-ring-count" id="today-streak-ring-count">0</span>
+            <span class="today-streak-ring-label" id="today-streak-ring-target">of 4</span>
           </div>
-        </label>
-        <div class="full" id="exlog-exercises"></div>
-        <button type="button" id="exlog-add-exercise" class="secondary">+ Add Exercise</button>
-        <button type="submit" class="primary">Save Exercises</button>
-      </form>
+        </div>
+        <div class="today-streak-body">
+          <p class="today-streak-headline" id="today-streak-headline">
+            <button type="button" class="streak-info-btn" id="today-streak-info-btn" aria-label="How streaks and shields work">&#9432;</button>
+          </p>
+          <p class="today-streak-meta" id="today-streak-meta"></p>
+          <div class="today-streak-pips" id="today-streak-pips"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="today-cycle-card-wrap" id="today-cycle-card-wrap" hidden>
+      <div class="today-cycle-card">
+        <div class="today-cycle-header">
+          <span class="today-cycle-day" id="today-cycle-day"></span>
+          <span class="today-cycle-phase" id="today-cycle-phase"></span>
+        </div>
+        <div class="today-phase-bar" id="today-phase-bar"></div>
+        <p class="today-cycle-insight" id="today-cycle-insight"></p>
+        <p class="today-cycle-footnote" id="today-cycle-footnote"></p>
+      </div>
+    </div>
+
+    <div class="today-cta-wrap">
+      <p class="today-cta-hint" id="today-cta-hint" hidden></p>
+      <button type="button" class="today-cta" id="today-cta-start">
+        <span id="today-cta-start-label">Start today's workout</span>
+        <span class="today-cta-arrow" aria-hidden="true">&rarr;</span>
+      </button>
+      <div class="today-secondary-row">
+        <button type="button" class="today-secondary-btn" id="today-cta-repeat" hidden>Repeat</button>
+        <button type="button" class="today-secondary-btn" id="today-cta-rest">Log a rest day</button>
+      </div>
+    </div>
+
+    <div class="today-last-session-wrap">
+      <div class="today-section-header">
+        <span class="today-section-label">Last session</span>
+        <button type="button" class="today-section-link" id="today-all-history-link">All history</button>
+      </div>
+      <div id="today-last-session-content">
+        <p class="today-empty" id="today-last-session-empty" hidden>Nothing logged yet - start today's workout to begin your streak.</p>
+        <div class="today-last-session-card" id="today-last-session-card" hidden>
+          <div class="today-last-session-title-row">
+            <h3 class="today-last-session-title" id="today-last-session-title"></h3>
+            <span class="pr-day-tag" id="today-last-session-pr-tag" hidden>New PR</span>
+          </div>
+          <div class="today-last-session-stats" id="today-last-session-stats"></div>
+          <p class="today-last-session-meta" id="today-last-session-meta"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= LOG (one screen) ================= -->
+  <section id="maintab-log" class="main-tab-panel">
+    <div class="log-header">
+      <button type="button" class="log-close-btn" id="log-close-btn" aria-label="Close">&#10005;</button>
+      <div class="log-header-center">
+        <div class="log-header-title" id="log-header-title">Log workout</div>
+        <button type="button" class="log-header-subtitle" id="log-header-subtitle">Today</button>
+      </div>
+      <button type="button" class="log-done-btn" id="log-done-btn">Done</button>
+    </div>
+    <div class="log-scroll">
+      <div class="session-strip" id="session-strip">
+        <div class="energy-field" data-energy-field data-compact="1">
+          <button type="button" class="energy-field-btn">
+            <span class="energy-field-value placeholder">&#128170; Add energy</span>
+          </button>
+          <input type="hidden" name="energy_level" id="log-energy-input">
+        </div>
+        <div class="meal-timing-field" id="log-meal-field">
+          <button type="button" class="meal-timing-field-btn" id="log-meal-btn">
+            <span class="meal-timing-field-value placeholder">&#127869; Add fuel</span>
+          </button>
+          <input type="hidden" name="hours_since_meal" id="log-meal-timing-input">
+        </div>
+        <button type="button" class="session-strip-note-btn chip chip-add" id="log-note-chip">+ Note</button>
+      </div>
+
+      <div class="log-exercise-chips" id="log-exercise-chips"></div>
+
+      <div class="sets-card" id="sets-card">
+        <div class="sets-card-header">
+          <span class="sets-card-label">Sets</span>
+          <span class="sets-card-last-time" id="sets-card-last-time"></span>
+        </div>
+        <div class="sets-card-empty" id="sets-card-empty">
+          <button type="button" class="log-add-exercise-btn" id="log-add-exercise-btn">
+            <span class="log-add-exercise-plus" aria-hidden="true">+</span>
+            <span>Add Exercise</span>
+          </button>
+          <p class="log-add-exercise-hint">Pick a muscle group, then an exercise, to start logging sets.</p>
+        </div>
+        <div id="log-exercises-container" hidden></div>
+      </div>
+
+    </div>
+    <div class="log-footer">
+      <button type="button" class="log-footer-btn" id="log-footer-btn">
+        <span class="log-footer-btn-fill" id="log-footer-btn-fill" aria-hidden="true"></span>
+        <span class="log-footer-btn-label" id="log-footer-btn-label">Start rest</span>
+      </button>
     </div>
   </section>
 
   <!-- ================= HISTORY ================= -->
-  <section id="tab-history" class="tab-panel">
+  <section id="maintab-history" class="main-tab-panel main-tab-panel-padded">
     <div class="card" id="card-workout-log">
       <h2>Workout Log</h2>
       <div class="phase-legend" id="workout-log-phase-legend" hidden></div>
       <p class="placeholder-text" id="history-empty" hidden></p>
-      <div class="table-scroll">
-        <table class="data-table" id="table-workout-log">
-          <thead>
-            <tr><th>Date</th><th>Muscles Targeted</th><th>Energy Level</th><th>Notes</th><th></th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <div class="history-list" id="history-list"></div>
       <div class="history-pager" id="history-pager">
         <button type="button" class="history-pager-btn" id="history-pager-newer">&larr; Newer</button>
         <span class="history-pager-label"></span>
@@ -322,18 +393,9 @@
       <div id="exercise-detail-list"></div>
     </div>
   </section>
-  </section>
-
-  <!-- ================= DIET ================= -->
-  <section id="maintab-diet" class="main-tab-panel">
-    <div class="card placeholder-card">
-      <h2>Diet</h2>
-      <p class="placeholder-text">Diet tracking is coming soon.</p>
-    </div>
-  </section>
 
   <!-- ================= YOUR CYCLE ================= -->
-  <section id="maintab-cycle" class="main-tab-panel">
+  <section id="maintab-cycle" class="main-tab-panel main-tab-panel-padded">
     <div class="card">
       <div class="card-title-row cycle-title-row">
         <h2>Your Cycle</h2>
@@ -460,92 +522,80 @@
     </div>
   </section>
 
-  <!-- ================= YOUR PERFORMANCE ================= -->
-  <section id="maintab-performance" class="main-tab-panel">
+  <!-- ================= YOU (aka "Your Body") ================= -->
+  <section id="maintab-you" class="main-tab-panel main-tab-panel-padded">
     <div class="card">
-      <h2>Your Performance</h2>
-      <p class="placeholder-text" id="perf-empty" hidden>Log a few sets to see your progress here.</p>
-      <div id="perf-content" hidden>
-        <div class="chart-switcher" id="perf-chart-switcher">
-          <button type="button" class="chart-switch-btn active" data-chart="prs">PRs</button>
-          <button type="button" class="chart-switch-btn" data-chart="energy">Energy vs Time</button>
-        </div>
+      <h2>Your Body</h2>
+    </div>
 
-        <div class="chart-panel" data-chart-panel="prs">
-          <label class="perf-picker">
-            <span class="perf-picker-label">Exercise</span>
-            <div class="option-field perf-exercise-field" data-option-field data-title="Exercise">
-              <button type="button" class="option-field-btn">
-                <span class="option-field-value placeholder">Select an exercise...</span>
-                <span class="option-field-caret" aria-hidden="true">&#9662;</span>
-              </button>
-              <input type="hidden" id="perf-exercise-value">
-            </div>
-          </label>
-          <div class="perf-chart-wrap" id="perf-chart-wrap">
-            <svg id="perf-chart" class="perf-chart" viewBox="0 0 600 260" preserveAspectRatio="none"></svg>
-            <div class="perf-tooltip" id="perf-tooltip" hidden></div>
-          </div>
-          <div class="phase-legend" id="perf-phase-legend" hidden></div>
-        </div>
+    <!-- ============ Strength by phase (2c, lives inside Your Body) ============ -->
+    <p class="cycle-perf-section-label" id="cycle-perf-empty" hidden>Log a few sets to see your strength-by-phase chart here.</p>
+    <div id="cycle-perf-content" hidden>
+      <p class="cycle-perf-section-label">Strength by phase</p>
 
-        <div class="chart-panel" data-chart-panel="energy" hidden>
-          <p class="placeholder-text" id="energy-chart-empty" hidden>Log your energy level with a workout to see this chart.</p>
-          <div class="perf-chart-wrap" id="energy-chart-wrap" hidden>
-            <svg id="energy-chart" class="perf-chart" viewBox="0 0 600 260" preserveAspectRatio="none"></svg>
-            <div class="perf-tooltip" id="energy-tooltip" hidden></div>
-          </div>
+      <div class="cycle-perf-chart-card">
+        <div class="cycle-perf-chart-header">
+          <span class="cycle-perf-chart-title">
+            Performance by Time
+            <button type="button" class="cycle-perf-info-btn" id="cycle-perf-info-btn" aria-expanded="false" aria-label="About this chart"><span aria-hidden="true">i</span></button>
+            <div class="cycle-perf-info-popover" id="cycle-perf-info-popover" hidden>Every logged best set for this exercise, plotted over time - colored by cycle phase. Line and shading show a phase change; dashed rings mark an edited entry.</div>
+          </span>
+          <button type="button" class="cycle-perf-change-btn" id="cycle-perf-change-btn"><span id="cycle-perf-exercise-name"></span> &#9662;</button>
         </div>
+        <svg id="cycle-perf-chart" class="perf-chart" viewBox="0 0 340 200" preserveAspectRatio="none"></svg>
+        <div class="perf-tooltip" id="cycle-perf-tooltip" hidden></div>
+        <div class="phase-legend" id="cycle-perf-phase-legend" hidden></div>
+      </div>
+
+      <div class="cycle-perf-prphase-card">
+        <p class="cycle-perf-prphase-label">Where your PRs happen</p>
+        <div id="cycle-perf-prphase-content"></div>
+      </div>
+
+      <div class="cycle-perf-insight-card" id="cycle-perf-insight-card" hidden>
+        <p class="cycle-perf-insight-eyebrow">This week</p>
+        <p class="cycle-perf-insight-body" id="cycle-perf-insight-body"></p>
+        <p class="cycle-perf-insight-footnote" id="cycle-perf-insight-footnote"></p>
       </div>
     </div>
 
-    <div class="card">
-      <h2>PRs by Cycle Phase</h2>
-      <p class="placeholder-text" id="prphase-empty" hidden>Log a few sets and turn on cycle tracking in your profile to see this breakdown.</p>
-      <div id="prphase-content" hidden></div>
+    <div class="card placeholder-card">
+      <h2>Fuel</h2>
+      <p class="placeholder-text">Coming soon - what you eat before the gym, and what it correlates with.</p>
     </div>
-  </section>
 
-  <!-- ================= PROFILE ================= -->
-  <section id="tab-profile" class="tab-panel">
-    <div class="card">
-      <div class="card-header-row">
-        <h2>Profile</h2>
-        <button type="button" class="secondary back-btn" id="profile-back">&larr; Back</button>
-      </div>
-      <div class="profile-avatar-row">
-        <img id="profile-avatar-img" class="profile-avatar" src="" alt="Profile picture">
-        <label class="secondary profile-upload-btn">
-          Change Photo
-          <input type="file" id="profile-avatar-input" accept="image/*" hidden>
-        </label>
-      </div>
-      <form id="form-profile" class="grid-form">
-        <label class="full">Name
-          <input type="text" name="name" id="profile-name" required>
-        </label>
-        <label>Age
-          <input type="number" name="age" id="profile-age" min="1" max="120">
-        </label>
-        <label class="full checkbox-field">
-          <input type="checkbox" id="profile-track-cycle">
-          <span>Track my menstrual cycle</span>
-        </label>
-        <p class="field-hint full">Turn this on and Clock It will show your current cycle phase and how it lines up with your workout performance in Your Cycle.</p>
-        <label class="full" id="profile-period-date-label" hidden>Last Period Date
-          <div class="date-field" data-date-field data-max="today">
-            <button type="button" class="date-field-btn">
-              <span class="date-field-value placeholder">dd-mm-yyyy</span>
-              <span class="date-field-icon" aria-hidden="true">📅</span>
-            </button>
-            <input type="hidden" name="last_period_date" id="profile-last-period">
-          </div>
-        </label>
-        <button type="submit" class="primary">Save Changes</button>
-      </form>
+    <div class="card" id="card-pending-exercises" hidden>
+      <h2>Pending Exercise Approvals</h2>
+      <p class="placeholder-text" id="pending-exercises-empty" hidden>Nothing pending.</p>
+      <div id="pending-exercises-list"></div>
     </div>
+
+    <button type="button" class="secondary" id="logout-btn">Log Out</button>
   </section>
 </main>
+
+<nav class="bottom-nav">
+  <button type="button" class="bottom-nav-item active" data-maintab="today">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>
+    <span>Today</span>
+  </button>
+  <button type="button" class="bottom-nav-item" data-maintab="log">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+    <span>Log</span>
+  </button>
+  <button type="button" class="bottom-nav-item" data-maintab="history">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+    <span>History</span>
+  </button>
+  <button type="button" class="bottom-nav-item" data-maintab="cycle">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c0-.34-.02-.68-.05-1A7 7 0 0 1 12 3Z"/></svg>
+    <span>Cycle</span>
+  </button>
+  <button type="button" class="bottom-nav-item" data-maintab="you">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1.5-4 4.5-6 7.5-6s6 2 7.5 6"/></svg>
+    <span>Your Body</span>
+  </button>
+</nav>
 
 <div id="toast" class="toast"></div>
 

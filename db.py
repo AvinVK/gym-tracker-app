@@ -194,6 +194,16 @@ def init_db():
     _ensure_column(conn, "users", "shield_count", "INTEGER NOT NULL DEFAULT 0")
     _ensure_column(conn, "users", "shield_milestone_progress", "INTEGER NOT NULL DEFAULT 0")
     _ensure_column(conn, "users", "period_length_days", "INTEGER NOT NULL DEFAULT 5")
+    # status/proposed_by/proposed_at back the new-exercise approval flow (see
+    # routes/exercise_plan.py): a row typed by a user with no strong semantic
+    # match to the existing catalog lands here as 'pending' - visible only to
+    # its proposer - until an admin approves or redirects it (see
+    # matching.py). Every pre-existing/seeded row defaults to 'approved' so
+    # nothing already in the catalog needs review.
+    _ensure_column(conn, "exercise_plan", "status", "TEXT NOT NULL DEFAULT 'approved'")
+    _ensure_column(conn, "exercise_plan", "proposed_by", "INTEGER REFERENCES users(id)")
+    _ensure_column(conn, "exercise_plan", "proposed_at", "TEXT")
+    _ensure_column(conn, "users", "is_admin", "INTEGER NOT NULL DEFAULT 0")
     if first_run:
         conn.executemany(
             "INSERT INTO exercise_plan (target_muscle, exercise, images, curated) VALUES (?, ?, ?, ?)",
@@ -245,6 +255,22 @@ def backfill_owner(user_id):
     conn.commit()
     conn.close()
     print(f"Assigned {w} workout_log row(s) and {e} exercise_log row(s) to user {user_id} ({owner[1]}).")
+
+
+def set_admin(user_id):
+    """One-time promotion of a user to admin (see users.is_admin) - the only
+    account that can review pending exercise proposals (see
+    routes/exercise_plan.py). Run manually, same as backfill_owner above;
+    there's no signup-time concept of "the owner" to default this from."""
+    conn = sqlite3.connect(DB_PATH)
+    owner = conn.execute("SELECT id, name FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not owner:
+        conn.close()
+        raise ValueError(f"No user with id {user_id}")
+    conn.execute("UPDATE users SET is_admin = 1 WHERE id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    print(f"User {user_id} ({owner[1]}) is now an admin.")
 
 
 VALID_TABLES = {"exercise_plan", "workout_log", "exercise_log", "users"}

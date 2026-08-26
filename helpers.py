@@ -3,6 +3,8 @@ from datetime import datetime
 
 from flask import jsonify, session
 
+from db import get_db
+
 
 def is_future_date(date_str):
     try:
@@ -22,4 +24,16 @@ def require_login():
     user_id = get_current_user_id()
     if not user_id:
         return None, (jsonify({"error": "not logged in"}), 401)
+    return user_id, None
+
+
+def require_admin():
+    """Gates the pending-exercise approval queue (see
+    routes/exercise_plan.py) to whichever user db.set_admin() promoted."""
+    user_id, err = require_login()
+    if err:
+        return None, err
+    row = get_db().execute("SELECT is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not row or not row["is_admin"]:
+        return None, (jsonify({"error": "forbidden"}), 403)
     return user_id, None
