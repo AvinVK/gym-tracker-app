@@ -71,3 +71,21 @@ def update_workout_log(row_id):
     )
     db.commit()
     return jsonify({"id": row_id})
+
+
+@bp.route("/api/workout-log/<int:row_id>", methods=["DELETE"])
+def delete_workout_log(row_id):
+    """Only ever called for a visit row that turned out to have zero
+    exercises logged against it (see submitExerciseLog in app.js) - a
+    workout_log row gets created eagerly the moment the session-strip's
+    energy/meal chips are touched (see ensureVisitSaved), before any
+    exercise is necessarily added, so hitting Done with nothing logged
+    needs to clean that speculative row back up rather than leaving an
+    empty visit sitting in History."""
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "missing user"}), 401
+    db = get_db()
+    db.execute("DELETE FROM workout_log WHERE id = ? AND user_id = ?", (row_id, user_id))
+    db.commit()
+    return jsonify({"id": row_id})
