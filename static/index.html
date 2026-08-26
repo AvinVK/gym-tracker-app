@@ -12,16 +12,39 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="auth-name-modal" class="modal-overlay" hidden>
-  <div class="modal-card">
-    <h2>What should we call you? 👋</h2>
-    <form id="form-auth-name" class="grid-form">
-      <label class="full">Name
-        <input type="text" name="name" placeholder="Your name" required autocomplete="name">
-      </label>
-      <button type="submit" class="primary">Continue</button>
-    </form>
+<div id="landing-page" class="landing-page">
+  <div class="landing-brand">
+    <img src="logo-mark.png" alt="" class="landing-brand-mark">
+    <span class="landing-brand-name">Clock It</span>
   </div>
+
+  <div class="landing-hero">
+    <h1 class="landing-headline">Train with<br>your cycle,<br>not against it.</h1>
+    <p class="landing-sub">Clock It tracks your workouts alongside your cycle, so you can see exactly where you're strongest &ndash; and plan around it.</p>
+  </div>
+
+  <ul class="landing-features">
+    <li>
+      <span class="landing-feature-icon landing-feature-icon-pulse">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l2-7 4 14 3-9 2 4h5"/></svg>
+      </span>
+      <span>Performance charted against your cycle phase</span>
+    </li>
+    <li>
+      <span class="landing-feature-icon landing-feature-icon-check">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+      </span>
+      <span>Log a full session in one screen, no fuss</span>
+    </li>
+    <li>
+      <span class="landing-feature-icon landing-feature-icon-clock">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      </span>
+      <span>PRs, streaks and phase trends, always on your Today screen</span>
+    </li>
+  </ul>
+
+  <button type="button" id="landing-start-btn" class="primary landing-cta">Let's clock it!</button>
 </div>
 
 <div id="auth-email-modal" class="modal-overlay" hidden>
@@ -41,7 +64,7 @@
 <div id="auth-signup-modal" class="modal-overlay" hidden>
   <div class="modal-card">
     <h2>Oh, you're new here! 🎉</h2>
-    <p class="modal-sub">Let's get a little more info, then set a PIN to finish up.</p>
+    <p class="modal-sub">Let's get a little more info, then set a PIN.</p>
     <form id="form-auth-signup" class="grid-form">
       <label>Age <span class="field-optional">(optional)</span>
         <input type="number" name="age" min="1" max="120" placeholder="Age">
@@ -63,8 +86,22 @@
       <label class="full">Set a PIN
         <input type="password" name="pin" placeholder="4-digit PIN" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password">
       </label>
-      <button type="submit" class="primary">Create Account</button>
+      <button type="submit" class="primary">Continue</button>
       <button type="button" class="secondary" id="auth-signup-back">&larr; Back</button>
+    </form>
+  </div>
+</div>
+
+<div id="auth-name-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>What should we call you? 👋</h2>
+    <p class="modal-sub">Last thing, we promise.</p>
+    <form id="form-auth-name" class="grid-form">
+      <label class="full">Name
+        <input type="text" name="name" placeholder="Your name" required autocomplete="name">
+      </label>
+      <button type="submit" class="primary">Create Account</button>
+      <button type="button" class="secondary" id="auth-name-back">&larr; Back</button>
     </form>
   </div>
 </div>
@@ -428,6 +465,7 @@
             </div>
             <div class="cycle-cal-grid" id="cycle-cal-grid"></div>
             <p class="cycle-cal-log-hint" id="cycle-cal-log-hint" hidden>Tap the day it started - today, or a past date if you missed logging it. We'll fill in the next few days for you; tap any day to add or remove it.</p>
+            <p class="cycle-cal-log-count" id="cycle-cal-log-count" hidden></p>
             <div class="cycle-cal-log-actions" id="cycle-cal-log-actions" hidden>
               <button type="button" class="secondary" id="cycle-cal-log-cancel">Cancel</button>
               <button type="button" class="primary" id="cycle-cal-log-save">Save</button>

@@ -1,5 +1,5 @@
 """Small pieces shared across route blueprints."""
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import jsonify, session
 
@@ -7,10 +7,18 @@ from db import get_db
 
 
 def is_future_date(date_str):
+    """Rejects dates the client couldn't legitimately mean as "today" or
+    earlier. Compared against the server's clock (PythonAnywhere runs UTC),
+    not the client's - so a user in a timezone ahead of UTC (e.g. IST,
+    UTC+5:30) can have a local "today" that's still "tomorrow" server-side.
+    A 1-day grace window absorbs any timezone offset up to UTC+24 without
+    weakening the check's actual purpose of catching genuine typos/far-future
+    dates."""
     try:
-        return datetime.strptime(date_str, "%Y-%m-%d").date() > datetime.now().date()
+        d = datetime.strptime(date_str, "%Y-%m-%d").date()
     except ValueError:
         return False
+    return d > datetime.now().date() + timedelta(days=1)
 
 
 def get_current_user_id():
