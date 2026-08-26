@@ -405,7 +405,7 @@ document.getElementById("form-auth-login").addEventListener("submit", async (e) 
   }
 });
 
-document.getElementById("logout-btn").addEventListener("click", async () => {
+async function handleLogout() {
   document.getElementById("streak-info-modal").hidden = true;
   await api.post("/api/logout", {});
   currentUser = null;
@@ -415,7 +415,7 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
   resetWorkoutFlowUI();
   document.getElementById("form-auth-name").reset();
   showAuthStep("auth-name-modal");
-});
+}
 
 async function checkAuth() {
   const user = await api.get("/api/me");
@@ -461,10 +461,46 @@ function openProfileEditModal() {
   renderProfileAvatar();
   document.getElementById("profile-edit-modal").hidden = false;
 }
-document.getElementById("today-avatar-img").addEventListener("click", openProfileEditModal);
-document.getElementById("today-avatar-img").addEventListener("keydown", (e) => {
-  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openProfileEditModal(); }
+// Tapping the avatar opens a small menu (View Profile / Log Out) instead of
+// jumping straight into the edit form - logout used to live as its own
+// button on the Your Body tab, but that tab is body-performance data now,
+// not account settings, so both account actions live behind the avatar.
+const todayAvatarImg = document.getElementById("today-avatar-img");
+const todayAvatarMenu = document.getElementById("today-avatar-menu");
+function closeAvatarMenu() {
+  todayAvatarMenu.hidden = true;
+  todayAvatarImg.setAttribute("aria-expanded", "false");
+}
+function openAvatarMenu() {
+  // position:fixed (not CSS-anchored absolute) so the menu never gets
+  // clipped by .today-greeting's overflow:hidden (used to contain its
+  // decorative glow) - computed fresh each open in case the avatar moved
+  // (e.g. orientation change).
+  const rect = todayAvatarImg.getBoundingClientRect();
+  todayAvatarMenu.style.top = `${rect.bottom + 8}px`;
+  todayAvatarMenu.style.right = `${window.innerWidth - rect.right}px`;
+  todayAvatarMenu.hidden = false;
+  todayAvatarImg.setAttribute("aria-expanded", "true");
+}
+todayAvatarImg.addEventListener("click", (e) => {
+  e.stopPropagation();
+  if (todayAvatarMenu.hidden) openAvatarMenu(); else closeAvatarMenu();
 });
+todayAvatarImg.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openAvatarMenu(); }
+});
+document.getElementById("today-avatar-view-profile-btn").addEventListener("click", () => {
+  closeAvatarMenu();
+  openProfileEditModal();
+});
+document.getElementById("today-avatar-logout-btn").addEventListener("click", () => {
+  closeAvatarMenu();
+  handleLogout();
+});
+document.addEventListener("click", (e) => {
+  if (!todayAvatarMenu.hidden && !todayAvatarMenu.contains(e.target) && e.target !== todayAvatarImg) closeAvatarMenu();
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAvatarMenu(); });
 function closeProfileEditModal() { document.getElementById("profile-edit-modal").hidden = true; }
 document.getElementById("profile-edit-cancel").addEventListener("click", closeProfileEditModal);
 document.getElementById("profile-edit-modal").addEventListener("click", (e) => {
@@ -2321,14 +2357,24 @@ async function submitExerciseLog() {
     // rather than saving it with an empty sets array.
     .filter(ex => ex.sets.length > 0);
   if (!exercises.length) {
+    // ensureVisitSaved() (see the session-strip's energy/meal chips) may
+    // have already speculatively created a workout_log row before any
+    // exercise was added - clean that back up rather than leaving an empty
+    // visit sitting in History with nothing logged against it.
+    if (savedWorkoutId) {
+      try { await api.del(`/api/workout-log/${savedWorkoutId}`); } catch { /* best-effort cleanup */ }
+    }
+    toast("No workout was logged for today");
+    clearDraft();
+    resetWorkoutFlowUI();
     switchTab("today");
     return;
   }
   try {
     await ensureVisitSaved();
-    await api.post("/api/exercise-log", { date, exercises });
+    const res = await api.post("/api/exercise-log", { date, exercises });
     exerciseHistoryCache = null; // stale after this submit - refetch next time a PR check needs it
-    toast("Workout logged");
+    toast(res.duplicate ? "This exact session already exists for this day" : "Workout logged");
     clearDraft();
     resetWorkoutFlowUI();
     switchTab("today");
@@ -2806,9 +2852,13 @@ async function startLogSession({ repeatFrom } = {}) {
 }
 
 document.getElementById("today-cta-start").addEventListener("click", async () => {
-  const alreadyInProgress = exercisesContainer.children.length > 0;
-  const fieldsAlreadySet = sessionFields.energy_level || sessionFields.pre_workout_meal || sessionFields.hours_since_meal;
-  if (!alreadyInProgress && !fieldsAlreadySet) await promptSessionFeelAndFood();
+  // Same "anything real to resume" check renderTodayCtaState() uses for the
+  // Start-vs-Continue label (see below) - deliberately not a raw
+  // exercisesContainer.children.length check, which would also count a
+  // block whose muscle got picked but whose exercise pick was abandoned
+  // (see collectExerciseBlocksDraft's docstring) and wrongly skip the
+  // check-in on what the label still correctly calls a fresh start.
+  if (!isWorkoutInProgress()) await promptSessionFeelAndFood();
   startLogSession();
 });
 document.getElementById("today-cta-rest").addEventListener("click", () => {
@@ -2836,10 +2886,16 @@ async function renderTodayScreen() {
 // tell "Start today's workout" will actually resume something rather than
 // begin fresh. Swaps in "Continue" copy plus a small hint pill whenever
 // there's anything to resume.
-function renderTodayCtaState() {
-  const namedCount = [...exercisesContainer.children].filter(b => b.querySelector(".ex-exercise").value).length;
+function namedExerciseCount() {
+  return [...exercisesContainer.children].filter(b => b.querySelector(".ex-exercise").value).length;
+}
+function isWorkoutInProgress() {
   const hasSessionFields = !!(sessionFields.energy_level || sessionFields.pre_workout_meal || sessionFields.hours_since_meal || sessionFields.notes);
-  const inProgress = namedCount > 0 || hasSessionFields;
+  return namedExerciseCount() > 0 || hasSessionFields;
+}
+function renderTodayCtaState() {
+  const namedCount = namedExerciseCount();
+  const inProgress = isWorkoutInProgress();
   document.getElementById("today-cta-start-label").textContent = inProgress ? "Continue today's workout" : "Start today's workout";
   const hint = document.getElementById("today-cta-hint");
   if (inProgress) {
@@ -3059,17 +3115,7 @@ function workoutCardView(group) {
 function sessionEditRow(w) {
   return `
     <div class="history-session-row history-session-edit" data-id="${w.id}">
-      <div class="history-card-edit-row">
-        <div class="date-field" data-max="today">
-          <button type="button" class="date-field-btn">
-            <span class="date-field-value">${formatDateDisplay(w.date)}</span>
-            <span class="date-field-icon" aria-hidden="true">📅</span>
-          </button>
-          <input type="hidden" class="edit-date" value="${w.date}">
-        </div>
-        ${energyFieldHtml("edit-energy", w.energy_level)}
-      </div>
-      <input type="text" class="edit-notes" placeholder="Notes" value="${w.notes || ""}">
+      ${workoutEditFieldsHtml(w)}
       <div class="history-card-actions">
         <button class="save-btn" data-id="${w.id}">Save</button>
         <button class="cancel-btn" data-id="${w.id}">Cancel</button>
@@ -3077,21 +3123,32 @@ function sessionEditRow(w) {
     </div>`;
 }
 
+// Date is deliberately not editable here - it's what determines which
+// day's exercise_log rows this visit groups with, and letting it drift
+// away from that in the History editor (as opposed to catching a wrong
+// date before ever saving) is more likely to silently orphan a visit from
+// its own sets than to fix a real mistake. Only the softer, always-safe-to-
+// change fields (energy, food, notes) are editable after the fact.
+function workoutEditFieldsHtml(w) {
+  return `
+    <div class="history-card-edit-row">
+      ${energyFieldHtml("edit-energy", w.energy_level)}
+      <div class="meal-timing-field" data-meal-timing-field>
+        <button type="button" class="meal-timing-field-btn">
+          <span class="meal-timing-field-value placeholder">&#127869; How long ago?</span>
+        </button>
+        <input type="hidden" class="edit-hours-since-meal" value="${w.hours_since_meal ?? ""}">
+      </div>
+    </div>
+    <input type="text" class="edit-meal" placeholder="What'd you eat before?" value="${w.pre_workout_meal || ""}">
+    <input type="text" class="edit-notes" placeholder="Notes" value="${w.notes || ""}">`;
+}
+
 function workoutCardEdit(w) {
   return `
     <div class="history-card" data-id="${w.id}">
-      <div class="history-card-edit-row">
-        <div class="date-field" data-max="today">
-          <button type="button" class="date-field-btn">
-            <span class="date-field-value">${formatDateDisplay(w.date)}</span>
-            <span class="date-field-icon" aria-hidden="true">📅</span>
-          </button>
-          <input type="hidden" class="edit-date" value="${w.date}">
-        </div>
-        ${energyFieldHtml("edit-energy", w.energy_level)}
-      </div>
       <h3 class="history-card-muscles">${formatMuscles(w.muscles) || "&mdash;"}</h3>
-      <input type="text" class="edit-notes" placeholder="Notes" value="${w.notes || ""}">
+      ${workoutEditFieldsHtml(w)}
       <div class="history-card-actions">
         <button class="save-btn" data-id="${w.id}">Save</button>
         <button class="cancel-btn" data-id="${w.id}">Cancel</button>
@@ -3186,13 +3243,16 @@ function bindWorkoutRowEvents() {
 
 function bindWorkoutEditRowEvents(id) {
   const row = document.querySelector(`#history-list .history-card[data-id="${id}"], #history-list .history-session-row[data-id="${id}"]`);
-  initDateField(row.querySelector(".date-field"));
   initEnergyField(row.querySelector(".energy-field"));
+  initMealTimingField(row.querySelector(".meal-timing-field"));
   row.querySelector(".save-btn").addEventListener("click", async (e) => {
     e.stopPropagation();
+    const w = currentWorkouts.find(x => x.id == id);
     const body = {
-      date: row.querySelector(".edit-date").value,
+      date: w.date,
       energy_level: row.querySelector(".edit-energy").value || null,
+      pre_workout_meal: row.querySelector(".edit-meal").value,
+      hours_since_meal: row.querySelector(".edit-hours-since-meal").value || null,
       notes: row.querySelector(".edit-notes").value,
     };
     try {
@@ -4225,34 +4285,48 @@ function clearDraft() {
   localStorage.removeItem(draftKey());
 }
 
+// Only blocks with both a muscle group and an exercise chosen are "real" -
+// promptAddExercise appends its block to the container the moment the
+// muscle picker opens, before the exercise is picked, so a block abandoned
+// between those two steps (app closed/backgrounded mid-pick, not just an
+// explicit Cancel) can sit here with muscle_group set and exercise still
+// empty. Saving that phantom entry into the draft is what let a stale
+// "Start today's workout" silently skip the energy/food check-in on a later
+// day - restoreDraft would recreate the empty block, its zero real sets
+// would fall back to one blank set row, and exercisesContainer.children
+// would read as "already in progress" even though nothing was ever
+// actually logged. Dropping incomplete blocks here stops that at the
+// source, instead of only patching it up on restore.
 function collectExerciseBlocksDraft() {
-  return [...exercisesContainer.querySelectorAll(".exercise-block")].map(block => {
-    const isCardio = block.dataset.exerciseType === "cardio";
-    return {
-      muscle_group: block.querySelector(".ex-muscle").value,
-      exercise: block.querySelector(".ex-exercise").value,
-      type: block.dataset.exerciseType || "strength",
-      levelMode: block.dataset.levelMode || "level",
-      notes: block.querySelector(".ex-notes").value,
-      sets: [...block.querySelectorAll(".set-row")].map(row => {
-        // levelValue holds whichever the 2nd cardio field currently is
-        // (the generic Level wheel-picker, or the Speed stepper when the
-        // block's levelMode is "speed") - restoreDraft figures out which one
-        // to write back to the same way, based on what addSetRow actually
-        // rendered for it.
-        const s = isCardio ? {
-          duration_minutes: row.querySelector(".set-duration").value,
-          levelValue: (row.querySelector(".set-speed") || row.querySelector(".set-level")).value,
-        } : {
-          reps: row.querySelector(".set-reps").value,
-          weight_kg: row.querySelector(".set-weight").value,
-        };
-        const extraInput = row.querySelector(".set-extra");
-        if (extraInput) s.extraValue = extraInput.value;
-        return s;
-      }),
-    };
-  });
+  return [...exercisesContainer.querySelectorAll(".exercise-block")]
+    .filter(block => block.querySelector(".ex-muscle").value && block.querySelector(".ex-exercise").value)
+    .map(block => {
+      const isCardio = block.dataset.exerciseType === "cardio";
+      return {
+        muscle_group: block.querySelector(".ex-muscle").value,
+        exercise: block.querySelector(".ex-exercise").value,
+        type: block.dataset.exerciseType || "strength",
+        levelMode: block.dataset.levelMode || "level",
+        notes: block.querySelector(".ex-notes").value,
+        sets: [...block.querySelectorAll(".set-row")].map(row => {
+          // levelValue holds whichever the 2nd cardio field currently is
+          // (the generic Level wheel-picker, or the Speed stepper when the
+          // block's levelMode is "speed") - restoreDraft figures out which
+          // one to write back to the same way, based on what addSetRow
+          // actually rendered for it.
+          const s = isCardio ? {
+            duration_minutes: row.querySelector(".set-duration").value,
+            levelValue: (row.querySelector(".set-speed") || row.querySelector(".set-level")).value,
+          } : {
+            reps: row.querySelector(".set-reps").value,
+            weight_kg: row.querySelector(".set-weight").value,
+          };
+          const extraInput = row.querySelector(".set-extra");
+          if (extraInput) s.extraValue = extraInput.value;
+          return s;
+        }),
+      };
+    });
 }
 
 function saveWorkoutDraft() {
@@ -4283,7 +4357,12 @@ async function restoreDraft() {
 
     if (draft.exercises && draft.exercises.length) {
       exercisesContainer.innerHTML = "";
-      for (const ex of draft.exercises) {
+      // Self-heals a draft saved before collectExerciseBlocksDraft started
+      // filtering these out - an entry with no muscle/exercise never had
+      // anything real logged against it, so recreating it here would just
+      // reintroduce the phantom "already in progress" block the filter
+      // above was added to prevent.
+      for (const ex of draft.exercises.filter(e => e.muscle_group && e.exercise)) {
         const block = addExerciseBlock();
         block.classList.add("log-set-block");
         block.hidden = true;

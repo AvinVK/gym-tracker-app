@@ -55,6 +55,55 @@ def list_exercise_log():
     return jsonify([_exercise_log_dict(r) for r in rows])
 
 
+def _canonical_set(s):
+    """A set's identity for duplicate-session comparison: the numbers that
+    actually describe what was done, not notes/set_number (which can
+    legitimately differ between two submissions of an otherwise identical
+    workout) or anything falsy/absent (so a field the client omits and one
+    it sends as None/0-ish compare equal)."""
+    extra = {
+        k: v for k, v in s.items()
+        if k not in ("notes", "set_number") and k not in EXERCISE_LOG_KNOWN_ATTRS and v is not None
+    }
+    return (s.get("reps"), s.get("weight_kg"), s.get("duration_minutes"), s.get("intensity_level"),
+            tuple(sorted(extra.items())))
+
+
+def _canonical_session(exercises):
+    """Order-independent signature for a {muscle_group, exercise, sets} list,
+    for detecting when a submitted session is identical to one already
+    logged - same exercises, same sets, regardless of what order either side
+    lists them in."""
+    return tuple(sorted(
+        (ex["muscle_group"], ex["exercise"], tuple(sorted(_canonical_set(s) for s in ex["sets"])))
+        for ex in exercises
+    ))
+
+
+def _session_matches_existing(db, user_id, date, exercises):
+    existing_rows = db.execute(
+        "SELECT muscle_group, exercise, reps, weight_kg, duration_minutes, intensity_level, extra_attributes "
+        "FROM exercise_log WHERE user_id = ? AND date = ? AND deleted_at IS NULL",
+        (user_id, date),
+    ).fetchall()
+    if not existing_rows:
+        return False
+    existing_by_ex = {}
+    for r in existing_rows:
+        extra = json.loads(r["extra_attributes"]) if r["extra_attributes"] else {}
+        s = {"reps": r["reps"], "weight_kg": r["weight_kg"], "duration_minutes": r["duration_minutes"],
+             "intensity_level": r["intensity_level"], **extra}
+        existing_by_ex.setdefault((r["muscle_group"], r["exercise"]), []).append(s)
+    existing_exercises = [{"muscle_group": k[0], "exercise": k[1], "sets": v} for k, v in existing_by_ex.items()]
+
+    incoming_exercises = [
+        {"muscle_group": (ex.get("muscle_group") or "").strip(), "exercise": (ex.get("exercise") or "").strip(),
+         "sets": ex.get("sets") or []}
+        for ex in exercises
+    ]
+    return _canonical_session(existing_exercises) == _canonical_session(incoming_exercises)
+
+
 @bp.route("/api/exercise-log", methods=["POST"])
 def add_exercise_log():
     user_id = get_current_user_id()
@@ -74,6 +123,15 @@ def add_exercise_log():
     ).fetchone()["c"]
     if visit_count == 0:
         return jsonify({"error": "Log a gym visit for this date before adding exercises"}), 400
+
+    # Only for a genuinely new session (not the History group-editor adding
+    # sets to an exercise that's already logged, see mark_edited below) -
+    # someone re-submitting the exact same exercises/sets they already
+    # logged today (e.g. a double-tap on Done, or resuming a draft that was
+    # actually already saved) would otherwise silently create a second,
+    # visually-identical entry for the day.
+    if not data.get("mark_edited") and _session_matches_existing(db, user_id, date, exercises):
+        return jsonify({"duplicate": True}), 200
 
     # Set by the History group-editor's Save (see startGroupEdit/saveGroupEdit
     # in app.js) when these rows are new sets being added to an

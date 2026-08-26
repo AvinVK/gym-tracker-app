@@ -244,7 +244,13 @@
         <p class="today-eyebrow" id="today-date"></p>
         <h1 class="today-title" id="today-greeting-title">Hi</h1>
       </div>
-      <img class="today-avatar" id="today-avatar-img" src="" alt="Edit profile" role="button" tabindex="0">
+      <div class="today-avatar-wrap">
+        <img class="today-avatar" id="today-avatar-img" src="" alt="Profile menu" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0">
+        <div class="today-avatar-menu" id="today-avatar-menu" hidden>
+          <button type="button" class="today-avatar-menu-item" id="today-avatar-view-profile-btn">View Profile</button>
+          <button type="button" class="today-avatar-menu-item today-avatar-menu-item-danger" id="today-avatar-logout-btn">Log Out</button>
+        </div>
+      </div>
     </div>
 
     <div class="today-card-wrap">
@@ -569,8 +575,6 @@
       <p class="placeholder-text" id="pending-exercises-empty" hidden>Nothing pending.</p>
       <div id="pending-exercises-list"></div>
     </div>
-
-    <button type="button" class="secondary" id="logout-btn">Log Out</button>
   </section>
 </main>
 

@@ -201,6 +201,7 @@ body {
   letter-spacing: -.02em;
   color: var(--ink);
 }
+.today-avatar-wrap { position: relative; flex: none; }
 .today-avatar {
   width: 38px;
   height: 38px;
@@ -210,6 +211,37 @@ body {
   cursor: pointer;
 }
 .today-avatar:active { transform: scale(.94); }
+/* position:fixed (set from JS, see openAvatarMenu) rather than CSS-anchored
+   absolute - .today-greeting clips its own overflow for the decorative
+   glow, which would otherwise clip this menu too. */
+.today-avatar-menu {
+  position: fixed;
+  min-width: 168px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  padding: 6px;
+  z-index: 50;
+}
+.today-avatar-menu-item {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s ease;
+}
+.today-avatar-menu-item:hover { background: var(--surface-2); }
+.today-avatar-menu-item-danger { color: var(--danger); }
 
 .today-card-wrap { padding: 14px 16px 0; }
 .today-streak-card {
@@ -2542,7 +2574,8 @@ button:disabled {
   gap: 10px;
   flex-wrap: wrap;
 }
-.history-card .edit-notes {
+.history-card .edit-notes, .history-card .edit-meal,
+.history-session-row .edit-notes, .history-session-row .edit-meal {
   width: 100%;
   margin-top: 8px;
   font-size: 13px;
@@ -2553,7 +2586,8 @@ button:disabled {
   background: var(--surface-2);
   color: var(--ink);
 }
-.history-card .edit-notes:focus {
+.history-card .edit-notes:focus, .history-card .edit-meal:focus,
+.history-session-row .edit-notes:focus, .history-session-row .edit-meal:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-glow);
