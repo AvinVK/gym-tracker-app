@@ -186,7 +186,7 @@ document.querySelectorAll("[data-date-field]").forEach(initDateField);
 
 // ---------------- Auth (name -> email -> new-user setup or PIN login) ----------------
 let currentUser = null;
-let authDraft = { name: "", email: "" };
+let authDraft = { email: "", signup: {} };
 
 function showGreeting(name) {
   // Kept as a no-op-ish helper (the topbar greeting it used to fill no
@@ -280,6 +280,7 @@ function renderTodayStreakCard(animateFromZero) {
 }
 
 function hideAllAuthModals() {
+  document.getElementById("landing-page").hidden = true;
   document.getElementById("auth-name-modal").hidden = true;
   document.getElementById("auth-email-modal").hidden = true;
   document.getElementById("auth-signup-modal").hidden = true;
@@ -319,14 +320,12 @@ async function onLoggedIn(user, { isNewSignup = false } = {}) {
   switchTab("today");
 }
 
-document.getElementById("form-auth-name").addEventListener("submit", (e) => {
-  e.preventDefault();
-  authDraft.name = new FormData(e.target).get("name").trim();
+document.getElementById("landing-start-btn").addEventListener("click", () => {
   showAuthStep("auth-email-modal");
 });
 
 document.getElementById("auth-email-back").addEventListener("click", () => {
-  showAuthStep("auth-name-modal");
+  showAuthStep("landing-page");
 });
 
 document.getElementById("form-auth-email").addEventListener("submit", async (e) => {
@@ -372,14 +371,25 @@ const signupTrackCycle = document.getElementById("signup-track-cycle");
 const signupPeriodDateLabel = document.getElementById("signup-period-date-label");
 wireCycleOptIn(signupTrackCycle, signupPeriodDateLabel);
 
-document.getElementById("form-auth-signup").addEventListener("submit", async (e) => {
+document.getElementById("form-auth-signup").addEventListener("submit", (e) => {
   e.preventDefault();
   if (signupTrackCycle.checked && !e.target.querySelector('[name="last_period_date"]').value) {
     toast("Add your last period date, or turn off cycle tracking");
     return;
   }
-  const fd = new FormData(e.target);
-  const body = { ...Object.fromEntries(fd.entries()), name: authDraft.name, email: authDraft.email };
+  authDraft.signup = Object.fromEntries(new FormData(e.target).entries());
+  document.getElementById("form-auth-name").reset();
+  showAuthStep("auth-name-modal");
+});
+
+document.getElementById("auth-name-back").addEventListener("click", () => {
+  showAuthStep("auth-signup-modal");
+});
+
+document.getElementById("form-auth-name").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = new FormData(e.target).get("name").trim();
+  const body = { ...authDraft.signup, name, email: authDraft.email };
   try {
     await api.post("/api/signup", body);
     const user = await api.get("/api/me");
@@ -410,11 +420,10 @@ async function handleLogout() {
   await api.post("/api/logout", {});
   currentUser = null;
   currentUserId = null;
-  authDraft = { name: "", email: "" };
+  authDraft = { email: "", signup: {} };
   restoringDraft = true;
   resetWorkoutFlowUI();
-  document.getElementById("form-auth-name").reset();
-  showAuthStep("auth-name-modal");
+  showAuthStep("landing-page");
 }
 
 async function checkAuth() {
@@ -422,7 +431,7 @@ async function checkAuth() {
   if (user) {
     await onLoggedIn(user);
   } else {
-    showAuthStep("auth-name-modal");
+    showAuthStep("landing-page");
   }
 }
 
@@ -747,6 +756,16 @@ function renderCycleCalendar() {
   document.getElementById("cycle-log-period-btn").hidden = periodLogging || !hasPeriodDate;
   document.getElementById("cycle-cal-log-hint").hidden = !periodLogging;
   document.getElementById("cycle-cal-log-actions").hidden = !periodLogging;
+  const countEl = document.getElementById("cycle-cal-log-count");
+  countEl.hidden = !periodLogging || periodLogDates.size === 0;
+  if (periodLogging && periodLogDates.size > 0) {
+    // Surfaced so a mis-tap (e.g. the auto-fill silently reusing a
+    // previously-saved period_length_days that was itself a mistake) is
+    // visible before Save, instead of quietly re-saving the same wrong
+    // length forever - trimming days is the only way to correct it, so the
+    // count needs to be seen to be trimmed.
+    countEl.textContent = `${periodLogDates.size} day${periodLogDates.size === 1 ? "" : "s"} selected`;
+  }
 
   document.getElementById("cycle-cal-month-label").textContent = new Date(cycleCalViewYear, cycleCalViewMonth, 1)
     .toLocaleDateString("en-US", { month: "long", year: "numeric" });
