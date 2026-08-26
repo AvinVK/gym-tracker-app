@@ -3,7 +3,7 @@
   "appName": "Clock It",
   "webDir": "static",
   "server": {
-    "url": "http://192.168.68.103:6000",
+    "url": "http://localhost:8000",
     "cleartext": true
   }
 }

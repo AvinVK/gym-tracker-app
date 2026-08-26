@@ -58,6 +58,13 @@
 
   --radius: 16px;
   --radius-sm: 10px;
+
+  /* Bottom-nav redesign tokens (2a/2b/2c) - see design_handoff_clockit_redesign. */
+  --nav-bg: #0b0b0b;
+  --nav-border: #1e1e1e;
+  --stepper-btn: #242424;
+  --hairline: #1f1f1f;
+  --tab-inactive: #6f6a70;
 }
 
 * { box-sizing: border-box; }
@@ -82,101 +89,439 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ---------------- Header ---------------- */
-.topbar {
-  background: linear-gradient(135deg, #000000 0%, #0a0709 45%, #120a10 100%);
-  color: #fff;
-  padding: 28px 20px 22px;
-  position: relative;
+/* ---------------- Bottom nav (2a) ----------------
+   Replaces the old .topbar + .main-tabs/.tabs. Fixed to the viewport bottom;
+   the scrolling content pane above it is `main { flex:1; overflow:auto }`
+   (see the flex-column rule on body/main below). */
+.bottom-nav {
+  flex: none;
+  display: flex;
+  gap: 2px;
+  background: var(--nav-bg);
+  border-top: 1px solid var(--nav-border);
+  padding: 8px 6px calc(22px + env(safe-area-inset-bottom));
 }
-/* Clipping lives on this dedicated overlay instead of .topbar itself, so
-   the decorative glow stays contained without also clipping the profile
-   dropdown, which needs to extend past the header's own bottom edge. */
-.topbar-glow {
+.bottom-nav-item {
+  flex: 1;
+  min-height: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 2px;
+  background: none;
+  border: none;
+  color: var(--tab-inactive);
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color .15s ease;
+}
+.bottom-nav-item svg { width: 20px; height: 20px; line-height: 1; }
+.bottom-nav-item span { font-size: 10.5px; letter-spacing: .02em; }
+.bottom-nav-item.active { color: var(--accent); font-weight: 700; }
+.bottom-nav-item:active { transform: scale(.96); }
+
+/* ---------------- Chip (shared pill component) ----------------
+   Consolidates what used to be several near-identical ad hoc pill styles
+   (session-strip fields, exercise switcher, "+ add" affordances). */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 13px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s ease, border-color .15s ease;
+}
+.chip:hover { background: var(--surface-2); }
+.chip.chip-active {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: var(--accent-ink);
+  border-color: transparent;
+}
+.chip.chip-add {
+  background: var(--card);
+  border: 1px dashed #3a3a3a;
+  color: var(--accent-purple);
+}
+/* Icon-only "+" (no label text, unlike the other chip-add uses like
+   "+ Note") - at the base chip's 12.5px text size the glyph read as a
+   barely-visible dot lost in the middle of the pill's padding. Bumped up
+   and re-centered so it actually reads as a plus sign. */
+#log-add-exercise-chip {
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 13px;
+}
+.chip.chip-filled { color: var(--ink); }
+
+/* ---------------- Today screen (2a) ---------------- */
+.today-greeting {
+  padding: 22px 20px 6px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.today-greeting-glow {
+  position: absolute;
+  top: -190px;
+  right: -70px;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(247, 184, 200, .28), transparent 70%);
+  pointer-events: none;
+}
+.today-greeting-text { flex: 1; min-width: 0; }
+.today-eyebrow {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+.today-title {
+  margin: 6px 0 0;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -.02em;
+  color: var(--ink);
+}
+.today-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+  cursor: pointer;
+}
+.today-avatar:active { transform: scale(.94); }
+
+.today-card-wrap { padding: 14px 16px 0; }
+.today-streak-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 18px;
+  display: flex;
+  gap: 18px;
+}
+.today-streak-ring-wrap { position: relative; width: 104px; height: 104px; flex: none; }
+.today-streak-ring { width: 104px; height: 104px; transform: rotate(-90deg); }
+.today-streak-ring circle { transition: stroke-dasharray 1.1s cubic-bezier(.22,.9,.24,1); }
+.today-streak-ring-center {
   position: absolute;
   inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
-.topbar-glow::after {
-  content: "";
-  position: absolute;
-  inset: -60% -20% auto auto;
-  width: 260px;
-  height: 260px;
-  background: radial-gradient(circle, rgba(247, 184, 200, .4), transparent 70%);
-  pointer-events: none;
+.today-streak-ring-count { font-size: 26px; font-weight: 700; line-height: 1; color: var(--ink); }
+.today-streak-ring-label {
+  margin-top: 2px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted-2);
 }
-.topbar h1 {
+.today-streak-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.today-streak-headline {
   margin: 0;
-  font-size: 24px;
+  font-size: 17px;
   font-weight: 700;
-  letter-spacing: -.02em;
+  line-height: 1.2;
+  color: var(--ink);
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: baseline;
+  gap: 6px;
 }
-.topbar-icon { height: 34px; width: auto; filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)); }
-.topbar-wordmark {
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-.user-menu {
-  position: absolute;
-  top: 18px;
-  right: 20px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  /* Must beat .tabs (z-index: 2): .tabs comes later in the DOM, so at an
-     equal z-index it would paint on top and cover the bottom of the
-     dropdown (View Profile / Log Out) wherever the two overlap. */
-  z-index: 3;
-}
-.user-menu[hidden] { display: none; }
-.streak-menu { position: relative; }
-.streak-badge-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  background: rgba(255,255,255,.14);
-  border: none;
-  padding: 6px 12px;
+.today-streak-headline .streak-info-btn { flex: none; width: 16px; height: 16px; font-size: 9px; }
+.today-streak-meta { margin: 0; font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.today-streak-meta .dot-sep { color: #2a2a2a; }
+.today-streak-pips { display: flex; gap: 5px; }
+.today-streak-pip { width: 26px; height: 5px; border-radius: 3px; background: var(--surface-3); }
+.today-streak-pip.filled { background: linear-gradient(90deg, #f7b8c8, #a9c4f7); }
+
+.today-cycle-card-wrap { padding: 12px 16px 0; }
+.today-cycle-card {
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 20px;
+  padding: 16px 18px 18px;
+}
+.today-cycle-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+.today-cycle-day { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-2); }
+.today-cycle-phase { font-size: 11px; font-weight: 700; }
+.today-phase-bar { display: flex; gap: 2px; margin-bottom: 12px; }
+.today-phase-bar-seg { height: 8px; }
+.today-phase-bar-seg:first-child { border-radius: 4px 0 0 4px; }
+.today-phase-bar-seg:last-child { border-radius: 0 4px 4px 0; }
+.today-cycle-insight { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--ink); }
+.today-cycle-insight strong { font-weight: 700; }
+.today-cycle-footnote { margin: 8px 0 0; font-size: 12px; color: var(--muted-2); }
+
+.today-cta-wrap { padding: 20px 16px 0; }
+.today-cta-hint {
+  margin: 0 0 8px;
+  padding: 7px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-purple);
+  text-align: center;
+}
+.today-cta {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: linear-gradient(90deg, #f7b8c8, #a9c4f7);
+  color: var(--accent-ink);
+  border: none;
+  padding: 17px 20px;
+  border-radius: 16px;
+  font-size: 16.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 14px 30px -12px rgba(247, 184, 200, .5);
+  transition: transform .15s ease;
+}
+.today-cta:active { transform: scale(.985); }
+.today-cta-arrow { font-size: 18px; }
+.today-secondary-row { display: flex; gap: 10px; margin-top: 10px; }
+.today-secondary-btn {
+  flex: 1;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  padding: 13px 10px;
+  border-radius: 14px;
+  font-size: 13.5px;
+  font-weight: 700;
   cursor: pointer;
   font-family: inherit;
   transition: background .15s ease;
 }
-.streak-badge-btn:hover { background: rgba(255,255,255,.22); }
-.streak-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
+.today-secondary-btn:hover { background: var(--surface-2); }
+
+.today-last-session-wrap { padding: 20px 16px 24px; }
+.today-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.today-section-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-2); }
+.today-section-link { font-size: 12px; font-weight: 700; color: var(--accent-purple); background: none; border: none; cursor: pointer; font-family: inherit; padding: 0; }
+.today-last-session-card {
   background: var(--card);
-  border-radius: 12px;
-  box-shadow: var(--shadow-md);
-  width: 210px;
-  max-width: calc(100vw - 32px);
-  padding: 14px 16px;
-  animation: fadeUp .15s ease;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px 18px;
 }
-.streak-dropdown[hidden] { display: none; }
-.streak-dropdown-header {
+.today-last-session-title-row { display: flex; align-items: center; gap: 8px; }
+.today-last-session-title { margin: 0; font-size: 15.5px; font-weight: 700; color: var(--ink); }
+.today-last-session-stats { display: flex; gap: 18px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+.today-last-session-stats strong { font-size: 15px; color: var(--ink); }
+.today-last-session-meta { margin: 10px 0 0; font-size: 12.5px; color: var(--muted-2); }
+.today-empty { color: var(--muted); font-size: 13.5px; }
+
+/* ---------------- One-screen log (2b) ---------------- */
+.log-header {
+  flex: none;
+  padding: 20px 18px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding-bottom: 6px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid var(--border);
+  gap: 10px;
 }
-.streak-dropdown-title { font-size: 12px; font-weight: 700; color: var(--ink); text-transform: uppercase; letter-spacing: .04em; }
+.log-close-btn {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+.log-header-center { flex: 1; min-width: 0; text-align: center; }
+.log-header-title { font-size: 15px; font-weight: 700; color: var(--ink); line-height: 1.15; }
+.log-header-subtitle {
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--muted-2);
+  line-height: 1.15;
+  background: none;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+.log-done-btn {
+  flex: none;
+  height: 36px;
+  padding: 0 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--accent-purple);
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+.log-scroll { flex: 1; overflow: auto; padding: 0 16px 8px; }
+
+.session-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 2px 0 12px;
+  border-bottom: 1px solid #1a1a1a;
+  margin-bottom: 14px;
+}
+
+/* Session-strip chips reuse the existing energy/meal-timing field
+   components (same hidden-input + picker-modal wiring as the old visit
+   form) but need the pill-chip look instead of their usual full-width
+   bordered-rectangle one - scoped overrides beat the base component rules
+   regardless of source order (two classes vs one). */
+.session-strip .energy-field-btn, .session-strip .meal-timing-field-btn, .session-strip-note-btn {
+  width: auto;
+  min-width: 0;
+  display: inline-flex;
+  gap: 7px;
+  padding: 8px 13px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.session-strip-note-btn {
+  background: var(--card);
+  border: 1px dashed #3a3a3a;
+  color: var(--accent-purple);
+  cursor: pointer;
+  font-family: inherit;
+}
+.session-strip-note-btn.filled { border-style: solid; border-color: var(--border); color: var(--ink); }
+
+.log-exercise-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 0 14px; }
+
+.sets-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 16px 16px 6px;
+}
+.sets-card-header { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.sets-card-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-2); }
+.sets-card-last-time { font-size: 11.5px; color: var(--muted-2); text-align: right; }
+.sets-card-empty { padding: 6px 0 14px; }
+.log-add-exercise-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--surface-2);
+  border: 1.5px dashed #3a3a3a;
+  color: var(--accent-purple);
+  padding: 16px;
+  border-radius: 14px;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s ease, border-color .15s ease;
+}
+.log-add-exercise-btn:hover { background: var(--surface-3); border-color: var(--accent-purple); }
+.log-add-exercise-plus { font-size: 19px; line-height: 1; }
+.log-add-exercise-hint { margin: 10px 0 0; font-size: 12.5px; color: var(--muted); text-align: center; }
+
+/* Blocks built by addExerciseBlock() for the log screen strip their own
+   card chrome and internal muscle/exercise pickers - exercise selection
+   happens via the chip row + option-picker modal instead (see app.js), and
+   the sets card above already provides the card shell. Reuses the same
+   idea as .group-edit-mode (History's inline editor) for the header. */
+.log-set-block.exercise-block {
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: none;
+}
+.log-set-block.exercise-block > .exercise-block-header,
+.log-set-block.exercise-block > label,
+.log-set-block.exercise-block > label.full {
+  display: none;
+}
+/* The block's own "Sets" label (inside .sets-header, so not caught by the
+   > label rule above) is redundant with the sets-card's own header label
+   just above it - the Reps/Time toggle next to it stays, that's real
+   functionality the 2b spec doesn't show but nothing here should drop. */
+.log-set-block .sets-header label { display: none; }
+.log-set-block .set-actions {
+  padding: 12px 0 14px;
+  border-top: 1px solid var(--hairline);
+  margin-top: 4px;
+}
+.log-set-block .set-actions .add-set,
+.log-set-block .set-actions .add-set-same {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--accent-purple);
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.log-footer {
+  flex: none;
+  padding: 12px 16px 22px;
+  background: linear-gradient(180deg, rgba(0,0,0,0), #000 40%);
+}
+.log-footer-btn {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, #f7b8c8, #a9c4f7);
+  color: var(--accent-ink);
+  border: none;
+  padding: 17px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 14px 30px -12px rgba(247, 184, 200, .5);
+}
+.log-footer-btn-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0%;
+  background: rgba(23, 16, 21, .16);
+  transition: width 1s linear;
+}
+.log-footer-btn-label { position: relative; }
+
+/* ---------------- Streak info trigger (Today card) ---------------- */
 .streak-info-btn {
   display: flex;
   align-items: center;
@@ -236,99 +581,35 @@ body {
   line-height: 1.4;
   color: var(--muted-2);
 }
-.topbar-greeting {
+/* App shell: body is a full-height flex column (greeting/content pane above
+   a fixed .bottom-nav, per 2a) - replaces the old document-scroll layout
+   the .topbar + .main-tabs/.tabs header used to sit at the top of. */
+body {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  background: rgba(255,255,255,.14);
-  border: none;
-  padding: 6px 14px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background .15s ease;
-}
-.topbar-greeting:hover { background: rgba(255,255,255,.22); }
-.topbar-greeting .caret { font-size: 10px; opacity: .8; }
-.user-menu-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  background: var(--card);
-  border-radius: 12px;
-  box-shadow: var(--shadow-md);
-  min-width: 170px;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
-  animation: fadeUp .15s ease;
 }
-.user-menu-dropdown[hidden] { display: none; }
-.user-menu-dropdown button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 12px 16px;
-  background: none;
-  border: none;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink);
-  cursor: pointer;
-  font-family: inherit;
-}
-.user-menu-dropdown button:hover { background: var(--surface-2); }
-.topbar-sub {
-  margin: 6px 0 0;
-  font-size: 13px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  opacity: .85;
-  font-weight: 700;
-  letter-spacing: .01em;
-}
-
-/* ---------------- Tabs ---------------- */
-.main-tabs, .tabs {
-  display: flex;
-  gap: 6px;
-  background: #171310;
-  padding: 6px;
-  border-radius: 14px;
-  position: relative;
-  z-index: 2;
-  box-shadow: var(--shadow-lg);
-}
-.main-tabs { margin: -14px 14px 0; }
-.tabs { margin: 0 0 18px; }
-
-.main-tab-btn, .tab-btn {
+main {
   flex: 1;
-  padding: 11px 8px;
-  background: none;
-  border: none;
-  color: rgba(255,255,255,.55);
-  font-size: 13.5px;
-  font-weight: 700;
-  cursor: pointer;
-  border-radius: 10px;
-  transition: color .2s ease, background .2s ease, transform .15s ease;
-  font-family: inherit;
-}
-.main-tab-btn:active, .tab-btn:active { transform: scale(.97); }
-.main-tab-btn.active, .tab-btn.active {
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  color: var(--accent-ink);
-  box-shadow: 0 6px 16px -4px var(--accent-glow);
+  min-height: 0;
+  max-width: 880px;
+  width: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+  position: relative;
 }
 
-main { max-width: 880px; margin: 0 auto; padding: 20px 16px 48px; }
-
-.main-tab-panel, .tab-panel { display: none; animation: fadeUp .35s ease; }
-.main-tab-panel.active, .tab-panel.active { display: block; }
+.main-tab-panel { display: none; animation: fadeUp .35s ease; }
+.main-tab-panel.active { display: block; height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+/* History/Cycle/You keep the old page gutter+max-width the .card system
+   was built around; Today/Log define their own spacing per the redesign's
+   pixel spec, so they opt out of it instead. */
+.main-tab-panel-padded.active { padding: 20px 16px 48px; }
+/* Log manages its own internal scroll region (fixed header/footer, see
+   .log-scroll) instead of using the panel's own overflow-y. */
+#maintab-log.active { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
 
 .placeholder-card { text-align: center; padding: 36px 18px; }
 .placeholder-text { margin: 0; color: var(--muted); font-size: 14px; }
@@ -613,55 +894,109 @@ main { max-width: 880px; margin: 0 auto; padding: 20px 16px 48px; }
 .hormone-sources-detail { display: block; margin-top: 6px; }
 .hormone-sources-detail a { color: var(--accent-dark); }
 
-/* ---------------- Your Performance ---------------- */
-/* Segmented control for switching which chart occupies the shared area
-   below - visually mirrors .tabs/.tab-btn (same pill-with-gradient-active
-   look) but is a separate class so its click handler can't collide with
-   the real Log Workout/History sub-tabs, which listen on .tab-btn
-   globally. Add a chart here by adding one button (data-chart="key") and
-   one .chart-panel (data-chart-panel="key") instead of stacking another
-   chart under the last one. */
-.chart-switcher {
-  display: flex;
-  gap: 6px;
-  background: var(--bg-soft);
-  padding: 6px;
-  border-radius: 14px;
-  margin-bottom: 18px;
-}
-.chart-switch-btn {
-  flex: 1;
-  padding: 10px 8px;
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 12.5px;
+/* ---------------- Cycle-first Performance (2c, inside Your Cycle) ---------------- */
+.cycle-perf-section-label {
+  margin: 0 0 10px;
+  padding: 26px 4px 0;
+  font-size: 12px;
   font-weight: 700;
-  cursor: pointer;
-  border-radius: 10px;
-  transition: color .2s ease, background .2s ease, transform .15s ease;
-  font-family: inherit;
-}
-.chart-switch-btn:active { transform: scale(.97); }
-.chart-switch-btn.active {
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  color: var(--accent-ink);
-  box-shadow: 0 6px 16px -4px var(--accent-glow);
-}
-.perf-picker {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 18px;
-  max-width: 320px;
-}
-.perf-picker-label {
-  font-size: 11.5px;
-  font-weight: 700;
+  letter-spacing: .08em;
   text-transform: uppercase;
-  letter-spacing: .04em;
-  color: var(--muted);
+  color: var(--muted-2);
 }
+.cycle-perf-chart-card, .cycle-perf-prphase-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 18px;
+  margin-top: 14px;
+}
+/* Anchors the absolutely-positioned #cycle-perf-tooltip (see .perf-tooltip)
+   to this card instead of whatever positioned ancestor it'd otherwise land
+   on - the old chart had a dedicated .perf-chart-wrap for this; here the
+   svg+tooltip sit directly in the card, so the card itself is the anchor. */
+.cycle-perf-chart-card { position: relative; }
+.cycle-perf-prphase-label {
+  margin: 0 0 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+.cycle-perf-chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.cycle-perf-chart-title {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+/* Same "click, not hover" popover pattern as .hormone-info-btn - here it's
+   inline next to the chart title instead of floating over the chart, since
+   there's no dead space over this chart to anchor to. */
+.cycle-perf-info-btn {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface-3);
+  color: var(--muted-2);
+  cursor: pointer;
+  padding: 0;
+}
+.cycle-perf-info-btn span {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1;
+}
+.cycle-perf-info-btn:hover, .cycle-perf-info-btn[aria-expanded="true"] { background: var(--surface-2); color: var(--ink); }
+.cycle-perf-info-popover {
+  position: absolute;
+  top: 26px;
+  left: 0;
+  width: 230px;
+  max-width: 72vw;
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+  z-index: 3;
+}
+.cycle-perf-change-btn { flex: none; background: none; border: none; color: var(--accent-purple); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; padding: 0; }
+.cycle-perf-insight-card {
+  background: linear-gradient(135deg, #1a1116, #121212);
+  border: 1px solid #3a2b33;
+  border-radius: 20px;
+  padding: 18px;
+  margin-top: 14px;
+}
+.cycle-perf-insight-eyebrow {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--accent-dark);
+}
+.cycle-perf-insight-body { margin: 0; font-size: 15px; line-height: 1.45; font-weight: 600; color: var(--ink); }
+.cycle-perf-insight-footnote { margin: 14px 0 0; font-size: 12.5px; color: var(--muted); }
+.cycle-perf-insight-footnote strong { color: var(--ink); }
+
+/* ---------------- Chart primitives (shared by the strength-by-phase chart) ---------------- */
 .perf-chart-wrap { position: relative; }
 .perf-chart {
   width: 100%;
@@ -677,9 +1012,9 @@ main { max-width: 880px; margin: 0 auto; padding: 20px 16px 48px; }
   font-family: inherit;
 }
 /* Stroke/fill color deliberately not set here - each line segment and dot
-   is colored per its cycle-phase run (see renderPerformanceChart), so a
-   CSS color here would win over that per-element attribute and flatten
-   every phase back to one color. */
+   is colored per its cycle-phase run (see renderCyclePerfChart), so a CSS
+   color here would win over that per-element attribute and flatten every
+   phase back to one color. */
 .perf-chart .perf-line {
   fill: none;
   stroke-width: 2;
@@ -727,10 +1062,6 @@ main { max-width: 880px; margin: 0 auto; padding: 20px 16px 48px; }
 .perf-tooltip-date { color: var(--muted); font-size: 11px; }
 .perf-tooltip-edited { color: var(--accent-dark); font-size: 11px; font-weight: 700; }
 .perf-tooltip-edited-prev { color: var(--muted); font-size: 11px; }
-/* Unlike the PR chart's short "34 min" tooltip, this one can carry a full
-   meal description - let it wrap instead of running off-screen as one
-   long nowrap line. */
-#energy-tooltip { white-space: normal; max-width: 200px; }
 
 .prphase-row {
   padding: 12px 0;
@@ -743,7 +1074,16 @@ main { max-width: 880px; margin: 0 auto; padding: 20px 16px 48px; }
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 7px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: default;
 }
+.prphase-row-top.prphase-expandable { cursor: pointer; }
 .prphase-name {
   display: flex;
   align-items: center;
@@ -753,26 +1093,77 @@ main { max-width: 880px; margin: 0 auto; padding: 20px 16px 48px; }
 }
 .prphase-name .phase-dot { margin-right: 8px; }
 .prphase-count {
+  display: inline-flex;
+  align-items: center;
   font-size: 12.5px;
   font-weight: 700;
   color: var(--muted);
   white-space: nowrap;
 }
+/* Rotates via .expanded (toggled on click, see renderPRPhaseBreakdown's
+   click handler) so it points down collapsed / up expanded - same idea as
+   the option-field caret elsewhere in the app. */
+.prphase-chevron {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 10px;
+  transition: transform .2s ease;
+}
+.prphase-expandable.expanded .prphase-chevron { transform: rotate(180deg); }
 .prphase-bar-track {
-  height: 10px;
-  border-radius: 0 5px 5px 0;
-  background: var(--bg-soft);
+  height: 9px;
+  border-radius: 5px;
+  background: var(--surface-2);
   overflow: hidden;
 }
 .prphase-bar-fill {
   height: 100%;
-  border-radius: 0 5px 5px 0;
+  border-radius: 5px;
 }
-.prphase-exercises {
+.prphase-energy {
+  margin: 7px 0 0;
+  font-size: 12px;
+  color: var(--ink);
+}
+.prphase-energy.placeholder { color: var(--muted); }
+.prphase-energy-count { color: var(--muted); font-weight: 400; }
+.prphase-exercises-empty {
   margin: 7px 0 0;
   font-size: 12px;
   color: var(--muted);
-  line-height: 1.5;
+}
+/* Each PR its own row instead of one comma-joined paragraph (see
+   renderPRPhaseBreakdown) - a phase with a lot of PRs stays scannable
+   instead of wrapping into a wall of text, and it's tucked behind
+   .prphase-expandable's tap-to-expand so it doesn't dominate the card by
+   default. */
+.prphase-details { margin-top: 8px; }
+.prphase-exercise-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+/* Wraps like tag chips - each pill sized to its own text and flowing left
+   to right, next one wrapping to a new line once the row fills, instead of
+   either one-per-line (wastes vertical space) or a full-width row with
+   space-between (leaves a huge gap between a short name and its value). */
+.prphase-exercise-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  background: var(--bg-soft);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.prphase-exercise-value {
+  color: var(--ink);
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 @keyframes fadeUp {
@@ -817,6 +1208,8 @@ main { max-width: 880px; margin: 0 auto; padding: 20px 16px 48px; }
   justify-content: flex-end;
   gap: 10px;
 }
+#session-note-modal .confirm-actions,
+#session-meal-modal .confirm-actions { margin-top: 16px; }
 .confirm-actions button {
   grid-column: unset;
   width: auto;
@@ -1322,6 +1715,26 @@ button:disabled {
   transition: background .15s ease;
 }
 .option-picker-show-all:hover { background: var(--surface-2); }
+.option-picker-add-btn,
+.option-picker-not-a-match {
+  display: block;
+  width: 100%;
+  border: 1px dashed var(--border);
+  background: none;
+  padding: 12px;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-dark);
+  text-align: center;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 8px;
+  transition: background .15s ease;
+}
+.option-picker-add-btn:hover,
+.option-picker-not-a-match:hover { background: var(--surface-2); }
+.option-picker-not-a-match { color: var(--muted); border-style: solid; }
 
 /* ---------------- Date field (custom in-app picker) ---------------- */
 .date-field-btn {
@@ -1607,9 +2020,27 @@ button:disabled {
   gap: 8px;
   align-items: stretch;
 }
+/* Wasn't themed at all before - fell back to the browser's default white
+   box + gold focus ring instead of matching every other text input in the
+   app (see .grid-form input above, whose look this mirrors). */
 .note-field input {
   flex: 1 1 auto;
   min-width: 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--surface-2);
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.note-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface-3);
+  box-shadow: 0 0 0 4px var(--accent-glow);
 }
 
 /* ---------------- Exercise blocks ---------------- */
@@ -1710,6 +2141,7 @@ button:disabled {
   margin-bottom: 2px;
 }
 .sets-header label { margin: 0; }
+.set-level-mode-toggle[hidden] { display: none; }
 .set-type-toggle, .set-level-mode-toggle {
   display: flex;
   border: 1px solid var(--border);
@@ -1738,91 +2170,47 @@ button:disabled {
 }
 
 
-/* Labels live inline on each row now (2nd grid row, above that row's own
-   controls) instead of a single header shared above every row - that
-   shared header only ever worked at desktop widths (it needed its own
-   breakpoint-specific column tracks to stay aligned with the rows below
-   it, which kept drifting out of sync). Building the label into each
-   row's own grid means one definition works at any width and can never
-   drift out of alignment with its own row. BW sits on this label line,
-   right-aligned. Set N sits a row down instead, on the same line as the
-   fields it labels - leftmost, own dedicated (auto-width) column - so it
-   never costs the reps/weight fields any width the way sharing the label
-   row with BW did. BW is pulled out of the grid entirely (absolutely
-   positioned in the top-right corner) rather than sharing a column with
-   remove - remove is a bare 26px square, far narrower than BW's
-   labelled toggle, and splitting that shared column only let the field
-   next to it (weight) claim the leftover, growing it lopsidedly bigger
-   than reps. With BW out of the way, the last real column only has to
-   fit remove, so reps and weight - both still plain 1fr - grow into
-   that reclaimed width equally and stay the same size as each other. */
+/* Plain flex row, one per set - replaces the old named-grid layout, whose
+   BW toggle was absolutely positioned out of flow and collided with the
+   weight label at narrow widths (see the "known bug" note in the design
+   handoff). BW/SPD now sit in normal flow like everything else, which
+   fixes that by construction instead of needing more grid-area juggling.
+   The per-field text labels ("Reps"/"Weight (kg)"/...) are dropped - Set N
+   plus each stepper's own value reads clearly enough on its own, and the
+   sets-card header above already shows the reps×weight convention via
+   "Last time: ...". */
 .set-row {
-  display: grid;
-  position: relative;
-  grid-template-columns: auto 1fr 1fr auto;
-  grid-template-areas:
-    ".    lab1   field2lab ."
-    "setn field1 field2    remove";
-  column-gap: 8px;
-  row-gap: 4px;
+  display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  gap: 10px;
+  padding: 14px 0;
+  border-top: 1px solid var(--hairline);
 }
-/* Being out of grid flow, BW doesn't stretch the label row to fit itself
-   the way a normal grid item would - left to auto sizing, the label row
-   is only as tall as the plain text labels (~11px), shorter than BW
-   (~19px), so BW's bottom edge spilled past it into the field row below.
-   Reserving BW's real height for that row keeps it clear. has-extra rows
-   have no BW, so they're left at their natural auto height. */
-.set-row:not(.has-extra) { grid-template-rows: 20px auto; }
-.set-row.has-extra {
-  grid-template-columns: auto 1fr 1fr 1fr 26px;
-  grid-template-areas:
-    ".    lab1   field2lab lab3   ."
-    "setn field1 field2    field3 remove";
-}
-.set-row-label {
-  grid-area: lab1;
-  font-size: 10px;
+.set-row:first-child { border-top: none; }
+.set-row-label, .set-row-label-2, .set-row-label-3 { display: none; }
+/* Inert everywhere by default (History's inline group-editor and cardio
+   rows never restyle these) - .log-set-block below turns them into a real
+   two-line layout for the log screen's Reps/Weight row specifically. */
+.set-row-top, .set-row-steppers { display: contents; }
+.set-row .set-number {
+  flex: none;
+  width: 44px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .03em;
-  color: var(--muted);
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  letter-spacing: .04em;
+  color: var(--muted-2);
+  background: none;
+  padding: 0;
 }
-.set-row-label-2 { grid-area: field2lab; }
-/* BW is absolutely positioned (see .set-bodyweight-btn below), so unlike
-   every other grid item it reserves no column of its own - nothing stops
-   the 2nd field's label text from running under it and getting ellipsized.
-   Cardio rows have the equivalent SPD switch in the same spot (see below);
-   has-extra rows have neither, so only non-has-extra rows need this
-   clearance. */
-.set-row:not(.has-extra) .set-row-label-2 { padding-right: 32px; }
-.set-row-label-3 { grid-area: lab3; }
-/* Set N and the BW/SPD switches share the same small-badge styling
-   (padding, radius, background) even though they no longer sit on the
-   same grid line, so they still read as a matched pair of affordances
-   rather than one looking like an afterthought next to the other. */
-.set-row .set-number, .set-row .set-bodyweight-btn, .set-row .set-speed-toggle-btn {
+.set-row .set-bodyweight-btn, .set-row .set-speed-toggle-btn {
+  position: static;
+  flex: none;
   font-size: 10.5px;
   font-weight: 700;
   border-radius: 8px;
   padding: 4px 10px;
   white-space: nowrap;
-}
-.set-row .set-number {
-  grid-area: setn;
-  color: var(--accent-purple);
-  background: var(--surface-2);
-  text-align: center;
-}
-.set-row .set-bodyweight-btn, .set-row .set-speed-toggle-btn {
-  position: absolute;
-  top: 0;
-  right: 0;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1877,10 +2265,20 @@ button:disabled {
   border-color: var(--accent);
   box-shadow: 0 0 0 4px var(--accent-glow);
 }
+.set-row .set-pr-badge {
+  flex: none;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--accent-ink);
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  padding: 3px 6px;
+  border-radius: 8px;
+}
 .set-row .set-remove {
-  grid-area: remove;
+  flex: none;
   width: 26px;
-  justify-self: end;
   background: var(--danger-tint);
   border: none;
   color: var(--danger);
@@ -1894,21 +2292,22 @@ button:disabled {
   transition: background .15s ease;
 }
 .set-row .set-remove:hover { background: var(--danger-tint-hover); }
-.set-row .stepper-reps, .set-row .stepper-duration { grid-area: field1; }
-.set-row .stepper-weight, .set-row .stepper-level, .set-row .set-speed-field { grid-area: field2; }
-.set-row .set-extra-field { grid-area: field3; }
+.set-row .stepper-reps, .set-row .stepper-duration,
+.set-row .stepper-weight, .set-row .stepper-level, .set-row .set-speed-field,
+.set-row .set-extra-field {
+  flex: 1;
+  min-width: 0;
+}
 
 .stepper {
-  /* Explicit height (matching the row's remove button, also fixed at 34px)
-     rather than letting padding+content size it - keeps Reps/Weight/Speed/
-     Duration/Level all pixel-identical regardless of which one is empty. */
-  height: 34px;
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: 14px;
   background: var(--surface-2);
-  overflow: hidden;
   transition: border-color .15s ease, box-shadow .15s ease;
 }
 .stepper:focus-within {
@@ -1916,11 +2315,14 @@ button:disabled {
   box-shadow: 0 0 0 4px var(--accent-glow);
 }
 .stepper .stepper-btn {
-  flex: 0 0 30px;
+  flex: none;
+  width: 34px;
+  height: 34px;
   border: none;
-  background: var(--border);
+  border-radius: 10px;
+  background: var(--stepper-btn);
   color: var(--accent-purple);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
@@ -1931,31 +2333,88 @@ button:disabled {
 .stepper .stepper-btn:active { transform: scale(.93); }
 /* Two classes' worth of specificity is deliberate — this needs to beat
    ".grid-form input" (which sets its own border/padding/background) since
-   steppers live inside .grid-form both here and in the exercise blocks. */
+   steppers live inside .grid-form both here and in the exercise blocks.
+   A real border/background (not "none"/transparent) is deliberate too -
+   a fully transparent number input is exactly what trips up Android
+   WebView's forced-dark-mode color inversion (it can't tell the field is
+   already dark-themed, so the typed digits and the auto-inverted
+   background end up the same color and the value reads as blank). Giving
+   the box its own visible bounds also directly answers "mark the boxes". */
 .stepper .stepper-input {
   flex: 1 1 auto;
   width: 100%;
   min-width: 0;
-  border: none;
-  background: none;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-3);
   text-align: center;
-  font-size: 14px;
+  font-size: 19px;
   font-weight: 700;
-  padding: 9px 2px;
+  padding: 8px 2px;
   font-family: inherit;
   color: var(--ink);
 }
-.stepper .stepper-input:focus {
-  outline: none;
-  border: none;
-  background: none;
-  box-shadow: none;
-}
+/* No separate focus ring here - the outer .stepper:focus-within glow above
+   already highlights the whole capsule when this input is focused, so a
+   second ring on the input itself would just double up. */
+.stepper .stepper-input:focus { outline: none; }
 .stepper-input::placeholder { color: var(--muted-2); }
 /* Hide the native up/down arrows — the stepper's own +/- buttons replace them. */
 .stepper-input::-webkit-outer-spin-button,
 .stepper-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .stepper-input[type=number] { -moz-appearance: textfield; }
+
+/* The Reps/Weight row splits into two visual lines - SET N / BW / remove
+   on top, the two (much wider) stepper pills below - instead of cramming
+   everything into one line. Applies both on the log screen and History's
+   inline group-editor (.group-edit-mode): BW toggle + remove button + set
+   number otherwise eat well over half of a phone-width row between them,
+   leaving each stepper well under 70px to share - not enough room for two
+   circular buttons plus a value, captioned or not (verified this was
+   actually unreadable in the group-editor too, not just cosmetically
+   cramped, before this split). */
+.log-set-block .set-row, .group-edit-mode .set-row { flex-wrap: wrap; row-gap: 6px; padding: 8px 0; }
+.log-set-block .set-row-top, .group-edit-mode .set-row-top { display: flex; align-items: center; gap: 8px; flex: 1 1 100%; }
+/* Set number + BW stay clustered on the left; remove (destructive, least
+   important action) gets pushed to the trailing edge instead of just
+   trailing directly after BW with no separation. */
+.log-set-block .set-row-top .set-remove, .group-edit-mode .set-row-top .set-remove { margin-left: auto; }
+.log-set-block .set-row-steppers, .group-edit-mode .set-row-steppers { display: flex; gap: 8px; flex: 1 1 100%; }
+/* Sized to content instead of stretching to fill the row - with the
+   caption now sitting above the number (see .stepper-caption grid-row
+   below) there's less to fit, so a fixed compact width reads better than
+   two pills stretched edge to edge. */
+.log-set-block .set-row-steppers .stepper-labeled, .group-edit-mode .set-row-steppers .stepper-labeled { flex: 1 1 0; min-width: 0; }
+/* Reps/weight steppers on the log screen and History's inline editor -
+   back to the base .stepper's plain single-row flex layout (minus / input
+   / plus), just sized down a notch. The "Reps"/"Kg" label lives entirely
+   in the input's own placeholder now (see addSetRow in app.js) instead of
+   a separate caption element stacked above/below the number - it reads
+   when the field is empty and gets replaced by whatever the user types or
+   dictates, same as any other placeholder, and center-aligns naturally
+   with the number since they're literally the same text node. That also
+   sidesteps the nested-flex/grid percentage-width fights the old stacked
+   caption version needed. */
+.log-set-block .stepper-labeled, .group-edit-mode .stepper-labeled { gap: 4px; padding: 4px; }
+.log-set-block .stepper-labeled .stepper-btn, .group-edit-mode .stepper-labeled .stepper-btn {
+  width: 26px;
+  height: 26px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+.log-set-block .stepper-labeled .stepper-input, .group-edit-mode .stepper-labeled .stepper-input {
+  border: none;
+  background: var(--surface-2);
+  padding: 6px 0;
+  font-size: 15px;
+  line-height: 1.1;
+}
+.log-set-block .stepper-labeled .stepper-input::placeholder, .group-edit-mode .stepper-labeled .stepper-input::placeholder {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
 
 /* ---------------- History table ---------------- */
 /* Cycle-phase dot shown next to each date instead of a dedicated column -
@@ -1973,17 +2432,6 @@ button:disabled {
    layout's `justify-content: space-between` (label vs. value) doesn't
    split the dot away from the date it belongs to. */
 .date-with-phase { display: inline-flex; align-items: center; }
-/* Same reasoning one level up - date-with-phase plus the optional Edited
-   badge need to act as one flex item from the <td>'s point of view too,
-   with the badge free to wrap onto its own line under the date rather
-   than fight the label for space on narrow screens. */
-.date-with-phase-wrap {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 4px 8px;
-}
 .phase-legend {
   display: flex;
   flex-wrap: wrap;
@@ -1994,6 +2442,17 @@ button:disabled {
 }
 .phase-legend-item { display: inline-flex; align-items: center; }
 #perf-phase-legend { margin: 14px 0 0; }
+/* Forced onto one line (unlike the base .phase-legend's wrap) - the chart
+   card is narrow enough that 4 wrapped phase names read as clutter; an
+   overflow-x scroll is the fallback on anything narrower than an iPhone SE. */
+#cycle-perf-phase-legend {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 10px;
+  margin: 10px 0 0;
+  font-size: 11px;
+  white-space: nowrap;
+}
 
 /* Same pills as .phase-legend-item, but clickable - the History tab's
    phase filter doubles as its own legend instead of adding a separate
@@ -2017,93 +2476,113 @@ button:disabled {
   font-weight: 700;
 }
 
-/* A plain <table> ignores overflow on itself in most engines, so the
-   scroll container has to be a wrapping block element instead. */
-.table-scroll {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-.data-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 13px;
-}
-.data-table th, .data-table td {
-  text-align: left;
-  padding: 10px 8px;
-  border-bottom: 1px solid var(--border);
-}
-.data-table th {
-  color: var(--muted);
-  font-weight: 700;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  position: sticky;
-  top: 0;
-  background: var(--card);
-}
-.data-table tbody tr { transition: background .15s ease; }
-.data-table tbody tr:hover { background: var(--surface-2); }
-.data-table tbody tr.clickable-row { cursor: pointer; }
-.data-table tbody tr:last-child td { border-bottom: none; }
-.data-table .del-btn {
-  background: none;
-  border: none;
-  color: var(--danger);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 4px 8px;
-  border-radius: 6px;
+.history-list { display: flex; flex-direction: column; gap: 10px; }
+.history-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
   transition: background .15s ease;
-  font-family: inherit;
 }
-.data-table .del-btn:hover { background: var(--danger-tint); }
-.data-table .edit-btn {
+.history-card.clickable-row { cursor: pointer; }
+.history-card.clickable-row:hover { background: var(--surface-2); }
+.history-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.history-card-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+.history-card-muscles {
+  margin: 6px 0 4px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.history-card-meta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.history-card-note { color: var(--accent-dark); font-style: italic; }
+.history-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.history-card-actions .edit-btn,
+.history-card-actions .save-btn,
+.history-card-actions .cancel-btn {
   background: none;
   border: none;
   color: var(--accent-dark);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 700;
   padding: 4px 8px;
   border-radius: 6px;
   transition: background .15s ease;
   font-family: inherit;
-  margin-right: 4px;
 }
-.data-table .edit-btn:hover { background: var(--surface-2); }
-.data-table .save-btn {
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  border: none;
-  color: var(--accent-ink);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-family: inherit;
-  margin-right: 4px;
-  transition: box-shadow .15s ease, transform .15s ease;
+.history-card-actions .edit-btn:hover,
+.history-card-actions .save-btn:hover,
+.history-card-actions .cancel-btn:hover { background: var(--surface-2); }
+.history-card-actions .cancel-btn { color: var(--muted); }
+.history-card-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
-.data-table .save-btn:hover { box-shadow: 0 6px 14px -6px rgba(247, 184, 200, .55); }
-.data-table .save-btn:active { transform: scale(.97); }
-.data-table .cancel-btn {
-  background: var(--surface-2);
+.history-card .edit-notes {
+  width: 100%;
+  margin-top: 8px;
+  font-size: 13px;
+  padding: 8px 10px;
   border: 1px solid var(--border);
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 6px 12px;
   border-radius: 8px;
   font-family: inherit;
-  transition: background .15s ease;
+  background: var(--surface-2);
+  color: var(--ink);
 }
-.data-table .cancel-btn:hover { background: var(--surface-3); }
-.data-table .row-actions { white-space: nowrap; }
+.history-card .edit-notes:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.history-sessions-count { font-style: italic; }
+.history-sessions { display: flex; flex-direction: column; margin-top: 6px; }
+.history-session-row {
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+.history-session-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .02em;
+}
+.history-session-row .history-card-meta { margin-top: 4px; }
+.history-session-row .history-card-actions {
+  margin-top: 8px;
+  padding-top: 0;
+  border-top: none;
+}
+.history-card-meta-empty { font-style: italic; opacity: .7; }
 
 .history-pager {
   display: flex;
@@ -2132,62 +2611,8 @@ button:disabled {
 .history-pager-btn:hover:not(:disabled) { background: var(--surface-3); }
 .history-pager-btn:disabled { opacity: .4; cursor: default; }
 
-.data-table input, .data-table select {
-  width: 100%;
-  min-width: 0;
-  font-size: 13px;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-family: inherit;
-  background: var(--surface-2);
-  color: var(--ink);
-}
-.data-table input:focus, .data-table select:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
-}
-
-/* Below this width a 6-7 column table can't fit; render each row as a
-   stacked card instead of forcing horizontal scroll over the actions. */
 @media (max-width: 700px) {
-  .data-table thead { display: none; }
-  .data-table, .data-table tbody, .data-table tr, .data-table td { display: block; width: 100%; }
-  .data-table tbody tr {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    margin-bottom: 10px;
-    padding: 2px 12px;
-  }
-  .data-table tbody tr:hover { background: none; }
-  .data-table tbody tr:last-child { margin-bottom: 0; }
-  .data-table td {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 9px 0;
-    border-bottom: 1px solid var(--border);
-    text-align: right;
-  }
-  .data-table tr td:last-child { border-bottom: none; }
-  .data-table td::before {
-    content: attr(data-label);
-    flex-shrink: 0;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-    color: var(--muted);
-    text-align: left;
-  }
-  .data-table td.row-actions {
-    justify-content: flex-end;
-    padding: 10px 0 8px;
-  }
-  .data-table td.row-actions::before { content: none; }
-  .data-table input, .data-table select { text-align: right; font-size: 16px; }
+  .history-card-edit-row .date-field { flex: 1 1 auto; }
 }
 
 /* ---------------- Exercise detail list (History day drill-down) ----------------
@@ -2362,52 +2787,89 @@ button:disabled {
 
 @media (max-width: 480px) {
   .grid-form { grid-template-columns: 1fr; }
-  main { padding: 16px 12px 40px; }
-  /* Taken out of absolute positioning (used on wider screens, where there's
-     enough horizontal room for it to just float over the title) and put in
-     a flex row with the logo instead - same line, greeting on the right,
-     with the tagline forced onto its own full-width line below via
-     flex-wrap + flex-basis. DOM order is greeting-then-h1-then-tagline, so
-     `order` is what actually puts the logo first visually. */
-  .topbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    row-gap: 4px;
-  }
-  .topbar h1 { order: 1; min-width: 0; }
-  .user-menu {
-    position: relative;
-    top: auto;
-    right: auto;
-    order: 2;
-    flex-shrink: 0;
-  }
-  .topbar-sub { order: 3; flex-basis: 100%; }
+  .main-tab-panel-padded.active { padding: 16px 12px 40px; }
 
   /* Prevent iOS Safari from zooming in when a field is focused. */
   .grid-form input, .grid-form select,
   .set-row input {
     font-size: 16px;
   }
-
-  /* .set-row's own grid (labels baked into each row, see above) already
-     works unchanged at this width - nothing mobile-specific needed here
-     anymore, EXCEPT has-extra: fitting 3 full label+control columns
-     (duration/level/extra) is fine on a wide screen, but the duration and
-     level fields are full buttons with icon+text that don't compress,
-     which crushes the 3rd (extra) column down to nothing on a narrow
-     phone. Drop the extra field - and its label - to its own full-width
-     line below instead of fighting the other two for space. */
-  .set-row.has-extra {
-    grid-template-columns: auto 1fr 1fr 26px;
-    grid-template-areas:
-      ".    lab1   field2lab ."
-      "setn field1 field2    remove"
-      "lab3 lab3   lab3      lab3"
-      "field3 field3 field3  field3";
-    row-gap: 4px;
-  }
-  .set-row.has-extra .set-row-label-3 { text-align: left; }
 }
+
+/* ---------------- Pending exercise approvals (admin only) ---------------- */
+.pending-exercise-row {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.pending-exercise-meta {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.pending-exercise-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.pending-exercise-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.pending-exercise-fields input,
+.pending-exercise-fields select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--bg-soft);
+}
+.pending-exercise-actions {
+  display: flex;
+  gap: 8px;
+}
+.pending-exercise-actions .primary,
+.pending-exercise-actions .secondary {
+  grid-column: unset;
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+}
+.pending-exercise-reject-panel {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+.pending-exercise-reject-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.pending-exercise-reject-panel input,
+.pending-exercise-reject-panel select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--bg-soft);
+}
+.pe-reject-confirm.danger {
+  background: var(--danger-tint);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+.pe-reject-confirm.danger:hover { background: var(--danger-tint-hover); }

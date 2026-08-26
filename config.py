@@ -38,3 +38,18 @@ def get(key):
         return os.environ[key]
     defaults = BRANCH_DEFAULTS.get(_current_branch(), FALLBACK_DEFAULTS)
     return defaults[key]
+
+
+def is_dev():
+    """True when this process is serving the dev branch's defaults (by
+    branch, or by an explicit PORT env var matching dev's) - lets app.py
+    turn off static-file caching there. Static assets (app.js/style.css)
+    otherwise get Flask's default 12-hour cache header, which an Android
+    WebView happily honors across app relaunches - editing a file and
+    reloading the app can silently keep serving the old JS/CSS for hours,
+    which is exactly the kind of thing that makes "I already fixed and
+    verified that" wrong on a real device even though it tested fine
+    against a fresh browser instance."""
+    if "PORT" in os.environ:
+        return os.environ["PORT"] == BRANCH_DEFAULTS["dev"]["PORT"]
+    return _current_branch() == "dev"
