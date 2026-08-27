@@ -926,15 +926,28 @@ main {
 .hormone-sources-detail { display: block; margin-top: 6px; }
 .hormone-sources-detail a { color: var(--accent-dark); }
 
-/* ---------------- Cycle-first Performance (2c, inside Your Cycle) ---------------- */
+/* ---------------- Cycle-first Performance (2c, inside Your Body) ---------------- */
+/* Matches .card h2's weight/accent-bar treatment so this reads as a section
+   header at the same visual level as the "Your Body"/"Fuel" cards around it,
+   instead of a smaller floating uppercase label with its own oversized gap. */
 .cycle-perf-section-label {
-  margin: 0 0 10px;
-  padding: 26px 4px 0;
-  font-size: 12px;
+  margin: 0 0 14px;
+  padding: 0 4px;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--muted-2);
+  color: var(--ink);
+  letter-spacing: -.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cycle-perf-section-label::before {
+  content: "";
+  width: 4px;
+  height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  display: inline-block;
 }
 .cycle-perf-chart-card, .cycle-perf-prphase-card {
   background: var(--card);
@@ -1209,12 +1222,99 @@ main {
   inset: 0;
   z-index: 1001;
   background: var(--bg);
+  overflow: hidden;
+}
+.landing-page[hidden] { display: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .landing-page-entering { animation: landing-page-in .4s cubic-bezier(.2, .8, .2, 1) both; }
+  .landing-page-leaving { animation: landing-page-out .3s ease both; }
+}
+@keyframes landing-page-in {
+  from { opacity: 0; transform: scale(1.03); }
+}
+@keyframes landing-page-out {
+  to { opacity: 0; transform: scale(.97); }
+}
+
+.landing-track {
+  display: flex;
+  width: 200%;
+  height: 100%;
+  transition: transform .5s cubic-bezier(.4, 0, .2, 1);
+}
+.landing-track.is-open { transform: translateX(-50%); }
+
+.landing-panel {
+  width: 50%;
+  height: 100%;
+  flex: none;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   padding: 48px 24px 32px;
   overflow-y: auto;
 }
-.landing-page[hidden] { display: none; }
+
+.landing-splash {
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+.landing-splash-logo {
+  width: 140px;
+  height: auto;
+  object-fit: contain;
+}
+.landing-splash-name {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.landing-splash-tagline {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: .01em;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landing-splash-logo { animation: landing-pop-in .65s cubic-bezier(.34, 1.56, .64, 1) both; }
+  .landing-splash-name { animation: landing-fade-up .5s ease both .18s; }
+  .landing-splash-tagline { animation: landing-fade-up .5s ease both .3s; }
+
+  /* Sliding open: the splash shrinks/fades away while the main panel's
+     content reveals in a staggered sequence, so the transition reads as
+     one continuous move rather than a static block sliding over. */
+  .landing-track.is-open .landing-splash {
+    animation: landing-splash-out .4s ease both;
+  }
+  .landing-track.is-open .landing-main .landing-brand,
+  .landing-track.is-open .landing-main .landing-hero,
+  .landing-track.is-open .landing-main .landing-features li,
+  .landing-track.is-open .landing-main .landing-cta {
+    animation: landing-fade-up .5s ease both;
+  }
+  .landing-track.is-open .landing-main .landing-brand { animation-delay: .1s; }
+  .landing-track.is-open .landing-main .landing-hero { animation-delay: .18s; }
+  .landing-track.is-open .landing-main .landing-features li:nth-child(1) { animation-delay: .26s; }
+  .landing-track.is-open .landing-main .landing-features li:nth-child(2) { animation-delay: .32s; }
+  .landing-track.is-open .landing-main .landing-features li:nth-child(3) { animation-delay: .38s; }
+  .landing-track.is-open .landing-main .landing-cta { animation-delay: .46s; }
+}
+
+@keyframes landing-pop-in {
+  from { opacity: 0; transform: scale(.7); }
+}
+@keyframes landing-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+}
+@keyframes landing-splash-out {
+  to { opacity: 0; transform: scale(.92); }
+}
 
 .landing-brand {
   display: flex;
@@ -1223,10 +1323,9 @@ main {
   flex: none;
 }
 .landing-brand-mark {
-  width: 32px;
+  width: auto;
   height: 32px;
-  border-radius: 9px;
-  object-fit: cover;
+  object-fit: contain;
 }
 .landing-brand-name {
   font-size: 16px;
