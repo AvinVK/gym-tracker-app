@@ -1,2 +1,3 @@
 Flask>=3.0
 model2vec>=0.9
+Pillow>=10.0

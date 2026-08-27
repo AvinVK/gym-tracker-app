@@ -529,7 +529,13 @@ body {
   padding: 12px 16px 22px;
   background: linear-gradient(180deg, rgba(0,0,0,0), #000 40%);
 }
+.log-footer-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
 .log-footer-btn {
+  flex: 1;
   width: 100%;
   position: relative;
   overflow: hidden;
@@ -544,6 +550,18 @@ body {
   font-family: inherit;
   box-shadow: 0 14px 30px -12px rgba(247, 184, 200, .5);
 }
+.log-footer-reset-btn {
+  flex: none;
+  width: 54px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  border-radius: 16px;
+  font-size: 20px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.log-footer-reset-btn[hidden] { display: none; }
 .log-footer-btn-fill {
   position: absolute;
   left: 0; top: 0; bottom: 0;

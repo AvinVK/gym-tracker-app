@@ -6,6 +6,7 @@ import time
 import uuid
 
 from flask import Blueprint, jsonify, request, session
+from PIL import Image, ImageOps
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
@@ -18,6 +19,12 @@ bp = Blueprint("auth", __name__)
 
 PIN_LENGTH = 4
 ALLOWED_AVATAR_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+# Uploads come straight from a phone camera/gallery with no client-side
+# resizing - a raw photo can be several MB. Re-encoding down to a small,
+# uniform JPEG here is what keeps 1000 users' avatars from costing gigabytes
+# of disk instead of tens of megabytes.
+AVATAR_MAX_DIMENSION = 256
+AVATAR_JPEG_QUALITY = 80
 OTP_LENGTH = 6
 OTP_TTL_SECONDS = 10 * 60
 OTP_RESEND_COOLDOWN_SECONDS = 30
@@ -272,10 +279,29 @@ def upload_avatar(user_id):
     ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
     if ext not in ALLOWED_AVATAR_EXTENSIONS:
         return jsonify({"error": "unsupported file type"}), 400
-    filename = secure_filename(f"user{user_id}_{uuid.uuid4().hex}.{ext}")
-    file.save(os.path.join(UPLOAD_DIR, filename))
-    avatar_url = f"/uploads/{filename}"
+
+    try:
+        image = ImageOps.exif_transpose(Image.open(file.stream))  # undo phone camera rotation
+        image = image.convert("RGB")
+        image.thumbnail((AVATAR_MAX_DIMENSION, AVATAR_MAX_DIMENSION))
+    except Exception:
+        return jsonify({"error": "couldn't read that image"}), 400
+
     db = get_db()
+    old_avatar = db.execute("SELECT avatar FROM users WHERE id = ?", (user_id,)).fetchone()["avatar"]
+
+    # Always re-encoded to JPEG regardless of upload format, so size stays
+    # predictable and every avatar on disk is small and uniform.
+    filename = secure_filename(f"user{user_id}_{uuid.uuid4().hex}.jpg")
+    image.save(os.path.join(UPLOAD_DIR, filename), "JPEG", quality=AVATAR_JPEG_QUALITY, optimize=True)
+    avatar_url = f"/uploads/{filename}"
     db.execute("UPDATE users SET avatar = ? WHERE id = ?", (avatar_url, user_id))
     db.commit()
+
+    if old_avatar and old_avatar.startswith("/uploads/"):
+        try:
+            os.remove(os.path.join(UPLOAD_DIR, os.path.basename(old_avatar)))
+        except OSError:
+            pass  # already gone - not worth failing the request over
+
     return jsonify({"avatar": avatar_url})
