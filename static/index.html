@@ -71,6 +71,21 @@
   </div>
 </div>
 
+<div id="auth-otp-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>Check your inbox 📬</h2>
+    <p class="modal-sub">We sent a 6-digit code to <span id="auth-otp-email"></span>.</p>
+    <form id="form-auth-otp" class="grid-form">
+      <label class="full">Code
+        <input type="text" name="code" placeholder="123456" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code">
+      </label>
+      <button type="submit" class="primary">Verify</button>
+      <button type="button" class="secondary" id="auth-otp-resend">Resend code</button>
+      <button type="button" class="secondary" id="auth-otp-back">&larr; Back</button>
+    </form>
+  </div>
+</div>
+
 <div id="auth-signup-modal" class="modal-overlay" hidden>
   <div class="modal-card">
     <h2>Oh, you're new here! 🎉</h2>

@@ -1,5 +1,8 @@
 """Auth API: signup/login/logout, profile updates, period logging, avatar upload."""
 import os
+import random
+import re
+import time
 import uuid
 
 from flask import Blueprint, jsonify, request, session
@@ -8,12 +11,17 @@ from werkzeug.utils import secure_filename
 
 from db import get_db
 from helpers import get_current_user_id, is_future_date, require_login
+from mail import send_otp_email
 from paths import UPLOAD_DIR
 
 bp = Blueprint("auth", __name__)
 
 PIN_LENGTH = 4
 ALLOWED_AVATAR_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+OTP_LENGTH = 6
+OTP_TTL_SECONDS = 10 * 60
+OTP_RESEND_COOLDOWN_SECONDS = 30
+OTP_MAX_ATTEMPTS = 5
 # 1, not higher: the Your Cycle calendar lets a period be logged as a single
 # tapped day (Log Period -> tap one day -> Save), which is a legitimate,
 # easily-produced selection, not an input error.
@@ -37,10 +45,14 @@ def _capitalize_name(name):
     return name[:1].upper() + name[1:] if name else name
 
 
+EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+
+
 def _valid_email(email):
     # Deliberately loose — this isn't verified by a real email round-trip,
-    # just enough to catch obvious typos before it becomes the login key.
-    return bool(email) and "@" in email and "." in email.split("@")[-1]
+    # just enough to catch obvious typos (e.g. "com1" with no "@", or a
+    # domain with no "." like "user@com1") before it becomes the login key.
+    return bool(email) and bool(EMAIL_RE.match(email))
 
 
 def _user_public_dict(row):
@@ -79,6 +91,67 @@ def check_email():
     return jsonify({"exists": False})
 
 
+def _generate_otp():
+    return "".join(random.choices("0123456789", k=OTP_LENGTH))
+
+
+@bp.route("/api/send-otp", methods=["POST"])
+def send_otp():
+    """Emails a 6-digit code to prove the signup step 2 owns this address,
+    before it becomes their login key. Session-stored (not DB-stored): it's
+    only ever needed for the lifetime of this one signup attempt."""
+    data = request.get_json(force=True)
+    email = _normalize_email(data.get("email"))
+    if not _valid_email(email):
+        return jsonify({"error": "enter a valid email"}), 400
+
+    db = get_db()
+    if db.execute("SELECT 1 FROM users WHERE email = ?", (email,)).fetchone():
+        return jsonify({"error": "that email is already registered"}), 409
+
+    now = time.time()
+    existing = session.get("otp")
+    if existing and existing["email"] == email and now - existing["sent_at"] < OTP_RESEND_COOLDOWN_SECONDS:
+        wait = int(OTP_RESEND_COOLDOWN_SECONDS - (now - existing["sent_at"]))
+        return jsonify({"error": f"wait {wait}s before requesting another code"}), 429
+
+    code = _generate_otp()
+    try:
+        send_otp_email(email, code)
+    except Exception:
+        return jsonify({"error": "couldn't send the verification email - try again"}), 502
+
+    session["otp"] = {"email": email, "code": code, "sent_at": now, "attempts": 0}
+    session.pop("otp_verified_email", None)
+    return jsonify({"ok": True})
+
+
+@bp.route("/api/verify-otp", methods=["POST"])
+def verify_otp():
+    data = request.get_json(force=True)
+    email = _normalize_email(data.get("email"))
+    code = (data.get("code") or "").strip()
+
+    otp = session.get("otp")
+    if not otp or otp["email"] != email:
+        return jsonify({"error": "request a new code"}), 400
+    if time.time() - otp["sent_at"] > OTP_TTL_SECONDS:
+        session.pop("otp", None)
+        return jsonify({"error": "code expired - request a new one"}), 400
+    if otp["attempts"] >= OTP_MAX_ATTEMPTS:
+        session.pop("otp", None)
+        return jsonify({"error": "too many attempts - request a new code"}), 400
+
+    if code != otp["code"]:
+        otp["attempts"] += 1
+        session["otp"] = otp
+        return jsonify({"error": "incorrect code"}), 401
+
+    session.pop("otp", None)
+    session["otp_verified_email"] = email
+    return jsonify({"ok": True})
+
+
 @bp.route("/api/signup", methods=["POST"])
 def signup():
     data = request.get_json(force=True)
@@ -89,6 +162,8 @@ def signup():
         return jsonify({"error": "name is required"}), 400
     if not _valid_email(email):
         return jsonify({"error": "enter a valid email"}), 400
+    if session.get("otp_verified_email") != email:
+        return jsonify({"error": "verify your email first"}), 403
     if not _valid_pin(pin):
         return jsonify({"error": f"PIN must be exactly {PIN_LENGTH} digits"}), 400
     if data.get("last_period_date") and is_future_date(data["last_period_date"]):

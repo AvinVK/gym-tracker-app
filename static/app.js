@@ -285,6 +285,7 @@ function renderTodayStreakCard(animateFromZero) {
 function hideAuthModalsOnly() {
   document.getElementById("auth-name-modal").hidden = true;
   document.getElementById("auth-email-modal").hidden = true;
+  document.getElementById("auth-otp-modal").hidden = true;
   document.getElementById("auth-signup-modal").hidden = true;
   document.getElementById("auth-login-modal").hidden = true;
 }
@@ -379,9 +380,23 @@ document.getElementById("auth-email-back").addEventListener("click", () => {
   hideAuthModalsOnly();
 });
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function goToSignupDetails() {
+  const signupForm = document.getElementById("form-auth-signup");
+  signupForm.reset();
+  setDateFieldValue(signupForm.querySelector('[name="last_period_date"]').closest(".date-field"), "");
+  document.getElementById("signup-period-date-label").hidden = true;
+  showAuthModal("auth-signup-modal");
+}
+
 document.getElementById("form-auth-email").addEventListener("submit", async (e) => {
   e.preventDefault();
   const email = new FormData(e.target).get("email").trim();
+  if (!EMAIL_RE.test(email)) {
+    toast("Enter a valid email address");
+    return;
+  }
   try {
     const res = await api.post("/api/check-email", { email });
     authDraft.email = email;
@@ -390,15 +405,62 @@ document.getElementById("form-auth-email").addEventListener("submit", async (e) 
       document.getElementById("auth-login-name").textContent = res.name;
       showAuthModal("auth-login-modal");
     } else {
-      const signupForm = document.getElementById("form-auth-signup");
-      signupForm.reset();
-      setDateFieldValue(signupForm.querySelector('[name="last_period_date"]').closest(".date-field"), "");
-      document.getElementById("signup-period-date-label").hidden = true;
-      showAuthModal("auth-signup-modal");
+      await api.post("/api/send-otp", { email });
+      document.getElementById("form-auth-otp").reset();
+      document.getElementById("auth-otp-email").textContent = email;
+      showAuthModal("auth-otp-modal");
+      startOtpResendCooldown(30);
     }
   } catch (err) {
     toast(err.message);
   }
+});
+
+let otpResendCooldownTimer = null;
+
+function startOtpResendCooldown(seconds) {
+  const btn = document.getElementById("auth-otp-resend");
+  clearInterval(otpResendCooldownTimer);
+  let remaining = seconds;
+  btn.disabled = true;
+  btn.textContent = `Resend code (${remaining}s)`;
+  otpResendCooldownTimer = setInterval(() => {
+    remaining -= 1;
+    if (remaining <= 0) {
+      clearInterval(otpResendCooldownTimer);
+      btn.disabled = false;
+      btn.textContent = "Resend code";
+    } else {
+      btn.textContent = `Resend code (${remaining}s)`;
+    }
+  }, 1000);
+}
+
+document.getElementById("form-auth-otp").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const code = new FormData(e.target).get("code").trim();
+  try {
+    await api.post("/api/verify-otp", { email: authDraft.email, code });
+    clearInterval(otpResendCooldownTimer);
+    goToSignupDetails();
+  } catch (err) {
+    toast(err.message);
+  }
+});
+
+document.getElementById("auth-otp-resend").addEventListener("click", async () => {
+  try {
+    await api.post("/api/send-otp", { email: authDraft.email });
+    toast("Code resent");
+    startOtpResendCooldown(30);
+  } catch (err) {
+    toast(err.message);
+  }
+});
+
+document.getElementById("auth-otp-back").addEventListener("click", () => {
+  clearInterval(otpResendCooldownTimer);
+  showAuthModal("auth-email-modal");
 });
 
 document.getElementById("auth-signup-back").addEventListener("click", () => {
