@@ -1,0 +1,8 @@
+{
+  "appId": "com.avinvk.clockit",
+  "appName": "Clock It",
+  "webDir": "static",
+  "server": {
+    "url": "https://avin0406.pythonanywhere.com"
+  }
+}

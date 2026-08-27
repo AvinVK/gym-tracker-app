@@ -2756,40 +2756,69 @@ async function promptAddExercise() {
 const REST_DURATION = 90;
 let restRemaining = 0;
 let restInterval = null;
+let restPaused = false;
 
 function updateRestButtonUI() {
   const label = document.getElementById("log-footer-btn-label");
   const fill = document.getElementById("log-footer-btn-fill");
+  const resetBtn = document.getElementById("log-footer-reset-btn");
   if (restRemaining > 0) {
     const m = Math.floor(restRemaining / 60), s = restRemaining % 60;
-    label.textContent = `Rest ${m}:${String(s).padStart(2, "0")}`;
+    label.textContent = `${restPaused ? "Paused" : "Rest"} ${m}:${String(s).padStart(2, "0")}`;
     fill.style.width = `${((REST_DURATION - restRemaining) / REST_DURATION) * 100}%`;
+    resetBtn.hidden = false;
   } else {
     label.textContent = "Start rest";
     fill.style.width = "0%";
+    resetBtn.hidden = true;
   }
 }
 
+function tickRest() {
+  restRemaining--;
+  if (restRemaining <= 0) { stopRestTimer(); return; }
+  updateRestButtonUI();
+}
+
+// Full reset back to idle - also what resetWorkoutFlowUI() calls to tear
+// the timer down entirely (e.g. on logout, finishing a session).
 function stopRestTimer() {
   clearInterval(restInterval);
   restInterval = null;
   restRemaining = 0;
+  restPaused = false;
   updateRestButtonUI();
 }
 
 function startRestTimer() {
   clearInterval(restInterval);
   restRemaining = REST_DURATION;
+  restPaused = false;
   updateRestButtonUI();
-  restInterval = setInterval(() => {
-    restRemaining--;
-    if (restRemaining <= 0) { stopRestTimer(); return; }
-    updateRestButtonUI();
-  }, 1000);
+  restInterval = setInterval(tickRest, 1000);
+}
+
+function pauseRestTimer() {
+  clearInterval(restInterval);
+  restInterval = null;
+  restPaused = true;
+  updateRestButtonUI();
+}
+
+function resumeRestTimer() {
+  restPaused = false;
+  updateRestButtonUI();
+  restInterval = setInterval(tickRest, 1000);
 }
 
 document.getElementById("log-footer-btn").addEventListener("click", () => {
-  startRestTimer();
+  if (restRemaining <= 0) startRestTimer();
+  else if (restPaused) resumeRestTimer();
+  else pauseRestTimer();
+});
+
+document.getElementById("log-footer-reset-btn").addEventListener("click", () => {
+  stopRestTimer();
 });
 
 document.getElementById("log-close-btn").addEventListener("click", () => switchTab("today"));

@@ -432,10 +432,13 @@
 
     </div>
     <div class="log-footer">
-      <button type="button" class="log-footer-btn" id="log-footer-btn">
-        <span class="log-footer-btn-fill" id="log-footer-btn-fill" aria-hidden="true"></span>
-        <span class="log-footer-btn-label" id="log-footer-btn-label">Start rest</span>
-      </button>
+      <div class="log-footer-row">
+        <button type="button" class="log-footer-btn" id="log-footer-btn">
+          <span class="log-footer-btn-fill" id="log-footer-btn-fill" aria-hidden="true"></span>
+          <span class="log-footer-btn-label" id="log-footer-btn-label">Start rest</span>
+        </button>
+        <button type="button" class="log-footer-reset-btn" id="log-footer-reset-btn" hidden aria-label="Reset rest timer">&#8635;</button>
+      </div>
     </div>
   </section>
 
@@ -593,16 +596,11 @@
 
   <!-- ================= YOU (aka "Your Body") ================= -->
   <section id="maintab-you" class="main-tab-panel main-tab-panel-padded">
-    <div class="card">
-      <h2>Your Body</h2>
-    </div>
-
     <!-- ============ Strength by phase (2c, lives inside Your Body) ============ -->
     <p class="cycle-perf-section-label" id="cycle-perf-empty" hidden>Log a few sets to see your strength-by-phase chart here.</p>
     <div id="cycle-perf-content" hidden>
-      <p class="cycle-perf-section-label">Strength by phase</p>
-
       <div class="cycle-perf-chart-card">
+        <p class="cycle-perf-section-label">Strength by phase</p>
         <div class="cycle-perf-chart-header">
           <span class="cycle-perf-chart-title">
             Performance by Time
