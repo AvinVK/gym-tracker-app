@@ -279,12 +279,27 @@ function renderTodayStreakCard(animateFromZero) {
   }
 }
 
-function hideAllAuthModals() {
-  document.getElementById("landing-page").hidden = true;
+// Just the email/signup/login/name steps — leaves the landing page alone,
+// since those steps sit on top of it (it's their backdrop, not a screen
+// they replace).
+function hideAuthModalsOnly() {
   document.getElementById("auth-name-modal").hidden = true;
   document.getElementById("auth-email-modal").hidden = true;
   document.getElementById("auth-signup-modal").hidden = true;
   document.getElementById("auth-login-modal").hidden = true;
+}
+
+function hideAllAuthModals() {
+  document.getElementById("landing-page").hidden = true;
+  hideAuthModalsOnly();
+}
+
+// Moves between the email/signup/login/name steps. The landing page stays
+// visible underneath throughout — these modals are meant to appear over the
+// hero screen, not over whatever the logged-in app happens to be showing.
+function showAuthModal(id) {
+  hideAuthModalsOnly();
+  document.getElementById(id).hidden = false;
 }
 
 function showAuthStep(id) {
@@ -296,8 +311,8 @@ function prefersReducedMotion() {
   return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-// Re-shows the landing page with its entrance transition (used when backing
-// out of the email step, or landing back here after a logout).
+// Re-shows the landing page with its entrance transition (used after a
+// logout, when it had actually been hidden behind the logged-in app).
 function presentLandingPage() {
   showAuthStep("landing-page");
   const landingPage = document.getElementById("landing-page");
@@ -305,21 +320,6 @@ function presentLandingPage() {
   landingPage.classList.add("landing-page-entering");
   landingPage.addEventListener("animationend", () => {
     landingPage.classList.remove("landing-page-entering");
-  }, { once: true });
-}
-
-// Plays the landing page's exit transition before switching to nextStepId,
-// instead of the instant cut showAuthStep does everywhere else.
-function dismissLandingPage(nextStepId) {
-  const landingPage = document.getElementById("landing-page");
-  if (prefersReducedMotion()) {
-    showAuthStep(nextStepId);
-    return;
-  }
-  landingPage.classList.add("landing-page-leaving");
-  landingPage.addEventListener("animationend", () => {
-    landingPage.classList.remove("landing-page-leaving");
-    showAuthStep(nextStepId);
   }, { once: true });
 }
 
@@ -372,11 +372,11 @@ landingSplash.addEventListener("touchend", (e) => {
 });
 
 document.getElementById("landing-start-btn").addEventListener("click", () => {
-  dismissLandingPage("auth-email-modal");
+  showAuthModal("auth-email-modal");
 });
 
 document.getElementById("auth-email-back").addEventListener("click", () => {
-  presentLandingPage();
+  hideAuthModalsOnly();
 });
 
 document.getElementById("form-auth-email").addEventListener("submit", async (e) => {
@@ -388,13 +388,13 @@ document.getElementById("form-auth-email").addEventListener("submit", async (e) 
     if (res.exists) {
       document.getElementById("form-auth-login").reset();
       document.getElementById("auth-login-name").textContent = res.name;
-      showAuthStep("auth-login-modal");
+      showAuthModal("auth-login-modal");
     } else {
       const signupForm = document.getElementById("form-auth-signup");
       signupForm.reset();
       setDateFieldValue(signupForm.querySelector('[name="last_period_date"]').closest(".date-field"), "");
       document.getElementById("signup-period-date-label").hidden = true;
-      showAuthStep("auth-signup-modal");
+      showAuthModal("auth-signup-modal");
     }
   } catch (err) {
     toast(err.message);
@@ -402,7 +402,7 @@ document.getElementById("form-auth-email").addEventListener("submit", async (e) 
 });
 
 document.getElementById("auth-signup-back").addEventListener("click", () => {
-  showAuthStep("auth-email-modal");
+  showAuthModal("auth-email-modal");
 });
 
 // Last Period Date is only required when the "track my cycle" checkbox is
@@ -430,11 +430,11 @@ document.getElementById("form-auth-signup").addEventListener("submit", (e) => {
   }
   authDraft.signup = Object.fromEntries(new FormData(e.target).entries());
   document.getElementById("form-auth-name").reset();
-  showAuthStep("auth-name-modal");
+  showAuthModal("auth-name-modal");
 });
 
 document.getElementById("auth-name-back").addEventListener("click", () => {
-  showAuthStep("auth-signup-modal");
+  showAuthModal("auth-signup-modal");
 });
 
 document.getElementById("form-auth-name").addEventListener("submit", async (e) => {
@@ -452,7 +452,7 @@ document.getElementById("form-auth-name").addEventListener("submit", async (e) =
 });
 
 document.getElementById("auth-login-back").addEventListener("click", () => {
-  showAuthStep("auth-email-modal");
+  showAuthModal("auth-email-modal");
 });
 
 document.getElementById("form-auth-login").addEventListener("submit", async (e) => {

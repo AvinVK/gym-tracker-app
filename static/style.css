@@ -1220,7 +1220,10 @@ main {
 .landing-page {
   position: fixed;
   inset: 0;
-  z-index: 1001;
+  /* Below .modal-overlay (1000) on purpose: the auth-flow modals (email,
+     signup, login, name) sit on top of this as their backdrop instead of
+     replacing it, so it stays the last thing visible behind them. */
+  z-index: 999;
   background: var(--bg);
   overflow: hidden;
 }
