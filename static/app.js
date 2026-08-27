@@ -292,6 +292,37 @@ function showAuthStep(id) {
   document.getElementById(id).hidden = false;
 }
 
+function prefersReducedMotion() {
+  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+// Re-shows the landing page with its entrance transition (used when backing
+// out of the email step, or landing back here after a logout).
+function presentLandingPage() {
+  showAuthStep("landing-page");
+  const landingPage = document.getElementById("landing-page");
+  if (prefersReducedMotion()) return;
+  landingPage.classList.add("landing-page-entering");
+  landingPage.addEventListener("animationend", () => {
+    landingPage.classList.remove("landing-page-entering");
+  }, { once: true });
+}
+
+// Plays the landing page's exit transition before switching to nextStepId,
+// instead of the instant cut showAuthStep does everywhere else.
+function dismissLandingPage(nextStepId) {
+  const landingPage = document.getElementById("landing-page");
+  if (prefersReducedMotion()) {
+    showAuthStep(nextStepId);
+    return;
+  }
+  landingPage.classList.add("landing-page-leaving");
+  landingPage.addEventListener("animationend", () => {
+    landingPage.classList.remove("landing-page-leaving");
+    showAuthStep(nextStepId);
+  }, { once: true });
+}
+
 async function onLoggedIn(user, { isNewSignup = false } = {}) {
   // Block autosave while we tear down whatever was on screen before (e.g. a
   // previous session on a shared device): it's a reset, not something that
@@ -320,12 +351,32 @@ async function onLoggedIn(user, { isNewSignup = false } = {}) {
   switchTab("today");
 }
 
+const landingTrack = document.getElementById("landing-track");
+const landingSplash = document.getElementById("landing-splash");
+
+function openLandingMain() {
+  landingTrack.classList.add("is-open");
+}
+
+landingSplash.addEventListener("click", openLandingMain);
+
+let landingTouchStartX = null;
+landingSplash.addEventListener("touchstart", (e) => {
+  landingTouchStartX = e.touches[0].clientX;
+}, { passive: true });
+landingSplash.addEventListener("touchend", (e) => {
+  if (landingTouchStartX === null) return;
+  const dx = e.changedTouches[0].clientX - landingTouchStartX;
+  landingTouchStartX = null;
+  if (Math.abs(dx) > 20) openLandingMain();
+});
+
 document.getElementById("landing-start-btn").addEventListener("click", () => {
-  showAuthStep("auth-email-modal");
+  dismissLandingPage("auth-email-modal");
 });
 
 document.getElementById("auth-email-back").addEventListener("click", () => {
-  showAuthStep("landing-page");
+  presentLandingPage();
 });
 
 document.getElementById("form-auth-email").addEventListener("submit", async (e) => {
@@ -423,7 +474,7 @@ async function handleLogout() {
   authDraft = { email: "", signup: {} };
   restoringDraft = true;
   resetWorkoutFlowUI();
-  showAuthStep("landing-page");
+  presentLandingPage();
 }
 
 async function checkAuth() {

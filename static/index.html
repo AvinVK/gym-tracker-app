@@ -13,38 +13,48 @@
 </head>
 <body>
 <div id="landing-page" class="landing-page">
-  <div class="landing-brand">
-    <img src="logo-mark.png" alt="" class="landing-brand-mark">
-    <span class="landing-brand-name">Clock It</span>
+  <div class="landing-track" id="landing-track">
+    <div class="landing-panel landing-splash" id="landing-splash">
+      <img src="logo-mark.png" alt="" class="landing-splash-logo">
+      <span class="landing-splash-name">Clock It</span>
+      <p class="landing-splash-tagline">Log it. Track it. Crush it.</p>
+    </div>
+
+    <div class="landing-panel landing-main">
+      <div class="landing-brand">
+        <img src="logo-mark.png" alt="" class="landing-brand-mark">
+        <span class="landing-brand-name">Clock It</span>
+      </div>
+
+      <div class="landing-hero">
+        <h1 class="landing-headline">Train with<br>your cycle,<br>not against it.</h1>
+        <p class="landing-sub">Clock It tracks your workouts alongside your cycle, so you can see exactly where you're strongest &ndash; and plan around it.</p>
+      </div>
+
+      <ul class="landing-features">
+        <li>
+          <span class="landing-feature-icon landing-feature-icon-pulse">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l2-7 4 14 3-9 2 4h5"/></svg>
+          </span>
+          <span>Performance charted against your cycle phase</span>
+        </li>
+        <li>
+          <span class="landing-feature-icon landing-feature-icon-check">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+          </span>
+          <span>Log a full session in one screen, no fuss</span>
+        </li>
+        <li>
+          <span class="landing-feature-icon landing-feature-icon-clock">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          </span>
+          <span>PRs, streaks and phase trends, always on your Today screen</span>
+        </li>
+      </ul>
+
+      <button type="button" id="landing-start-btn" class="primary landing-cta">Let's clock it!</button>
+    </div>
   </div>
-
-  <div class="landing-hero">
-    <h1 class="landing-headline">Train with<br>your cycle,<br>not against it.</h1>
-    <p class="landing-sub">Clock It tracks your workouts alongside your cycle, so you can see exactly where you're strongest &ndash; and plan around it.</p>
-  </div>
-
-  <ul class="landing-features">
-    <li>
-      <span class="landing-feature-icon landing-feature-icon-pulse">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l2-7 4 14 3-9 2 4h5"/></svg>
-      </span>
-      <span>Performance charted against your cycle phase</span>
-    </li>
-    <li>
-      <span class="landing-feature-icon landing-feature-icon-check">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>
-      </span>
-      <span>Log a full session in one screen, no fuss</span>
-    </li>
-    <li>
-      <span class="landing-feature-icon landing-feature-icon-clock">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-      </span>
-      <span>PRs, streaks and phase trends, always on your Today screen</span>
-    </li>
-  </ul>
-
-  <button type="button" id="landing-start-btn" class="primary landing-cta">Let's clock it!</button>
 </div>
 
 <div id="auth-email-modal" class="modal-overlay" hidden>
