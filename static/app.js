@@ -4407,29 +4407,46 @@ function computeEnergyByMeal(workoutLog) {
     const meal = (w.pre_workout_meal || "").trim();
     if (!meal || w.energy_level == null) return;
     const key = meal.toLowerCase();
-    if (!groups[key]) groups[key] = { label: meal, sum: 0, count: 0 };
+    if (!groups[key]) groups[key] = { key, label: meal, sum: 0, count: 0 };
     groups[key].sum += Number(w.energy_level);
     groups[key].count += 1;
   });
   return Object.values(groups)
-    .map(g => ({ label: g.label, value: g.sum / g.count, count: g.count }))
+    .map(g => ({ key: g.key, label: g.label, value: g.sum / g.count, count: g.count }))
     .sort((a, b) => b.value - a.value);
 }
+
+// Full list is usually longer than is useful to show at once - defaults to
+// just the top 4 (highest average energy), with "Choose foods to compare"
+// letting her pick a specific subset instead (e.g. only the foods she's
+// actually deciding between, ignoring the rest). null means "no custom
+// pick yet, show the default top 4"; picking zero foods in the modal resets
+// back to null rather than rendering an empty list.
+let mealCompareSelection = null;
+let lastEnergyByMealItems = [];
 
 // Reuses the "Where your PRs happen" row styling (.prphase-*) - a labeled
 // horizontal bar per category is the same right form here (compare a value
 // across a handful of foods), just on a fixed 1-10 scale instead of
 // relative to the biggest bar.
 function renderEnergyByMealList(items) {
+  lastEnergyByMealItems = items;
   const contentEl = document.getElementById("cycle-energy-meal-content");
   const emptyEl = document.getElementById("cycle-energy-meal-empty");
+  const compareBtn = document.getElementById("cycle-meal-compare-btn");
   if (!items.length) {
     contentEl.innerHTML = "";
     emptyEl.hidden = false;
+    compareBtn.hidden = true;
     return;
   }
   emptyEl.hidden = true;
-  contentEl.innerHTML = items.map(it => {
+  compareBtn.hidden = items.length <= 4 && !mealCompareSelection;
+
+  const visible = mealCompareSelection
+    ? items.filter(it => mealCompareSelection.has(it.key))
+    : items.slice(0, 4);
+  contentEl.innerHTML = visible.map(it => {
     const pct = Math.max((it.value / 10) * 100, 4);
     return `
       <div class="prphase-row">
@@ -4445,6 +4462,34 @@ function renderEnergyByMealList(items) {
   }).join("");
 }
 initTogglePopover(document.getElementById("cycle-meal-info-btn"), document.getElementById("cycle-meal-info-popover"));
+
+// ---------------- Choose foods to compare (Energy by Meal) ----------------
+const mealCompareModal = document.getElementById("meal-compare-modal");
+document.getElementById("cycle-meal-compare-btn").addEventListener("click", () => {
+  // Pre-checks whatever's currently shown - the top 4 if no custom pick
+  // yet, otherwise the existing selection - so opening the picker starts
+  // from what she's already looking at, not a blank slate.
+  const preChecked = mealCompareSelection || new Set(lastEnergyByMealItems.slice(0, 4).map(it => it.key));
+  document.getElementById("meal-compare-list").innerHTML = lastEnergyByMealItems.map(it => `
+    <label class="meal-compare-item">
+      <input type="checkbox" value="${escapeHtml(it.key)}" ${preChecked.has(it.key) ? "checked" : ""}>
+      <span class="meal-compare-item-name">${escapeHtml(it.label)}</span>
+      <span class="meal-compare-item-value">${it.value.toFixed(1)}/10</span>
+    </label>`).join("");
+  mealCompareModal.hidden = false;
+});
+mealCompareModal.addEventListener("click", (e) => { if (e.target === mealCompareModal) mealCompareModal.hidden = true; });
+document.getElementById("meal-compare-reset").addEventListener("click", () => {
+  mealCompareSelection = null;
+  renderEnergyByMealList(lastEnergyByMealItems);
+  mealCompareModal.hidden = true;
+});
+document.getElementById("meal-compare-done").addEventListener("click", () => {
+  const checked = [...document.querySelectorAll("#meal-compare-list input:checked")].map(el => el.value);
+  mealCompareSelection = checked.length ? new Set(checked) : null;
+  renderEnergyByMealList(lastEnergyByMealItems);
+  mealCompareModal.hidden = true;
+});
 
 async function chooseCyclePerfExercise() {
   const history = await getExerciseHistory();

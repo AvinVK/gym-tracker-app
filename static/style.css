@@ -1317,6 +1317,30 @@ main {
   font-size: 12px;
   color: var(--muted);
 }
+
+.cycle-meal-compare-btn { margin: 10px 0 0; }
+.meal-compare-list {
+  max-height: 50vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 16px;
+}
+.meal-compare-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.meal-compare-item:last-child { border-bottom: none; }
+.meal-compare-item input { flex: none; width: 18px; height: 18px; accent-color: var(--accent-purple); }
+.meal-compare-item-name { flex: 1; min-width: 0; }
+.meal-compare-item-value { flex: none; font-size: 12px; font-weight: 700; color: var(--muted); }
 /* Each PR its own row instead of one comma-joined paragraph (see
    renderPRPhaseBreakdown) - a phase with a lot of PRs stays scannable
    instead of wrapping into a wall of text, and it's tucked behind

@@ -219,6 +219,18 @@
   </div>
 </div>
 
+<div id="meal-compare-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>Choose foods to compare</h2>
+    <p class="modal-sub">Pick which foods show in the Energy by Meal list, instead of just the top 4.</p>
+    <div class="meal-compare-list" id="meal-compare-list"></div>
+    <div class="confirm-actions">
+      <button type="button" class="secondary" id="meal-compare-reset">Reset to top 4</button>
+      <button type="button" class="primary" id="meal-compare-done">Done</button>
+    </div>
+  </div>
+</div>
+
 <div id="date-picker-modal" class="modal-overlay" hidden>
   <div class="modal-card date-picker-card">
     <div class="date-picker-header">
@@ -666,6 +678,7 @@
           </div>
           <div id="cycle-energy-meal-content"></div>
           <p class="cycle-energy-empty" id="cycle-energy-meal-empty" hidden>Log what you ate along with your energy level to see this here.</p>
+          <button type="button" class="edit-link-btn cycle-meal-compare-btn" id="cycle-meal-compare-btn" hidden>Choose foods to compare</button>
         </div>
       </div>
 
