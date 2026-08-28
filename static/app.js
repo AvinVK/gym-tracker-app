@@ -3949,23 +3949,25 @@ const CYCLE_PERF_PAD = { left: 34, right: 20, top: 28, bottom: 28 };
 
 let cyclePerfExercise = null;
 
-// Which of the three views sharing this card is showing - "Performance by
-// Time" (per-exercise), "Energy by Time" (daily average energy), or
-// "Energy by Meal" (average energy grouped by what was eaten).
-const CYCLE_PERF_VIEWS = ["performance", "energy", "meal"];
-let cyclePerfActiveView = "performance";
-function setCyclePerfView(view) {
-  cyclePerfActiveView = view;
-  CYCLE_PERF_VIEWS.forEach(v => {
-    const btn = document.getElementById(`cycle-perf-subtab-${v}`);
-    btn.classList.toggle("active", v === view);
-    btn.setAttribute("aria-selected", String(v === view));
-    document.getElementById(`cycle-perf-view-${v}`).hidden = v !== view;
+// Shared by both subtab switchers on this tab - "Time based analysis"
+// (Performance by Time / Energy by Time) and "Phase based analysis" (Where
+// your PRs happen / Energy by Meal). Each button/view pair is found by id
+// as `${prefix}-subtab-${key}` / `${prefix}-view-${key}`.
+function initSubtabSwitcher(prefix, keys) {
+  function setView(key) {
+    keys.forEach(k => {
+      const btn = document.getElementById(`${prefix}-subtab-${k}`);
+      btn.classList.toggle("active", k === key);
+      btn.setAttribute("aria-selected", String(k === key));
+      document.getElementById(`${prefix}-view-${k}`).hidden = k !== key;
+    });
+  }
+  keys.forEach(k => {
+    document.getElementById(`${prefix}-subtab-${k}`).addEventListener("click", () => setView(k));
   });
 }
-CYCLE_PERF_VIEWS.forEach(v => {
-  document.getElementById(`cycle-perf-subtab-${v}`).addEventListener("click", () => setCyclePerfView(v));
-});
+initSubtabSwitcher("cycle-perf", ["performance", "energy"]);
+initSubtabSwitcher("cycle-phase", ["prs", "meal"]);
 
 function formatPerfDate(dateStr) {
   return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });

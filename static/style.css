@@ -1052,7 +1052,8 @@ main {
    a card, that card's 18px padding already provides the inset, so the extra
    4px here just double-counted and pushed "Strength by phase" in further
    than every other card's title (e.g. "Your Cycle"). */
-.cycle-perf-chart-card > .cycle-perf-section-label { padding: 0; }
+.cycle-perf-chart-card > .cycle-perf-section-label,
+.cycle-perf-prphase-card > .cycle-perf-section-label { padding: 0; }
 .cycle-perf-chart-card, .cycle-perf-prphase-card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -1069,14 +1070,6 @@ main {
    on - the old chart had a dedicated .perf-chart-wrap for this; here the
    svg+tooltip sit directly in the card, so the card itself is the anchor. */
 .cycle-perf-chart-card { position: relative; }
-.cycle-perf-prphase-label {
-  margin: 0 0 14px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--muted-2);
-}
 .cycle-perf-subtabs {
   display: flex;
   border: 1px solid var(--border);
