@@ -744,11 +744,39 @@ main {
   font-size: 10.5px;
   color: var(--muted);
 }
-.cycle-estimate-note {
-  margin: 14px 0 0;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-  font-size: 11.5px;
+.cycle-title-wrap { position: relative; display: flex; align-items: center; gap: 8px; }
+.cycle-title-info-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface-3);
+  color: var(--muted-2);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.cycle-title-info-btn:hover, .cycle-title-info-btn[aria-expanded="true"] { background: var(--surface-2); color: var(--ink); }
+.cycle-estimate-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 3;
+  width: 220px;
+  max-width: 70vw;
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+  font-size: 12px;
+  line-height: 1.5;
   color: var(--muted);
 }
 .cycle-power-stat {
@@ -1013,13 +1041,23 @@ main {
   background: linear-gradient(180deg, var(--accent), var(--accent-2));
   display: inline-block;
 }
+/* The label's own 4px side padding is only needed when it floats directly
+   in the section with no card of its own (the empty-state message) - inside
+   a card, that card's 18px padding already provides the inset, so the extra
+   4px here just double-counted and pushed "Strength by phase" in further
+   than every other card's title (e.g. "Your Cycle"). */
+.cycle-perf-chart-card > .cycle-perf-section-label { padding: 0; }
 .cycle-perf-chart-card, .cycle-perf-prphase-card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 18px;
-  margin-top: 14px;
 }
+/* Only the cards *after* the first one need top spacing - the chart card is
+   always first in #cycle-perf-content, so giving it the same margin-top as
+   its siblings left a stray extra gap between the tab's top padding and the
+   card that every other tab's first card (e.g. "Your Cycle") didn't have. */
+.cycle-perf-prphase-card { margin-top: 14px; }
 /* Anchors the absolutely-positioned #cycle-perf-tooltip (see .perf-tooltip)
    to this card instead of whatever positioned ancestor it'd otherwise land
    on - the old chart had a dedicated .perf-chart-wrap for this; here the
@@ -1032,6 +1070,31 @@ main {
   letter-spacing: .08em;
   text-transform: uppercase;
   color: var(--muted-2);
+}
+.cycle-perf-subtabs {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--surface-2);
+  margin-bottom: 14px;
+}
+.cycle-perf-subtab {
+  flex: 1;
+  padding: 8px 6px;
+  border: none;
+  background: none;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s ease, color .15s ease;
+}
+.cycle-perf-subtab:not(.active):hover { background: var(--surface-3); }
+.cycle-perf-subtab.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: var(--accent-ink);
 }
 .cycle-perf-chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .cycle-perf-chart-title {

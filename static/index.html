@@ -522,7 +522,11 @@
   <section id="maintab-cycle" class="main-tab-panel main-tab-panel-padded">
     <div class="card">
       <div class="card-title-row cycle-title-row">
-        <h2>Your Cycle</h2>
+        <div class="cycle-title-wrap">
+          <h2>Your Cycle</h2>
+          <button type="button" class="cycle-title-info-btn" id="cycle-estimate-info-btn" aria-expanded="false" aria-label="How cycle days are calculated" hidden>&#9432;</button>
+          <div class="cycle-estimate-popover" id="cycle-estimate-popover" hidden>Estimated from a standard 28-day cycle starting on your last period date.</div>
+        </div>
         <span class="cycle-cal-legend"><span class="cycle-cal-legend-dot" aria-hidden="true"></span>Estimated period</span>
       </div>
       <div class="cycle-calendar-banner" id="cycle-calendar-banner" hidden>
@@ -570,7 +574,6 @@
         </div>
       </div>
 
-      <p class="cycle-estimate-note" id="cycle-estimate-note" hidden>Estimated from a standard 28-day cycle starting on your last period date.</p>
       <div class="cycle-power-stat" id="cycle-power-stat" hidden>
         <span aria-hidden="true">💪</span>
         <span id="cycle-power-text">What a Diva! Went 0 days to the gym during periods.</span>
@@ -609,17 +612,37 @@
     <div id="cycle-perf-content" hidden>
       <div class="cycle-perf-chart-card">
         <p class="cycle-perf-section-label">Strength by phase</p>
-        <div class="cycle-perf-chart-header">
-          <span class="cycle-perf-chart-title">
-            Performance by Time
-            <button type="button" class="cycle-perf-info-btn" id="cycle-perf-info-btn" aria-expanded="false" aria-label="About this chart"><span aria-hidden="true">i</span></button>
-            <div class="cycle-perf-info-popover" id="cycle-perf-info-popover" hidden>Every logged best set for this exercise, plotted over time - colored by cycle phase. Line and shading show a phase change; dashed rings mark an edited entry.</div>
-          </span>
-          <button type="button" class="cycle-perf-change-btn" id="cycle-perf-change-btn"><span id="cycle-perf-exercise-name"></span> &#9662;</button>
+
+        <div class="cycle-perf-subtabs" role="tablist">
+          <button type="button" class="cycle-perf-subtab active" id="cycle-perf-subtab-performance" data-perf-view="performance" role="tab" aria-selected="true">Performance by Time</button>
+          <button type="button" class="cycle-perf-subtab" id="cycle-perf-subtab-energy" data-perf-view="energy" role="tab" aria-selected="false">Energy by Time</button>
         </div>
-        <svg id="cycle-perf-chart" class="perf-chart" viewBox="0 0 340 200" preserveAspectRatio="none"></svg>
-        <div class="perf-tooltip" id="cycle-perf-tooltip" hidden></div>
-        <div class="phase-legend" id="cycle-perf-phase-legend" hidden></div>
+
+        <div id="cycle-perf-view-performance">
+          <div class="cycle-perf-chart-header">
+            <span class="cycle-perf-chart-title">
+              <button type="button" class="cycle-perf-info-btn" id="cycle-perf-info-btn" aria-expanded="false" aria-label="About this chart"><span aria-hidden="true">i</span></button>
+              <div class="cycle-perf-info-popover" id="cycle-perf-info-popover" hidden>Every logged best set for this exercise, plotted over time - colored by cycle phase. Line and shading show a phase change; dashed rings mark an edited entry.</div>
+            </span>
+            <button type="button" class="cycle-perf-change-btn" id="cycle-perf-change-btn"><span id="cycle-perf-exercise-name"></span> &#9662;</button>
+          </div>
+          <svg id="cycle-perf-chart" class="perf-chart" viewBox="0 0 340 200" preserveAspectRatio="none"></svg>
+          <div class="perf-tooltip" id="cycle-perf-tooltip" hidden></div>
+          <div class="phase-legend" id="cycle-perf-phase-legend" hidden></div>
+        </div>
+
+        <div id="cycle-perf-view-energy" hidden>
+          <div class="cycle-perf-chart-header">
+            <span class="cycle-perf-chart-title">
+              <button type="button" class="cycle-perf-info-btn" id="cycle-energy-info-btn" aria-expanded="false" aria-label="About this chart"><span aria-hidden="true">i</span></button>
+              <div class="cycle-perf-info-popover" id="cycle-energy-info-popover" hidden>Your average logged energy level per day, colored by cycle phase. Tap a point to see what you ate that day and how long before your workout.</div>
+            </span>
+          </div>
+          <svg id="cycle-energy-chart" class="perf-chart" viewBox="0 0 340 200" preserveAspectRatio="none"></svg>
+          <div class="perf-tooltip" id="cycle-energy-tooltip" hidden></div>
+          <div class="phase-legend" id="cycle-energy-phase-legend" hidden></div>
+          <p class="cycle-energy-empty" id="cycle-energy-empty" hidden>Log your energy level during a workout to see this chart.</p>
+        </div>
       </div>
 
       <div class="cycle-perf-prphase-card">

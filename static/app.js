@@ -821,17 +821,18 @@ async function renderCycleTab() {
 
   const currentBlock = document.getElementById("cycle-current-block");
   const nextBlock = document.getElementById("cycle-next-block");
-  const noteEl = document.getElementById("cycle-estimate-note");
+  const estimateInfoBtn = document.getElementById("cycle-estimate-info-btn");
   const cycleDay = cycleDayForDate(todayStr);
   if (cycleDay == null) {
     currentBlock.hidden = true;
     nextBlock.hidden = true;
-    noteEl.hidden = true;
+    estimateInfoBtn.hidden = true;
+    document.getElementById("cycle-estimate-popover").hidden = true;
     return;
   }
   currentBlock.hidden = false;
   nextBlock.hidden = false;
-  noteEl.hidden = false;
+  estimateInfoBtn.hidden = false;
 
   // Looked up against one phases array (not cyclePhaseForDay's own internal
   // call) so currentPhase is === one of this array's own objects - needed
@@ -3795,13 +3796,34 @@ function renderHormoneReferenceChart() {
     tooltip.hidden = true;
     crosshair.style.opacity = 0;
   }
-  hitRect.addEventListener("pointermove", (e) => {
+  // Both pointermove (mouse hover, or a touch that drags slightly) and
+  // pointerdown (a plain tap/click that never moves - which is all an
+  // emulator's mouse click sends, unlike a real touchscreen tap that
+  // usually wobbles a pixel or two) - a pointermove-only listener works on
+  // a real phone but silently never fires from a clean click in an
+  // emulator or on desktop.
+  const handlePointer = (e) => {
     const svgRect = svg.getBoundingClientRect();
     const scaleX = PERF_CHART_W / svgRect.width;
     const localX = (e.clientX - svgRect.left) * scaleX;
     const day = Math.min(28, Math.max(1, Math.round(1 + ((localX - plotLeft) / plotW) * 27)));
     showTooltip(day, e.clientX, e.clientY);
+  };
+  // Captures the pointer on press so a held touch keeps delivering events to
+  // this element for its whole duration, instead of a long-press timer
+  // (Android's hold-to-select/inspect gesture) stealing it partway through
+  // and silently cancelling - which read as "the tooltip appears then
+  // disappears" even though the finger never lifted. Explicit pointerup/
+  // pointercancel hide it exactly on release; pointerleave still covers
+  // plain mouse-hover-away with no button down (never captured, so it never
+  // reaches up/cancel).
+  hitRect.addEventListener("pointerdown", (e) => {
+    hitRect.setPointerCapture(e.pointerId);
+    handlePointer(e);
   });
+  hitRect.addEventListener("pointermove", handlePointer);
+  hitRect.addEventListener("pointerup", hideTooltip);
+  hitRect.addEventListener("pointercancel", hideTooltip);
   hitRect.addEventListener("pointerleave", hideTooltip);
 }
 renderHormoneReferenceChart();
@@ -3819,7 +3841,7 @@ function initTogglePopover(btn, panel) {
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
     const opening = panel.hidden;
-    document.querySelectorAll(".hormone-info-popover:not([hidden]), .hormone-sources-detail:not([hidden])").forEach(p => {
+    document.querySelectorAll(".hormone-info-popover:not([hidden]), .hormone-sources-detail:not([hidden]), .cycle-estimate-popover:not([hidden])").forEach(p => {
       if (p !== panel) { p.hidden = true; }
     });
     panel.hidden = !opening;
@@ -3832,6 +3854,7 @@ function initTogglePopover(btn, panel) {
 }
 initTogglePopover(document.getElementById("hormone-info-btn"), document.getElementById("hormone-info-popover"));
 initTogglePopover(document.getElementById("hormone-sources-toggle"), document.getElementById("hormone-sources-detail"));
+initTogglePopover(document.getElementById("cycle-estimate-info-btn"), document.getElementById("cycle-estimate-popover"));
 
 // One point per day: the best set logged that day for that exercise (top
 // set), not every individual set - so the line reads as "how the exercise
@@ -3920,6 +3943,23 @@ const CYCLE_PERF_CHART_H = 200;
 const CYCLE_PERF_PAD = { left: 34, right: 20, top: 28, bottom: 28 };
 
 let cyclePerfExercise = null;
+
+// Which of the two charts sharing this card is showing - "Performance by
+// Time" (per-exercise) or "Energy by Time" (daily average energy).
+let cyclePerfActiveView = "performance";
+function setCyclePerfView(view) {
+  cyclePerfActiveView = view;
+  const perfBtn = document.getElementById("cycle-perf-subtab-performance");
+  const energyBtn = document.getElementById("cycle-perf-subtab-energy");
+  perfBtn.classList.toggle("active", view === "performance");
+  perfBtn.setAttribute("aria-selected", String(view === "performance"));
+  energyBtn.classList.toggle("active", view === "energy");
+  energyBtn.setAttribute("aria-selected", String(view === "energy"));
+  document.getElementById("cycle-perf-view-performance").hidden = view !== "performance";
+  document.getElementById("cycle-perf-view-energy").hidden = view !== "energy";
+}
+document.getElementById("cycle-perf-subtab-performance").addEventListener("click", () => setCyclePerfView("performance"));
+document.getElementById("cycle-perf-subtab-energy").addEventListener("click", () => setCyclePerfView("energy"));
 
 function formatPerfDate(dateStr) {
   return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -4086,7 +4126,10 @@ function renderCyclePerfChart(series, exerciseName) {
     tooltip.hidden = true;
     crosshair.style.opacity = 0;
   }
-  hitRect.addEventListener("pointermove", (e) => {
+  // pointerdown too, not just pointermove - a plain tap/click that never
+  // moves (all an emulator's mouse click sends, or a real click on desktop)
+  // never fires pointermove on its own.
+  const handlePointer = (e) => {
     const svgRect = svg.getBoundingClientRect();
     const scaleX = CYCLE_PERF_CHART_W / svgRect.width;
     const localX = (e.clientX - svgRect.left) * scaleX;
@@ -4096,9 +4139,211 @@ function renderCyclePerfChart(series, exerciseName) {
       if (d < nearestDist) { nearestDist = d; nearest = i; }
     });
     showTooltip(nearest, e.clientX, e.clientY);
+  };
+  // Captures the pointer on press so a held touch keeps delivering events to
+  // this element for its whole duration, instead of a long-press timer
+  // (Android's hold-to-select/inspect gesture) stealing it partway through
+  // and silently cancelling - which read as "the tooltip appears then
+  // disappears" even though the finger never lifted. Explicit pointerup/
+  // pointercancel hide it exactly on release; pointerleave still covers
+  // plain mouse-hover-away with no button down (never captured, so it never
+  // reaches up/cancel).
+  hitRect.addEventListener("pointerdown", (e) => {
+    hitRect.setPointerCapture(e.pointerId);
+    handlePointer(e);
   });
+  hitRect.addEventListener("pointermove", handlePointer);
+  hitRect.addEventListener("pointerup", hideTooltip);
+  hitRect.addEventListener("pointercancel", hideTooltip);
   hitRect.addEventListener("pointerleave", hideTooltip);
 }
+
+// One point per calendar date that has a logged energy level - averaged in
+// the rare case a date has more than one workout_log row (e.g. logged via
+// the date picker twice). Meal/timing come from that date's most recent
+// entry (workoutLog is already date DESC, id DESC, so the first row seen
+// per date here is the latest) - context for the tap-to-see-detail
+// behavior, since a bare energy number alone doesn't explain a dip or spike.
+function computeEnergySeries(workoutLog) {
+  const byDate = {};
+  workoutLog.forEach(w => {
+    if (w.energy_level == null) return;
+    if (!byDate[w.date]) {
+      byDate[w.date] = { sum: 0, count: 0, meal: w.pre_workout_meal, hoursSinceMeal: w.hours_since_meal };
+    }
+    byDate[w.date].sum += Number(w.energy_level);
+    byDate[w.date].count += 1;
+  });
+  return Object.keys(byDate).sort().map(date => {
+    const d = byDate[date];
+    return { date, value: Math.round((d.sum / d.count) * 10) / 10, meal: d.meal, hoursSinceMeal: d.hoursSinceMeal };
+  });
+}
+
+// Same visual language as renderCyclePerfChart (per-segment phase coloring,
+// tap/hover crosshair + tooltip) but a fixed 1-10 axis (energy is always
+// that scale, unlike weight/duration) and no PR marker - "peaked" doesn't
+// mean anything for a subjective energy rating. The tooltip trades the
+// weight/duration + edited-set details for what she ate that day and how
+// long before the workout, which is the whole point of tapping a point here.
+function renderCycleEnergyChart(points) {
+  const svg = document.getElementById("cycle-energy-chart");
+  const tooltip = document.getElementById("cycle-energy-tooltip");
+  const legendEl = document.getElementById("cycle-energy-phase-legend");
+  const emptyEl = document.getElementById("cycle-energy-empty");
+  svg.innerHTML = "";
+  tooltip.hidden = true;
+
+  if (!points.length) {
+    emptyEl.hidden = false;
+    svg.hidden = true;
+    legendEl.hidden = true;
+    return;
+  }
+  emptyEl.hidden = true;
+  svg.hidden = false;
+
+  const plotLeft = CYCLE_PERF_PAD.left, plotRight = CYCLE_PERF_CHART_W - CYCLE_PERF_PAD.right;
+  const plotTop = CYCLE_PERF_PAD.top, plotBottom = CYCLE_PERF_CHART_H - CYCLE_PERF_PAD.bottom;
+  const plotW = plotRight - plotLeft, plotH = plotBottom - plotTop;
+
+  const yMin = 1, yMax = 10, step = 3;
+  const dates = points.map(p => new Date(p.date + "T00:00:00").getTime());
+  const minDate = dates[0], maxDate = dates[dates.length - 1];
+  const dateSpan = Math.max(maxDate - minDate, 1);
+
+  const xFor = i => points.length === 1 ? plotLeft + plotW / 2 : plotLeft + ((dates[i] - minDate) / dateSpan) * plotW;
+  const yFor = v => plotTop + plotH - ((v - yMin) / (yMax - yMin || 1)) * plotH;
+
+  const segColors = points.map(p => colorForDate(p.date));
+  const tracksCycle = points.some(p => cyclePhaseForDate(p.date));
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const x1 = xFor(i), x2 = xFor(i + 1);
+    const y1 = yFor(points[i].value), y2 = yFor(points[i + 1].value);
+    const d = `M${x1},${plotBottom} L${x1},${y1} L${x2},${y2} L${x2},${plotBottom} Z`;
+    svg.appendChild(svgEl("path", { d, fill: segColors[i], "fill-opacity": "0.28", stroke: "none" }));
+  }
+
+  for (let v = yMin; v <= yMax + 0.001; v += step) {
+    const y = yFor(v);
+    svg.appendChild(svgEl("line", { class: "perf-gridline", x1: plotLeft, x2: plotRight, y1: y, y2: y }));
+    const label = svgEl("text", { class: "perf-axis-label", x: plotLeft - 8, y: y + 4, "text-anchor": "end" });
+    label.textContent = String(Math.round(v));
+    svg.appendChild(label);
+  }
+
+  const xTickCount = Math.min(points.length, 5);
+  const xTickIndices = new Set();
+  for (let i = 0; i < xTickCount; i++) {
+    xTickIndices.add(Math.round((i / (xTickCount - 1 || 1)) * (points.length - 1)));
+  }
+  xTickIndices.forEach(i => {
+    const label = svgEl("text", { class: "perf-axis-label", x: xFor(i), y: CYCLE_PERF_CHART_H - 8, "text-anchor": "middle" });
+    label.textContent = formatPerfDate(points[i].date);
+    svg.appendChild(label);
+  });
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const d = `M${xFor(i)},${yFor(points[i].value)} L${xFor(i + 1)},${yFor(points[i + 1].value)}`;
+    svg.appendChild(svgEl("path", { class: "perf-line", d, stroke: segColors[i] }));
+  }
+  points.forEach((p, i) => {
+    svg.appendChild(svgEl("circle", { cx: xFor(i), cy: yFor(p.value), r: 3, fill: segColors[i] }));
+  });
+
+  const lastIndex = points.length - 1;
+  const lastCx = xFor(lastIndex), lastCy = yFor(points[lastIndex].value);
+  svg.appendChild(svgEl("circle", { class: "perf-dot-ring", cx: lastCx, cy: lastCy, r: 6 }));
+  svg.appendChild(svgEl("circle", { cx: lastCx, cy: lastCy, r: 4, fill: segColors[lastIndex] }));
+  const lastLabel = svgEl("text", { class: "perf-value-label", x: lastCx, y: lastCy - 14, "text-anchor": "middle" });
+  lastLabel.textContent = `${points[lastIndex].value}/10`;
+  svg.appendChild(lastLabel);
+
+  if (tracksCycle) {
+    legendEl.hidden = false;
+    legendEl.innerHTML = getCyclePhases().map(p =>
+      `<span class="phase-legend-item"><span class="phase-dot" style="background:${p.color}"></span>${p.label.replace(" Phase", "")}</span>`
+    ).join("");
+  } else {
+    legendEl.hidden = true;
+  }
+
+  const wrap = svg.closest(".cycle-perf-chart-card");
+  const crosshair = svgEl("line", { class: "perf-crosshair", x1: 0, x2: 0, y1: plotTop, y2: plotBottom });
+  svg.appendChild(crosshair);
+  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent" });
+  svg.appendChild(hitRect);
+
+  function showTooltip(i, clientX, clientY) {
+    const p = points[i];
+    tooltip.innerHTML = "";
+    const valueEl = document.createElement("div");
+    valueEl.className = "perf-tooltip-value";
+    valueEl.textContent = `Energy ${p.value}/10`;
+    const dateEl = document.createElement("div");
+    dateEl.className = "perf-tooltip-date";
+    const phase = cyclePhaseForDate(p.date);
+    dateEl.textContent = phase ? `${formatPerfDate(p.date)} — ${phase.label}` : formatPerfDate(p.date);
+    tooltip.appendChild(valueEl);
+    tooltip.appendChild(dateEl);
+
+    const mealEl = document.createElement("div");
+    mealEl.className = "perf-tooltip-edited";
+    mealEl.textContent = p.meal ? `Ate: ${p.meal}` : "No meal logged";
+    tooltip.appendChild(mealEl);
+
+    if (p.hoursSinceMeal != null && p.hoursSinceMeal !== "") {
+      const timingEl = document.createElement("div");
+      timingEl.className = "perf-tooltip-edited";
+      timingEl.textContent = `Ate ${formatMealTimingLabel(p.hoursSinceMeal)}`;
+      tooltip.appendChild(timingEl);
+    }
+
+    const wrapRect = wrap.getBoundingClientRect();
+    tooltip.style.left = `${clientX - wrapRect.left}px`;
+    tooltip.style.top = `${clientY - wrapRect.top - 12}px`;
+    tooltip.hidden = false;
+    crosshair.setAttribute("x1", xFor(i));
+    crosshair.setAttribute("x2", xFor(i));
+    crosshair.style.opacity = 1;
+  }
+  function hideTooltip() {
+    tooltip.hidden = true;
+    crosshair.style.opacity = 0;
+  }
+  // pointerdown too, not just pointermove - a plain tap/click that never
+  // moves (all an emulator's mouse click sends, or a real click on desktop)
+  // never fires pointermove on its own.
+  const handlePointer = (e) => {
+    const svgRect = svg.getBoundingClientRect();
+    const scaleX = CYCLE_PERF_CHART_W / svgRect.width;
+    const localX = (e.clientX - svgRect.left) * scaleX;
+    let nearest = 0, nearestDist = Infinity;
+    points.forEach((p, i) => {
+      const d = Math.abs(xFor(i) - localX);
+      if (d < nearestDist) { nearestDist = d; nearest = i; }
+    });
+    showTooltip(nearest, e.clientX, e.clientY);
+  };
+  // Captures the pointer on press so a held touch keeps delivering events to
+  // this element for its whole duration, instead of a long-press timer
+  // (Android's hold-to-select/inspect gesture) stealing it partway through
+  // and silently cancelling - which read as "the tooltip appears then
+  // disappears" even though the finger never lifted. Explicit pointerup/
+  // pointercancel hide it exactly on release; pointerleave still covers
+  // plain mouse-hover-away with no button down (never captured, so it never
+  // reaches up/cancel).
+  hitRect.addEventListener("pointerdown", (e) => {
+    hitRect.setPointerCapture(e.pointerId);
+    handlePointer(e);
+  });
+  hitRect.addEventListener("pointermove", handlePointer);
+  hitRect.addEventListener("pointerup", hideTooltip);
+  hitRect.addEventListener("pointercancel", hideTooltip);
+  hitRect.addEventListener("pointerleave", hideTooltip);
+}
+initTogglePopover(document.getElementById("cycle-energy-info-btn"), document.getElementById("cycle-energy-info-popover"));
 
 async function chooseCyclePerfExercise() {
   const history = await getExerciseHistory();
@@ -4325,7 +4570,8 @@ async function renderCyclePerfSection() {
   renderCyclePerfChart(computeExerciseSeries(history, cyclePerfExercise), cyclePerfExercise);
 
   let workoutLog = [];
-  try { workoutLog = await api.get("/api/workout-log"); } catch (err) { /* insight/PR-phase cards just show their empty states */ }
+  try { workoutLog = await api.get("/api/workout-log"); } catch (err) { /* insight/PR-phase/energy cards just show their empty states */ }
+  renderCycleEnergyChart(computeEnergySeries(workoutLog));
   renderPRPhaseBreakdown(history, workoutLog);
   renderCyclePerfInsight(cyclePerfExercise, computeExercisePhaseBests(history, cyclePerfExercise), workoutLog);
 }
