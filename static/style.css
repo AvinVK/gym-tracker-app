@@ -1250,6 +1250,10 @@ main {
 .perf-tooltip-date { color: var(--muted); font-size: 11px; }
 .perf-tooltip-edited { color: var(--accent-dark); font-size: 11px; font-weight: 700; }
 .perf-tooltip-edited-prev { color: var(--muted); font-size: 11px; }
+/* Energy/meal/timing context lines - kept visually distinct from the
+   red/pink "Edited" flag above (a warning-ish color that fits an edit, not
+   a plain fact about the day) using the app's purple accent instead. */
+.perf-tooltip-context { color: var(--accent-purple); font-size: 11px; font-weight: 700; }
 
 .prphase-row {
   padding: 12px 0;

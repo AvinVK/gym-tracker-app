@@ -4115,17 +4115,17 @@ function renderCyclePerfChart(series, exerciseName, workoutByDate = {}) {
     if (dayLog) {
       if (dayLog.energy_level != null) {
         const energyEl = document.createElement("div");
-        energyEl.className = "perf-tooltip-edited";
+        energyEl.className = "perf-tooltip-context";
         energyEl.textContent = `Energy ${dayLog.energy_level}/10`;
         tooltip.appendChild(energyEl);
       }
       const mealEl = document.createElement("div");
-      mealEl.className = "perf-tooltip-edited";
+      mealEl.className = "perf-tooltip-context";
       mealEl.textContent = dayLog.pre_workout_meal ? `Ate: ${dayLog.pre_workout_meal}` : "No meal logged";
       tooltip.appendChild(mealEl);
       if (dayLog.hours_since_meal != null && dayLog.hours_since_meal !== "") {
         const timingEl = document.createElement("div");
-        timingEl.className = "perf-tooltip-edited";
+        timingEl.className = "perf-tooltip-context";
         timingEl.textContent = `Ate ${formatMealTimingLabel(dayLog.hours_since_meal)}`;
         tooltip.appendChild(timingEl);
       }
@@ -4326,13 +4326,13 @@ function renderCycleEnergyChart(points) {
     tooltip.appendChild(dateEl);
 
     const mealEl = document.createElement("div");
-    mealEl.className = "perf-tooltip-edited";
+    mealEl.className = "perf-tooltip-context";
     mealEl.textContent = p.meal ? `Ate: ${p.meal}` : "No meal logged";
     tooltip.appendChild(mealEl);
 
     if (p.hoursSinceMeal != null && p.hoursSinceMeal !== "") {
       const timingEl = document.createElement("div");
-      timingEl.className = "perf-tooltip-edited";
+      timingEl.className = "perf-tooltip-context";
       timingEl.textContent = `Ate ${formatMealTimingLabel(p.hoursSinceMeal)}`;
       tooltip.appendChild(timingEl);
     }
