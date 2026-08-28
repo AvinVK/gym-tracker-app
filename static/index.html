@@ -170,6 +170,55 @@
   </div>
 </div>
 
+<div id="phase-info-modal" class="modal-overlay" hidden>
+  <div class="modal-card phase-info-card">
+    <h2 class="phase-info-title"><span class="phase-info-title-bar" aria-hidden="true"></span>Menstrual Cycle Phases</h2>
+    <div class="cycle-phase-list">
+      <div class="cycle-phase-card" data-phase="menstrual">
+        <span class="cycle-phase-icon" aria-hidden="true">🩸</span>
+        <div class="cycle-phase-info">
+          <div class="cycle-phase-header">
+            <h3>Menstrual Phase</h3>
+            <span class="cycle-phase-days" id="cycle-phase-days-menstrual">Day 1-5</span>
+          </div>
+          <p>The uterine lining sheds and bleeding occurs.</p>
+        </div>
+      </div>
+      <div class="cycle-phase-card" data-phase="follicular">
+        <span class="cycle-phase-icon" aria-hidden="true">🌱</span>
+        <div class="cycle-phase-info">
+          <div class="cycle-phase-header">
+            <h3>Follicular Phase</h3>
+            <span class="cycle-phase-days" id="cycle-phase-days-follicular">Day 6-13</span>
+          </div>
+          <p>Estrogen rises as the body prepares to release an egg.</p>
+        </div>
+      </div>
+      <div class="cycle-phase-card" data-phase="ovulation">
+        <span class="cycle-phase-icon" aria-hidden="true">🥚</span>
+        <div class="cycle-phase-info">
+          <div class="cycle-phase-header">
+            <h3>Ovulation Phase</h3>
+            <span class="cycle-phase-days">Day 14</span>
+          </div>
+          <p>An egg is released.</p>
+        </div>
+      </div>
+      <div class="cycle-phase-card" data-phase="luteal">
+        <span class="cycle-phase-icon" aria-hidden="true">🌙</span>
+        <div class="cycle-phase-info">
+          <div class="cycle-phase-header">
+            <h3>Luteal Phase</h3>
+            <span class="cycle-phase-days">Day 15-28</span>
+          </div>
+          <p>Progesterone rises, then drops toward the end of the phase — PMS symptoms are common near the end.</p>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="primary phase-info-close" id="phase-info-close">Got it</button>
+  </div>
+</div>
+
 <div id="date-picker-modal" class="modal-overlay" hidden>
   <div class="modal-card date-picker-card">
     <div class="date-picker-header">
@@ -187,7 +236,7 @@
 
 <div id="energy-picker-modal" class="modal-overlay" hidden>
   <div class="modal-card time-picker-card">
-    <h2>How do you feel?</h2>
+    <h2 id="ep-modal-title">How do you feel?</h2>
     <div class="time-picker-wheel energy-picker-wheel">
       <div class="time-picker-highlight" aria-hidden="true"></div>
       <div class="time-picker-columns">
@@ -207,7 +256,7 @@
 
 <div id="meal-timing-picker-modal" class="modal-overlay" hidden>
   <div class="modal-card time-picker-card">
-    <h2>How long ago did you eat?</h2>
+    <h2 id="mtp-modal-title">How long ago did you eat?</h2>
     <div class="time-picker-wheel meal-timing-picker-wheel">
       <div class="time-picker-highlight" aria-hidden="true"></div>
       <div class="time-picker-columns">
@@ -233,7 +282,7 @@
 <div id="session-note-modal" class="modal-overlay" hidden>
   <div class="modal-card">
     <h2>Session note</h2>
-    <p class="modal-sub">How did today's session feel?</p>
+    <p class="modal-sub" id="session-note-modal-sub">How did today's session feel?</p>
     <div class="note-field">
       <input type="text" id="session-note-input" placeholder="optional">
       <button type="button" class="secondary note-mic-btn" id="session-note-mic-btn" aria-label="Dictate note" title="Speak your note">🎤</button>
@@ -248,7 +297,7 @@
 <div id="session-meal-modal" class="modal-overlay" hidden>
   <div class="modal-card">
     <h2>What did you eat?</h2>
-    <p class="modal-sub">Before today's session, if anything.</p>
+    <p class="modal-sub" id="session-meal-modal-sub">Before today's session, if anything.</p>
     <div class="note-field">
       <input type="text" id="session-meal-input" placeholder="e.g. banana, protein shake">
       <button type="button" class="secondary note-mic-btn" id="session-meal-mic-btn" aria-label="Dictate meal" title="Speak what you ate">🎤</button>
@@ -306,6 +355,7 @@
         <p class="today-eyebrow" id="today-date"></p>
         <h1 class="today-title" id="today-greeting-title">Hi</h1>
       </div>
+      <button type="button" class="today-give-tour-btn" id="today-give-tour-btn">Give tour</button>
       <div class="today-avatar-wrap">
         <img class="today-avatar" id="today-avatar-img" src="" alt="Profile menu" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0">
         <div class="today-avatar-menu" id="today-avatar-menu" hidden>
@@ -363,7 +413,7 @@
       </button>
       <div class="today-secondary-row">
         <button type="button" class="today-secondary-btn" id="today-cta-repeat" hidden>Repeat</button>
-        <button type="button" class="today-secondary-btn" id="today-cta-rest">Log a rest day</button>
+        <button type="button" class="today-secondary-btn" id="today-cta-log-old">Log an old workout</button>
       </div>
     </div>
 
@@ -418,7 +468,10 @@
       <div class="sets-card" id="sets-card">
         <div class="sets-card-header">
           <span class="sets-card-label">Sets</span>
-          <span class="sets-card-last-time" id="sets-card-last-time"></span>
+          <div class="sets-card-header-right">
+            <span class="sets-card-last-time" id="sets-card-last-time"></span>
+            <button type="button" class="sets-card-delete-btn" id="sets-card-delete-btn" aria-label="Delete this exercise" title="Delete this exercise" hidden>🗑</button>
+          </div>
         </div>
         <div class="sets-card-empty" id="sets-card-empty">
           <button type="button" class="log-add-exercise-btn" id="log-add-exercise-btn">
@@ -481,6 +534,7 @@
         <div class="cycle-cal-col">
           <div class="cycle-cal-wrap">
             <div class="cycle-cal-top-row">
+              <div class="cycle-cal-visit-legend"><span class="cycle-cal-visit-legend-dot" aria-hidden="true"></span>Workout logged</div>
               <button type="button" class="edit-link-btn cycle-log-period-btn" id="cycle-log-period-btn">Log Period</button>
             </div>
             <div class="cycle-cal-header">
@@ -524,52 +578,6 @@
     </div>
 
     <div class="card">
-      <h2>Menstrual Cycle Phases</h2>
-      <div class="cycle-phase-list">
-        <div class="cycle-phase-card" data-phase="menstrual">
-          <span class="cycle-phase-icon" aria-hidden="true">🩸</span>
-          <div class="cycle-phase-info">
-            <div class="cycle-phase-header">
-              <h3>Menstrual Phase</h3>
-              <span class="cycle-phase-days" id="cycle-phase-days-menstrual">Day 1-5</span>
-            </div>
-            <p>The uterine lining sheds and bleeding occurs.</p>
-          </div>
-        </div>
-        <div class="cycle-phase-card" data-phase="follicular">
-          <span class="cycle-phase-icon" aria-hidden="true">🌱</span>
-          <div class="cycle-phase-info">
-            <div class="cycle-phase-header">
-              <h3>Follicular Phase</h3>
-              <span class="cycle-phase-days" id="cycle-phase-days-follicular">Day 6-13</span>
-            </div>
-            <p>Estrogen rises as the body prepares to release an egg.</p>
-          </div>
-        </div>
-        <div class="cycle-phase-card" data-phase="ovulation">
-          <span class="cycle-phase-icon" aria-hidden="true">🥚</span>
-          <div class="cycle-phase-info">
-            <div class="cycle-phase-header">
-              <h3>Ovulation Phase</h3>
-              <span class="cycle-phase-days">Day 14</span>
-            </div>
-            <p>An egg is released.</p>
-          </div>
-        </div>
-        <div class="cycle-phase-card" data-phase="luteal">
-          <span class="cycle-phase-icon" aria-hidden="true">🌙</span>
-          <div class="cycle-phase-info">
-            <div class="cycle-phase-header">
-              <h3>Luteal Phase</h3>
-              <span class="cycle-phase-days">Day 15-28</span>
-            </div>
-            <p>Progesterone rises, then drops toward the end of the phase — PMS symptoms are common near the end.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
       <h2>Hormones Throughout Your Cycle</h2>
       <p class="hormone-chart-subtitle">Typical relative pattern of estrogen, progesterone, and testosterone across a 28-day cycle.</p>
       <div class="hormone-legend">
@@ -581,7 +589,7 @@
         <svg id="hormone-chart" class="hormone-chart" viewBox="0 0 600 260" preserveAspectRatio="none"></svg>
         <div class="hormone-tooltip" id="hormone-tooltip" hidden></div>
         <button type="button" class="hormone-info-btn" id="hormone-info-btn" aria-expanded="false" aria-label="About this chart"><span aria-hidden="true">i</span></button>
-        <div class="hormone-info-popover" id="hormone-info-popover" hidden>Shaded bands mark the cycle phases from the card above (Menstrual/Follicular/Ovulation/Luteal) — hover anywhere on the chart to see which phase that day falls in. Curves are relative levels (each hormone scaled to its own cycle peak, not a shared concentration scale) illustrating the typical pattern described in the sources below — actual levels vary by person and cycle.</div>
+        <div class="hormone-info-popover" id="hormone-info-popover" hidden>Shaded bands mark the cycle phases (Menstrual/Follicular/Ovulation/Luteal) — hover anywhere on the chart to see which phase that day falls in. Curves are relative levels (each hormone scaled to its own cycle peak, not a shared concentration scale) illustrating the typical pattern described in the sources below — actual levels vary by person and cycle.</div>
       </div>
       <p class="hormone-day1-note">Day 1 is the first day of your period (the first day of bleeding), same as Day 1 of the Menstrual Phase above.</p>
       <p class="hormone-chart-source">
@@ -663,6 +671,19 @@
 </nav>
 
 <div id="toast" class="toast"></div>
+
+<div id="tour-overlay" class="tour-overlay" hidden>
+  <div id="tour-spotlight" class="tour-spotlight"></div>
+  <div id="tour-card" class="tour-card">
+    <p class="tour-step-label" id="tour-step-label">1 of 5</p>
+    <h3 class="tour-title" id="tour-title"></h3>
+    <p class="tour-body" id="tour-body"></p>
+    <div class="tour-actions">
+      <button type="button" class="tour-skip-btn" id="tour-skip-btn">Skip</button>
+      <button type="button" class="tour-next-btn" id="tour-next-btn">Next</button>
+    </div>
+  </div>
+</div>
 
 <script src="app.js"></script>
 </body>

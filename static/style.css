@@ -201,7 +201,20 @@ body {
   letter-spacing: -.02em;
   color: var(--ink);
 }
-.today-avatar-wrap { position: relative; flex: none; }
+.today-give-tour-btn {
+  flex: none;
+  align-self: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+.today-give-tour-btn:active { transform: scale(.96); }
+.today-avatar-wrap { position: relative; flex: none; align-self: center; }
 .today-avatar {
   width: 38px;
   height: 38px;
@@ -299,7 +312,7 @@ body {
 }
 .today-cycle-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
 .today-cycle-day { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-2); }
-.today-cycle-phase { font-size: 11px; font-weight: 700; }
+.today-cycle-phase { font-size: 11px; font-weight: 700; cursor: pointer; }
 .today-phase-bar { display: flex; gap: 2px; margin-bottom: 12px; }
 .today-phase-bar-seg { height: 8px; }
 .today-phase-bar-seg:first-child { border-radius: 4px 0 0 4px; }
@@ -466,7 +479,18 @@ body {
 }
 .sets-card-header { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
 .sets-card-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-2); }
+.sets-card-header-right { display: flex; align-items: center; gap: 10px; }
 .sets-card-last-time { font-size: 11.5px; color: var(--muted-2); text-align: right; }
+.sets-card-delete-btn {
+  background: none;
+  border: none;
+  padding: 2px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+}
+.sets-card-delete-btn:hover { color: #f4436c; }
 .sets-card-empty { padding: 6px 0 14px; }
 .log-add-exercise-btn {
   width: 100%;
@@ -694,8 +718,14 @@ main {
   gap: 4px;
 }
 .cycle-summary-block-end { align-items: flex-end; text-align: right; }
-.cycle-cal-top-row { display: flex; justify-content: flex-end; margin-bottom: 6px; }
-.cycle-log-period-btn { margin: 0; white-space: nowrap; }
+.cycle-cal-top-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.cycle-log-period-btn { white-space: nowrap; }
+/* Higher specificity than .edit-link-btn's own margin-bottom (needed to
+   line up with the title row it's normally used in elsewhere) - here it
+   sits in a flex row with the visit-logged legend and that bottom margin
+   was throwing off their vertical centering, making the two look
+   misaligned onto separate lines even though they're one flex row. */
+.cycle-cal-top-row .cycle-log-period-btn { margin: 0; }
 .cycle-summary-label {
   font-size: 9.5px;
   font-weight: 700;
@@ -804,6 +834,22 @@ main {
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 .cycle-phase-card.active .cycle-phase-days { color: var(--accent-purple); }
+
+.phase-info-card { max-width: 420px; max-height: 82vh; overflow-y: auto; }
+.phase-info-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.phase-info-title-bar {
+  width: 4px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--accent, #f4436c);
+  flex-shrink: 0;
+}
+.phase-info-close { width: 100%; margin-top: 16px; }
 
 .hormone-chart-subtitle {
   margin: -6px 0 14px;
@@ -1408,6 +1454,81 @@ main {
   border-radius: 999px;
   padding: 16px;
   font-size: 15px;
+}
+
+/* ---------------- Onboarding tour ---------------- */
+.tour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: none;
+}
+.tour-overlay[hidden] { display: none; }
+.tour-spotlight {
+  position: fixed;
+  border-radius: 16px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, .72);
+  transition: top .25s ease, left .25s ease, width .25s ease, height .25s ease;
+  pointer-events: none;
+}
+.tour-card {
+  position: fixed;
+  left: 20px;
+  right: 20px;
+  max-width: 380px;
+  margin: 0 auto;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 18px 20px;
+  pointer-events: auto;
+  animation: fadeUp .25s ease;
+  transition: top .25s ease;
+}
+.tour-step-label {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+.tour-title {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.tour-body {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.tour-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.tour-skip-btn {
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 8px 4px;
+}
+.tour-next-btn {
+  background: var(--ink);
+  color: var(--bg);
+  border: none;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 /* ---------------- Onboarding modal ---------------- */
@@ -2145,6 +2266,7 @@ button:disabled {
   text-transform: uppercase;
 }
 .cycle-cal-day {
+  position: relative;
   aspect-ratio: 1;
   display: flex;
   align-items: center;
@@ -2159,11 +2281,41 @@ button:disabled {
   font-family: inherit;
   cursor: default;
 }
-.cycle-cal-day.today { box-shadow: 0 0 0 1.5px var(--accent-dark) inset; }
-.cycle-cal-day.period { box-shadow: 0 0 0 1.5px #f4436c inset; color: #f4436c; }
+/* Period reads as a soft wash across the whole stretch rather than an
+   outlined ring per day, and today is just solid-filled - two rings
+   stacking together (the old .today.period look) got unreadable fast. */
+.cycle-cal-day.period { color: #f4436c; background: rgba(244, 67, 108, .18); }
+.cycle-cal-day.today { background: var(--ink); color: var(--bg); }
+.cycle-cal-day.today.period { background: #f4436c; color: #fff; }
 .cycle-cal-day.selectable { cursor: pointer; transition: background .15s ease; }
 .cycle-cal-day.selectable:hover { background: var(--surface-2); }
 .cycle-cal-day:disabled { opacity: .55; cursor: not-allowed; }
+.cycle-cal-day.visited::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #34d399;
+}
+.cycle-cal-visit-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: var(--muted-2);
+  white-space: nowrap;
+}
+.cycle-cal-visit-legend-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #34d399;
+  display: inline-block;
+}
 
 .cycle-cal-log-hint {
   margin: 8px 0 0;
