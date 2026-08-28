@@ -3949,22 +3949,23 @@ const CYCLE_PERF_PAD = { left: 34, right: 20, top: 28, bottom: 28 };
 
 let cyclePerfExercise = null;
 
-// Which of the two charts sharing this card is showing - "Performance by
-// Time" (per-exercise) or "Energy by Time" (daily average energy).
+// Which of the three views sharing this card is showing - "Performance by
+// Time" (per-exercise), "Energy by Time" (daily average energy), or
+// "Energy by Meal" (average energy grouped by what was eaten).
+const CYCLE_PERF_VIEWS = ["performance", "energy", "meal"];
 let cyclePerfActiveView = "performance";
 function setCyclePerfView(view) {
   cyclePerfActiveView = view;
-  const perfBtn = document.getElementById("cycle-perf-subtab-performance");
-  const energyBtn = document.getElementById("cycle-perf-subtab-energy");
-  perfBtn.classList.toggle("active", view === "performance");
-  perfBtn.setAttribute("aria-selected", String(view === "performance"));
-  energyBtn.classList.toggle("active", view === "energy");
-  energyBtn.setAttribute("aria-selected", String(view === "energy"));
-  document.getElementById("cycle-perf-view-performance").hidden = view !== "performance";
-  document.getElementById("cycle-perf-view-energy").hidden = view !== "energy";
+  CYCLE_PERF_VIEWS.forEach(v => {
+    const btn = document.getElementById(`cycle-perf-subtab-${v}`);
+    btn.classList.toggle("active", v === view);
+    btn.setAttribute("aria-selected", String(v === view));
+    document.getElementById(`cycle-perf-view-${v}`).hidden = v !== view;
+  });
 }
-document.getElementById("cycle-perf-subtab-performance").addEventListener("click", () => setCyclePerfView("performance"));
-document.getElementById("cycle-perf-subtab-energy").addEventListener("click", () => setCyclePerfView("energy"));
+CYCLE_PERF_VIEWS.forEach(v => {
+  document.getElementById(`cycle-perf-subtab-${v}`).addEventListener("click", () => setCyclePerfView(v));
+});
 
 function formatPerfDate(dateStr) {
   return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -4390,6 +4391,59 @@ function renderCycleEnergyChart(points) {
 }
 initTogglePopover(document.getElementById("cycle-energy-info-btn"), document.getElementById("cycle-energy-info-popover"));
 
+// Average energy for each distinct food logged before a workout - grouped
+// case/whitespace-insensitively (typing "Banana" one day and "banana"
+// another shouldn't split into two rows) but displayed using whichever
+// casing was typed first for that group. Only entries with both a meal and
+// a logged energy level count - "No meal logged" days have nothing to
+// compare here. Sorted highest-energy-first since that's the point of the
+// chart: which foods this exercise/day pairing actually correlates with
+// feeling good, not which food comes up most often.
+function computeEnergyByMeal(workoutLog) {
+  const groups = {};
+  workoutLog.forEach(w => {
+    const meal = (w.pre_workout_meal || "").trim();
+    if (!meal || w.energy_level == null) return;
+    const key = meal.toLowerCase();
+    if (!groups[key]) groups[key] = { label: meal, sum: 0, count: 0 };
+    groups[key].sum += Number(w.energy_level);
+    groups[key].count += 1;
+  });
+  return Object.values(groups)
+    .map(g => ({ label: g.label, value: g.sum / g.count, count: g.count }))
+    .sort((a, b) => b.value - a.value);
+}
+
+// Reuses the "Where your PRs happen" row styling (.prphase-*) - a labeled
+// horizontal bar per category is the same right form here (compare a value
+// across a handful of foods), just on a fixed 1-10 scale instead of
+// relative to the biggest bar.
+function renderEnergyByMealList(items) {
+  const contentEl = document.getElementById("cycle-energy-meal-content");
+  const emptyEl = document.getElementById("cycle-energy-meal-empty");
+  if (!items.length) {
+    contentEl.innerHTML = "";
+    emptyEl.hidden = false;
+    return;
+  }
+  emptyEl.hidden = true;
+  contentEl.innerHTML = items.map(it => {
+    const pct = Math.max((it.value / 10) * 100, 4);
+    return `
+      <div class="prphase-row">
+        <div class="prphase-row-top">
+          <span class="prphase-name">${escapeHtml(it.label)}</span>
+          <span class="prphase-count">${it.value.toFixed(1)}/10</span>
+        </div>
+        <div class="prphase-bar-track">
+          <div class="prphase-bar-fill" style="width:${pct}%; background:var(--accent-purple);"></div>
+        </div>
+        <p class="prphase-energy">${it.count} workout${it.count === 1 ? "" : "s"}</p>
+      </div>`;
+  }).join("");
+}
+initTogglePopover(document.getElementById("cycle-meal-info-btn"), document.getElementById("cycle-meal-info-popover"));
+
 async function chooseCyclePerfExercise() {
   const history = await getExerciseHistory();
   const exercises = [...new Set(history.map(x => x.exercise))].sort();
@@ -4622,6 +4676,7 @@ async function renderCyclePerfSection() {
 
   renderCyclePerfChart(computeExerciseSeries(history, cyclePerfExercise), cyclePerfExercise, workoutByDate);
   renderCycleEnergyChart(computeEnergySeries(workoutLog));
+  renderEnergyByMealList(computeEnergyByMeal(workoutLog));
   renderPRPhaseBreakdown(history, workoutLog);
   renderCyclePerfInsight(cyclePerfExercise, computeExercisePhaseBests(history, cyclePerfExercise), workoutLog);
 }
