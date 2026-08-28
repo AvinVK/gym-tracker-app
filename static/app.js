@@ -3818,6 +3818,11 @@ function renderHormoneReferenceChart() {
   // plain mouse-hover-away with no button down (never captured, so it never
   // reaches up/cancel).
   hitRect.addEventListener("pointerdown", (e) => {
+    // Tells the WebView up front that this touch is spoken for - without
+    // it, Android's WebView (not a regular mobile browser) can still start
+    // its own long-press-to-select gesture partway through a hold and pull
+    // the pointer sequence out from under us.
+    e.preventDefault();
     hitRect.setPointerCapture(e.pointerId);
     handlePointer(e);
   });
@@ -4149,6 +4154,11 @@ function renderCyclePerfChart(series, exerciseName) {
   // plain mouse-hover-away with no button down (never captured, so it never
   // reaches up/cancel).
   hitRect.addEventListener("pointerdown", (e) => {
+    // Tells the WebView up front that this touch is spoken for - without
+    // it, Android's WebView (not a regular mobile browser) can still start
+    // its own long-press-to-select gesture partway through a hold and pull
+    // the pointer sequence out from under us.
+    e.preventDefault();
     hitRect.setPointerCapture(e.pointerId);
     handlePointer(e);
   });
@@ -4335,6 +4345,11 @@ function renderCycleEnergyChart(points) {
   // plain mouse-hover-away with no button down (never captured, so it never
   // reaches up/cancel).
   hitRect.addEventListener("pointerdown", (e) => {
+    // Tells the WebView up front that this touch is spoken for - without
+    // it, Android's WebView (not a regular mobile browser) can still start
+    // its own long-press-to-select gesture partway through a hold and pull
+    // the pointer sequence out from under us.
+    e.preventDefault();
     hitRect.setPointerCapture(e.pointerId);
     handlePointer(e);
   });

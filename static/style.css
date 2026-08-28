@@ -890,6 +890,12 @@ main {
   height: auto;
   display: block;
   overflow: visible;
+  /* See .perf-chart's matching rule - same WebView-only long-press/select
+     gesture can interrupt a held touch here too. */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 .hormone-chart .hormone-gridline { stroke: var(--border); stroke-width: 1; shape-rendering: crispEdges; }
 .hormone-chart .hormone-axis-label {
@@ -1176,6 +1182,16 @@ main {
   display: block;
   overflow: visible;
   touch-action: none;
+  /* Android WebView (unlike Chrome for Android) can still kick off its
+     native long-press-to-select/callout gesture on a held touch even with
+     touch-action: none, which silently cancels our own pointer sequence
+     mid-hold - exactly the "tooltip appears then disappears while still
+     holding" bug, and only in the packaged app's WebView, not a regular
+     mobile browser. Disabling selection/callout here stops WebView from
+     ever treating the hold as a selection gesture in the first place. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 .perf-chart .perf-gridline { stroke: var(--border); stroke-width: 1; shape-rendering: crispEdges; }
 .perf-chart .perf-axis-label {
