@@ -348,8 +348,15 @@ async function onLoggedIn(user, { isNewSignup = false } = {}) {
 
   await muscleOptionsReady;
   await restoreDraft(); // this user's own draft, if any; also resets restoringDraft when done
+  await autoFinalizeStaleDraft(); // a leftover draft from a previous day gets saved to History, not kept "in progress" forever
 
   switchTab("today");
+
+  if (isNewSignup) {
+    // Give the Today screen a moment to finish rendering (streak ring,
+    // cycle card, etc.) before measuring elements for the tour spotlight.
+    setTimeout(startTour, 400);
+  }
 }
 
 const landingTrack = document.getElementById("landing-track");
@@ -559,6 +566,16 @@ document.getElementById("today-streak-info-btn").addEventListener("click", (e) =
 });
 document.getElementById("streak-info-close").addEventListener("click", () => { streakInfoModal.hidden = true; });
 streakInfoModal.addEventListener("click", (e) => { if (e.target === streakInfoModal) streakInfoModal.hidden = true; });
+
+// ---------------- Phase info modal ----------------
+const phaseInfoModal = document.getElementById("phase-info-modal");
+document.getElementById("today-cycle-phase").addEventListener("click", (e) => {
+  e.stopPropagation();
+  renderPhaseList();
+  phaseInfoModal.hidden = false;
+});
+document.getElementById("phase-info-close").addEventListener("click", () => { phaseInfoModal.hidden = true; });
+phaseInfoModal.addEventListener("click", (e) => { if (e.target === phaseInfoModal) phaseInfoModal.hidden = true; });
 
 // Falls back to the default illustration (not a per-user placeholder) for
 // anyone who hasn't uploaded their own picture yet.
@@ -779,18 +796,28 @@ function cyclePhaseForDate(dateStr) {
   return day == null ? null : cyclePhaseForDay(day);
 }
 
-function renderCycleTab() {
-  renderCycleCalendar();
-
-  // Kept in sync here (not left as static HTML) since period length is
-  // per-user and adjustable via Log Period - a fixed "Day 1-5" would go
-  // stale the moment someone changes it.
+// Kept in sync here (not left as static HTML) since period length is
+// per-user and adjustable via Log Period - a fixed "Day 1-5" would go stale
+// the moment someone changes it. Shared by the Cycle tab render and the
+// phase-info modal (opened from Today's phase label), since both display
+// the same four phase cards.
+function renderPhaseList() {
   const phasesForList = getCyclePhases();
   const menstrualPhase = phasesForList.find(p => p.key === "menstrual");
   const follicularPhase = phasesForList.find(p => p.key === "follicular");
   document.getElementById("cycle-phase-days-menstrual").textContent =
     menstrualPhase.startDay === menstrualPhase.endDay ? `Day ${menstrualPhase.startDay}` : `Day ${menstrualPhase.startDay}-${menstrualPhase.endDay}`;
   document.getElementById("cycle-phase-days-follicular").textContent = `Day ${follicularPhase.startDay}-${follicularPhase.endDay}`;
+
+  const cycleDay = cycleDayForDate(todayStr);
+  const currentPhase = cycleDay == null ? null : cyclePhaseForDay(cycleDay);
+  document.querySelectorAll(".cycle-phase-card").forEach(c => c.classList.toggle("active", !!currentPhase && c.dataset.phase === currentPhase.key));
+}
+
+async function renderCycleTab() {
+  await refreshWorkoutVisitDates();
+  renderCycleCalendar();
+  renderPhaseList();
 
   const currentBlock = document.getElementById("cycle-current-block");
   const nextBlock = document.getElementById("cycle-next-block");
@@ -800,7 +827,6 @@ function renderCycleTab() {
     currentBlock.hidden = true;
     nextBlock.hidden = true;
     noteEl.hidden = true;
-    document.querySelectorAll(".cycle-phase-card").forEach(c => c.classList.remove("active"));
     return;
   }
   currentBlock.hidden = false;
@@ -826,8 +852,6 @@ function renderCycleTab() {
   document.getElementById("cycle-current-detail").textContent = `Day ${cycleDay} of ~${CYCLE_LENGTH_DAYS}`;
   document.getElementById("cycle-next-phase").textContent = nextPhase.label;
   document.getElementById("cycle-next-detail").textContent = `Starts in ${daysUntilNext} day${daysUntilNext === 1 ? "" : "s"} (${nextPhaseDateLabel})`;
-
-  document.querySelectorAll(".cycle-phase-card").forEach(c => c.classList.toggle("active", c.dataset.phase === currentPhase.key));
 }
 
 // ---------------- Period calendar ----------------
@@ -850,6 +874,18 @@ function renderCycleTab() {
 let cycleCalViewYear, cycleCalViewMonth;
 let periodLogging = false;
 let periodLogDates = new Set();
+
+// Dates (YYYY-MM-DD) with an actual workout logged (has exercises, not just
+// a rest-day check-in) - drives the calendar's gym-visit dot. Refetched
+// each time the Cycle tab renders so a workout logged elsewhere shows up
+// without requiring a full page reload.
+let workoutVisitDates = new Set();
+async function refreshWorkoutVisitDates() {
+  try {
+    const rows = await api.get("/api/workout-log");
+    workoutVisitDates = new Set(rows.filter(r => r.muscles).map(r => r.date));
+  } catch (err) { /* calendar just shows no visit dots */ }
+}
 
 function addDaysIso(iso, days) {
   const d = new Date(iso + "T00:00:00");
@@ -895,6 +931,7 @@ function renderCycleCalendar() {
     cell.textContent = day;
     cell.className = "cycle-cal-day";
     if (iso === todayStr) cell.classList.add("today");
+    if (workoutVisitDates.has(iso)) cell.classList.add("visited");
     if (periodLogging) {
       if (periodLogDates.size === 0 && iso > todayStr) {
         cell.disabled = true;
@@ -1042,6 +1079,109 @@ document.querySelectorAll(".bottom-nav-item").forEach(btn => {
   btn.addEventListener("click", () => switchTab(btn.dataset.maintab));
 });
 
+// ---------------- Onboarding tour ----------------
+const TOUR_STEPS = [
+  {
+    target: () => document.querySelector(".today-streak-card"),
+    title: "Build your streak",
+    body: "This ring tracks your weekly workout streak. Fill it up to keep your streak alive and earn shields.",
+  },
+  {
+    target: () => document.getElementById("today-cycle-card-wrap"),
+    title: "Cycle-aware training",
+    body: "See what cycle day you're on and how your current phase can affect your training and recovery. Tap your phase (e.g. \"Menstrual\") for more details on each phase of the menstrual cycle.",
+  },
+  {
+    target: () => document.getElementById("today-cta-start"),
+    title: "Log a workout",
+    body: "Tap here to start logging today's workout - add exercises, sets, and reps as you go. Once you've logged a session, \"Repeat\" lets you redo the same exercises again, and \"Log an old workout\" lets you back-log a past day you missed.",
+  },
+  {
+    target: () => document.querySelector('.bottom-nav-item[data-maintab="cycle"]'),
+    title: "Cycle tab",
+    body: "Log your cycle here and see how each phase has historically affected your performance.",
+  },
+  {
+    target: () => document.querySelector('.bottom-nav-item[data-maintab="you"]'),
+    title: "Your Body tab",
+    body: "See your body stats, personal records, and trends over time here.",
+  },
+];
+
+let tourStepIndex = 0;
+
+const tourOverlay = document.getElementById("tour-overlay");
+const tourSpotlight = document.getElementById("tour-spotlight");
+const tourCard = document.getElementById("tour-card");
+const tourTitleEl = document.getElementById("tour-title");
+const tourBodyEl = document.getElementById("tour-body");
+const tourStepLabel = document.getElementById("tour-step-label");
+const tourNextBtn = document.getElementById("tour-next-btn");
+const tourSkipBtn = document.getElementById("tour-skip-btn");
+
+function isElementVisible(el) {
+  return !!el && !el.hidden && el.offsetParent !== null;
+}
+
+function positionTourStep() {
+  if (tourOverlay.hidden) return;
+  const step = TOUR_STEPS[tourStepIndex];
+  const el = step.target();
+  if (!isElementVisible(el)) {
+    advanceTour();
+    return;
+  }
+
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+
+  const rect = el.getBoundingClientRect();
+  const pad = 8;
+  tourSpotlight.style.top = `${rect.top - pad}px`;
+  tourSpotlight.style.left = `${rect.left - pad}px`;
+  tourSpotlight.style.width = `${rect.width + pad * 2}px`;
+  tourSpotlight.style.height = `${rect.height + pad * 2}px`;
+
+  tourTitleEl.textContent = step.title;
+  tourBodyEl.textContent = step.body;
+  tourStepLabel.textContent = `${tourStepIndex + 1} of ${TOUR_STEPS.length}`;
+  tourNextBtn.textContent = tourStepIndex === TOUR_STEPS.length - 1 ? "Got it" : "Next";
+
+  const cardHeight = tourCard.offsetHeight || 160;
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const cardTop = spaceBelow > cardHeight + 32
+    ? rect.bottom + pad + 16
+    : Math.max(16, rect.top - pad - cardHeight - 16);
+  tourCard.style.top = `${cardTop}px`;
+}
+
+function advanceTour() {
+  tourStepIndex += 1;
+  if (tourStepIndex >= TOUR_STEPS.length) {
+    endTour();
+    return;
+  }
+  positionTourStep();
+}
+
+function startTour() {
+  if (activeTab !== "today") switchTab("today");
+  tourStepIndex = 0;
+  tourOverlay.hidden = false;
+  // Wait a frame so layout (and any tab switch above) has settled before we
+  // measure the target element's position.
+  requestAnimationFrame(positionTourStep);
+}
+
+function endTour() {
+  tourOverlay.hidden = true;
+}
+
+tourNextBtn.addEventListener("click", advanceTour);
+tourSkipBtn.addEventListener("click", endTour);
+window.addEventListener("resize", positionTourStep);
+
+document.getElementById("today-give-tour-btn").addEventListener("click", startTour);
+
 // ---------------- Muscle options (exercise log) ----------------
 let availableMuscles = [];
 
@@ -1154,6 +1294,7 @@ function openEnergyPicker(container) {
   const hidden = container.querySelector("input[type=hidden]");
   epSelected = hidden.value || "5"; // wheel always centers on something; default to the middle
   highlightEnergyPickerSelection();
+  applyCheckInCopy();
   epModal.hidden = false;
   requestAnimationFrame(() => jumpToEnergyOption(epSelected));
 }
@@ -1261,6 +1402,7 @@ function openMealTimingPicker(container) {
   const hidden = container.querySelector("input[type=hidden]");
   mtpSelected = hidden.value !== "" ? hidden.value : "3"; // wheel always centers on something; default to the middle
   highlightMealTimingSelection();
+  applyCheckInCopy();
   mtpModal.hidden = false;
   requestAnimationFrame(() => jumpToMealTimingOption(mtpSelected));
 }
@@ -1529,6 +1671,23 @@ let currentExerciseIndex = -1;
 // session, cached per exercise for the Sets card's "Last time: ..." line
 // and drawn from the same exercise-log history checkForPR already caches.
 let lastSessionFor = {};
+
+// The energy/meal/note check-in prompts are shared by every entry point
+// (Start today's workout, Log an old workout, and the session-strip chips
+// for editing any already-open session) - rather than branching per entry
+// point, they just read logSessionDate at the moment each modal opens and
+// phrase themselves accordingly, so "today" vs "that day" always matches
+// whichever date is actually being logged.
+function pastTenseCheckIn() {
+  return logSessionDate !== todayStr;
+}
+function applyCheckInCopy() {
+  const past = pastTenseCheckIn();
+  document.getElementById("ep-modal-title").textContent = past ? "How did you feel that day?" : "How do you feel?";
+  document.getElementById("mtp-modal-title").textContent = past ? "How long before the workout had you eaten?" : "How long ago did you eat?";
+  document.getElementById("session-meal-modal-sub").textContent = past ? "Before that session, if anything." : "Before today's session, if anything.";
+  document.getElementById("session-note-modal-sub").textContent = past ? "How did that session feel?" : "How did today's session feel?";
+}
 
 function currentSessionBody() {
   return {
@@ -2444,7 +2603,7 @@ function parseWeightKg(str) {
   return str === "" ? null : parseFloat(str);
 }
 
-async function submitExerciseLog() {
+async function submitExerciseLog({ auto = false } = {}) {
   const date = logSessionDate;
   const exercises = [...exercisesContainer.querySelectorAll(".exercise-block")]
     .filter(block => block.querySelector(".ex-exercise").value)
@@ -2496,7 +2655,7 @@ async function submitExerciseLog() {
     if (savedWorkoutId) {
       try { await api.del(`/api/workout-log/${savedWorkoutId}`); } catch { /* best-effort cleanup */ }
     }
-    toast("No workout was logged for today");
+    if (!auto) toast("No workout was logged for today");
     clearDraft();
     resetWorkoutFlowUI();
     switchTab("today");
@@ -2506,12 +2665,17 @@ async function submitExerciseLog() {
     await ensureVisitSaved();
     const res = await api.post("/api/exercise-log", { date, exercises });
     exerciseHistoryCache = null; // stale after this submit - refetch next time a PR check needs it
-    toast(res.duplicate ? "This exact session already exists for this day" : "Workout logged");
+    if (auto) {
+      toast(res.duplicate ? "Your last workout was already saved — check History" : "Your last workout was saved automatically — check History");
+    } else {
+      toast(res.duplicate ? "This exact session already exists for this day" : "Workout logged");
+    }
     clearDraft();
     resetWorkoutFlowUI();
     switchTab("today");
   } catch (err) {
-    toast(err.message);
+    if (!auto) toast(err.message);
+    throw err;
   }
 }
 
@@ -2577,6 +2741,7 @@ document.getElementById("log-energy-input").addEventListener("change", (e) => {
 document.getElementById("log-meal-btn").addEventListener("click", () => {
   const modal = document.getElementById("session-meal-modal");
   document.getElementById("session-meal-input").value = sessionFields.pre_workout_meal || "";
+  applyCheckInCopy();
   modal.hidden = false;
 });
 document.getElementById("session-meal-cancel").addEventListener("click", () => { document.getElementById("session-meal-modal").hidden = true; });
@@ -2600,6 +2765,7 @@ initNoteMicButtonGeneric(document.getElementById("session-meal-mic-btn"), docume
 
 document.getElementById("log-note-chip").addEventListener("click", () => {
   document.getElementById("session-note-input").value = sessionFields.notes || "";
+  applyCheckInCopy();
   document.getElementById("session-note-modal").hidden = false;
 });
 document.getElementById("session-note-cancel").addEventListener("click", () => { document.getElementById("session-note-modal").hidden = true; });
@@ -2691,6 +2857,7 @@ function setActiveExerciseIndex(i) {
   blocks.forEach((b, idx) => { b.hidden = idx !== i; });
   const active = blocks[i];
   const emptyEl = document.getElementById("sets-card-empty");
+  document.getElementById("sets-card-delete-btn").hidden = !active;
   if (active) {
     emptyEl.hidden = true;
     exercisesContainer.hidden = false;
@@ -2824,6 +2991,19 @@ document.getElementById("log-footer-reset-btn").addEventListener("click", () => 
 document.getElementById("log-close-btn").addEventListener("click", () => switchTab("today"));
 document.getElementById("log-done-btn").addEventListener("click", submitExerciseLog);
 document.getElementById("log-add-exercise-btn").addEventListener("click", promptAddExercise);
+document.getElementById("sets-card-delete-btn").addEventListener("click", async () => {
+  const block = exercisesContainer.children[currentExerciseIndex];
+  if (!block) return;
+  const exerciseName = block.querySelector(".ex-exercise").value;
+  const ok = await confirmModal(`Delete ${exerciseName || "this exercise"} and all its sets?`, "Yes, Delete");
+  if (!ok) return;
+  block.remove();
+  renumberExerciseBlocks();
+  saveExerciseDraft();
+  const blocks = [...exercisesContainer.children];
+  setActiveExerciseIndex(blocks.length ? Math.min(currentExerciseIndex, blocks.length - 1) : -1);
+  toast(exerciseName ? `Removed ${exerciseName}` : "Exercise removed");
+});
 
 function renderLogScreen() {
   renderSessionStrip();
@@ -2970,6 +3150,7 @@ async function promptSessionFeelAndFood() {
   await waitUntilHidden(epModal);
 
   document.getElementById("session-meal-input").value = sessionFields.pre_workout_meal || "";
+  applyCheckInCopy();
   document.getElementById("session-meal-modal").hidden = false;
   await waitUntilHidden(document.getElementById("session-meal-modal"));
   // "Next" on the meal-name modal chains straight into the hours-since
@@ -3022,8 +3203,27 @@ document.getElementById("today-cta-start").addEventListener("click", async () =>
   if (!isWorkoutInProgress()) await promptSessionFeelAndFood();
   startLogSession();
 });
-document.getElementById("today-cta-rest").addEventListener("click", () => {
-  toast("Noted — rest is part of the plan.");
+document.getElementById("today-cta-log-old").addEventListener("click", async () => {
+  // Only one workout can be "in progress" at a time (single-draft model).
+  // An old-workout log that's already mid-flight (from a previous, e.g.
+  // interrupted, use of this same button) just gets resumed - that IS the
+  // old-workout flow, so no explanation needed. But if it's *today's*
+  // workout that's in progress, silently dropping into it here would look
+  // like this button did nothing (no date picker, no prompts) - say why
+  // instead of just redirecting.
+  if (isWorkoutInProgress()) {
+    if (logSessionDate === todayStr) toast("Finish or save today's workout first");
+    switchTab("log");
+    return;
+  }
+  const maxDate = addDaysIso(todayStr, -1);
+  const beforeDate = logSessionDate;
+  logDateHiddenInput.value = maxDate;
+  openDatePicker({ container: logDateCarrier, max: maxDate });
+  await waitUntilHidden(dpModal);
+  if (logSessionDate === beforeDate) return; // closed without picking a date
+  await promptSessionFeelAndFood(); // reads logSessionDate itself, so the prompts already read in past tense
+  startLogSession();
 });
 document.getElementById("today-all-history-link").addEventListener("click", () => switchTab("history"));
 
@@ -3057,9 +3257,16 @@ function isWorkoutInProgress() {
 function renderTodayCtaState() {
   const namedCount = namedExerciseCount();
   const inProgress = isWorkoutInProgress();
-  document.getElementById("today-cta-start-label").textContent = inProgress ? "Continue today's workout" : "Start today's workout";
+  // The one in-progress draft belongs to whichever date logSessionDate
+  // currently holds - only today's own draft resumes via the main CTA;
+  // an old-workout draft (started via "Log an old workout") resumes via
+  // that button instead, so the main CTA stays "Start" in that case.
+  const inProgressToday = inProgress && logSessionDate === todayStr;
+  const inProgressOldDate = inProgress && logSessionDate !== todayStr;
+
+  document.getElementById("today-cta-start-label").textContent = inProgressToday ? "Continue today's workout" : "Start today's workout";
   const hint = document.getElementById("today-cta-hint");
-  if (inProgress) {
+  if (inProgressToday) {
     hint.hidden = false;
     hint.textContent = namedCount > 0
       ? `Workout in progress — ${namedCount} exercise${namedCount === 1 ? "" : "s"} added, not yet saved`
@@ -3067,6 +3274,13 @@ function renderTodayCtaState() {
   } else {
     hint.hidden = true;
   }
+
+  const oldDateLabel = inProgressOldDate
+    ? new Date(logSessionDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    : null;
+  document.getElementById("today-cta-log-old").textContent = inProgressOldDate
+    ? `Continue logging ${oldDateLabel} workout`
+    : "Log an old workout";
 }
 
 // ---------------- History ----------------
@@ -4558,11 +4772,31 @@ async function restoreDraft() {
         });
       }
       currentExerciseIndex = 0;
-      toast("Restored your unsaved entry");
+      // A same-day draft is restored right into today's workout - a
+      // previous day's leftover draft gets auto-saved to History instead
+      // (see autoFinalizeStaleDraft), so it'd be misleading to call it
+      // "restored" here.
+      if (draft.date === todayStr) toast("Restored your unsaved entry");
     }
   } finally {
     restoringDraft = false;
     setActiveExerciseIndex(exercisesContainer.children.length ? 0 : -1);
+  }
+}
+
+// A draft left over from a previous day (app closed mid-workout, or just
+// never hit Done) shouldn't linger as "Continue today's workout" forever -
+// once the day it belongs to has passed, it's finalized the same way Done
+// would: saved to History under its own date, then the Log screen resets so
+// Today starts fresh. restoreDraft() above must run first so this can reuse
+// its DOM/state, exactly like the manual Done button does.
+async function autoFinalizeStaleDraft() {
+  if (logSessionDate === todayStr) return;
+  try {
+    await submitExerciseLog({ auto: true });
+  } catch (err) {
+    // Save failed (e.g. offline) - leave the draft in place so it's retried
+    // on next launch instead of silently losing it.
   }
 }
 
