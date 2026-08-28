@@ -3979,7 +3979,7 @@ function colorForDate(dateStr) {
   return phase ? phase.color : "#6d5ef8";
 }
 
-function renderCyclePerfChart(series, exerciseName) {
+function renderCyclePerfChart(series, exerciseName, workoutByDate = {}) {
   const svg = document.getElementById("cycle-perf-chart");
   const tooltip = document.getElementById("cycle-perf-tooltip");
   const legendEl = document.getElementById("cycle-perf-phase-legend");
@@ -4107,6 +4107,30 @@ function renderCyclePerfChart(series, exerciseName) {
     dateEl.textContent = phase ? `${formatPerfDate(p.date)} — ${phase.label}` : formatPerfDate(p.date);
     tooltip.appendChild(valueEl);
     tooltip.appendChild(dateEl);
+
+    // Same "what was going on that day" context the Energy-by-Time tooltip
+    // shows - energy alone doesn't explain a good or bad lift day, but
+    // energy + what/when she ate together might.
+    const dayLog = workoutByDate[p.date];
+    if (dayLog) {
+      if (dayLog.energy_level != null) {
+        const energyEl = document.createElement("div");
+        energyEl.className = "perf-tooltip-edited";
+        energyEl.textContent = `Energy ${dayLog.energy_level}/10`;
+        tooltip.appendChild(energyEl);
+      }
+      const mealEl = document.createElement("div");
+      mealEl.className = "perf-tooltip-edited";
+      mealEl.textContent = dayLog.pre_workout_meal ? `Ate: ${dayLog.pre_workout_meal}` : "No meal logged";
+      tooltip.appendChild(mealEl);
+      if (dayLog.hours_since_meal != null && dayLog.hours_since_meal !== "") {
+        const timingEl = document.createElement("div");
+        timingEl.className = "perf-tooltip-edited";
+        timingEl.textContent = `Ate ${formatMealTimingLabel(dayLog.hours_since_meal)}`;
+        tooltip.appendChild(timingEl);
+      }
+    }
+
     if (p.editedAt) {
       const editedEl = document.createElement("div");
       editedEl.className = "perf-tooltip-edited";
@@ -4121,7 +4145,10 @@ function renderCyclePerfChart(series, exerciseName) {
     }
     const wrapRect = wrap.getBoundingClientRect();
     tooltip.style.left = `${clientX - wrapRect.left}px`;
-    tooltip.style.top = `${clientY - wrapRect.top - 12}px`;
+    // Well clear of a fingertip on touch, not just a mouse cursor - 12px
+    // (fine for a mouse pointer) left the tooltip hidden under the finger
+    // that triggered it on phones (same fix as the hormone chart's tooltip).
+    tooltip.style.top = `${clientY - wrapRect.top - 44}px`;
     tooltip.hidden = false;
     crosshair.setAttribute("x1", xFor(i));
     crosshair.setAttribute("x2", xFor(i));
@@ -4312,7 +4339,10 @@ function renderCycleEnergyChart(points) {
 
     const wrapRect = wrap.getBoundingClientRect();
     tooltip.style.left = `${clientX - wrapRect.left}px`;
-    tooltip.style.top = `${clientY - wrapRect.top - 12}px`;
+    // Well clear of a fingertip on touch, not just a mouse cursor - 12px
+    // (fine for a mouse pointer) left the tooltip hidden under the finger
+    // that triggered it on phones (same fix as the hormone chart's tooltip).
+    tooltip.style.top = `${clientY - wrapRect.top - 44}px`;
     tooltip.hidden = false;
     crosshair.setAttribute("x1", xFor(i));
     crosshair.setAttribute("x2", xFor(i));
@@ -4582,10 +4612,15 @@ async function renderCyclePerfSection() {
     history.forEach(x => { counts[x.exercise] = (counts[x.exercise] || 0) + 1; });
     cyclePerfExercise = exercises.reduce((best, ex) => (counts[ex] > (counts[best] || 0) ? ex : best), exercises[0]);
   }
-  renderCyclePerfChart(computeExerciseSeries(history, cyclePerfExercise), cyclePerfExercise);
-
   let workoutLog = [];
   try { workoutLog = await api.get("/api/workout-log"); } catch (err) { /* insight/PR-phase/energy cards just show their empty states */ }
+  // Keyed by date for the Performance-by-Time tooltip's energy/meal/timing
+  // lines - workoutLog is already date DESC, id DESC, so the first row seen
+  // per date here is that date's latest entry (matches computeEnergySeries).
+  const workoutByDate = {};
+  workoutLog.forEach(w => { if (!workoutByDate[w.date]) workoutByDate[w.date] = w; });
+
+  renderCyclePerfChart(computeExerciseSeries(history, cyclePerfExercise), cyclePerfExercise, workoutByDate);
   renderCycleEnergyChart(computeEnergySeries(workoutLog));
   renderPRPhaseBreakdown(history, workoutLog);
   renderCyclePerfInsight(cyclePerfExercise, computeExercisePhaseBests(history, cyclePerfExercise), workoutLog);
