@@ -3949,22 +3949,25 @@ const CYCLE_PERF_PAD = { left: 34, right: 20, top: 28, bottom: 28 };
 
 let cyclePerfExercise = null;
 
-// Which of the two charts sharing this card is showing - "Performance by
-// Time" (per-exercise) or "Energy by Time" (daily average energy).
-let cyclePerfActiveView = "performance";
-function setCyclePerfView(view) {
-  cyclePerfActiveView = view;
-  const perfBtn = document.getElementById("cycle-perf-subtab-performance");
-  const energyBtn = document.getElementById("cycle-perf-subtab-energy");
-  perfBtn.classList.toggle("active", view === "performance");
-  perfBtn.setAttribute("aria-selected", String(view === "performance"));
-  energyBtn.classList.toggle("active", view === "energy");
-  energyBtn.setAttribute("aria-selected", String(view === "energy"));
-  document.getElementById("cycle-perf-view-performance").hidden = view !== "performance";
-  document.getElementById("cycle-perf-view-energy").hidden = view !== "energy";
+// Shared by both subtab switchers on this tab - "Time based analysis"
+// (Performance by Time / Energy by Time) and "Phase based analysis" (Where
+// your PRs happen / Energy by Meal). Each button/view pair is found by id
+// as `${prefix}-subtab-${key}` / `${prefix}-view-${key}`.
+function initSubtabSwitcher(prefix, keys) {
+  function setView(key) {
+    keys.forEach(k => {
+      const btn = document.getElementById(`${prefix}-subtab-${k}`);
+      btn.classList.toggle("active", k === key);
+      btn.setAttribute("aria-selected", String(k === key));
+      document.getElementById(`${prefix}-view-${k}`).hidden = k !== key;
+    });
+  }
+  keys.forEach(k => {
+    document.getElementById(`${prefix}-subtab-${k}`).addEventListener("click", () => setView(k));
+  });
 }
-document.getElementById("cycle-perf-subtab-performance").addEventListener("click", () => setCyclePerfView("performance"));
-document.getElementById("cycle-perf-subtab-energy").addEventListener("click", () => setCyclePerfView("energy"));
+initSubtabSwitcher("cycle-perf", ["performance", "energy"]);
+initSubtabSwitcher("cycle-phase", ["prs", "meal"]);
 
 function formatPerfDate(dateStr) {
   return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -3979,7 +3982,7 @@ function colorForDate(dateStr) {
   return phase ? phase.color : "#6d5ef8";
 }
 
-function renderCyclePerfChart(series, exerciseName) {
+function renderCyclePerfChart(series, exerciseName, workoutByDate = {}) {
   const svg = document.getElementById("cycle-perf-chart");
   const tooltip = document.getElementById("cycle-perf-tooltip");
   const legendEl = document.getElementById("cycle-perf-phase-legend");
@@ -4107,6 +4110,30 @@ function renderCyclePerfChart(series, exerciseName) {
     dateEl.textContent = phase ? `${formatPerfDate(p.date)} — ${phase.label}` : formatPerfDate(p.date);
     tooltip.appendChild(valueEl);
     tooltip.appendChild(dateEl);
+
+    // Same "what was going on that day" context the Energy-by-Time tooltip
+    // shows - energy alone doesn't explain a good or bad lift day, but
+    // energy + what/when she ate together might.
+    const dayLog = workoutByDate[p.date];
+    if (dayLog) {
+      if (dayLog.energy_level != null) {
+        const energyEl = document.createElement("div");
+        energyEl.className = "perf-tooltip-context";
+        energyEl.textContent = `Energy ${dayLog.energy_level}/10`;
+        tooltip.appendChild(energyEl);
+      }
+      const mealEl = document.createElement("div");
+      mealEl.className = "perf-tooltip-context";
+      mealEl.textContent = dayLog.pre_workout_meal ? `Ate: ${dayLog.pre_workout_meal}` : "No meal logged";
+      tooltip.appendChild(mealEl);
+      if (dayLog.hours_since_meal != null && dayLog.hours_since_meal !== "") {
+        const timingEl = document.createElement("div");
+        timingEl.className = "perf-tooltip-context";
+        timingEl.textContent = `Ate ${formatMealTimingLabel(dayLog.hours_since_meal)}`;
+        tooltip.appendChild(timingEl);
+      }
+    }
+
     if (p.editedAt) {
       const editedEl = document.createElement("div");
       editedEl.className = "perf-tooltip-edited";
@@ -4121,7 +4148,10 @@ function renderCyclePerfChart(series, exerciseName) {
     }
     const wrapRect = wrap.getBoundingClientRect();
     tooltip.style.left = `${clientX - wrapRect.left}px`;
-    tooltip.style.top = `${clientY - wrapRect.top - 12}px`;
+    // Well clear of a fingertip on touch, not just a mouse cursor - 12px
+    // (fine for a mouse pointer) left the tooltip hidden under the finger
+    // that triggered it on phones (same fix as the hormone chart's tooltip).
+    tooltip.style.top = `${clientY - wrapRect.top - 44}px`;
     tooltip.hidden = false;
     crosshair.setAttribute("x1", xFor(i));
     crosshair.setAttribute("x2", xFor(i));
@@ -4299,20 +4329,23 @@ function renderCycleEnergyChart(points) {
     tooltip.appendChild(dateEl);
 
     const mealEl = document.createElement("div");
-    mealEl.className = "perf-tooltip-edited";
+    mealEl.className = "perf-tooltip-context";
     mealEl.textContent = p.meal ? `Ate: ${p.meal}` : "No meal logged";
     tooltip.appendChild(mealEl);
 
     if (p.hoursSinceMeal != null && p.hoursSinceMeal !== "") {
       const timingEl = document.createElement("div");
-      timingEl.className = "perf-tooltip-edited";
+      timingEl.className = "perf-tooltip-context";
       timingEl.textContent = `Ate ${formatMealTimingLabel(p.hoursSinceMeal)}`;
       tooltip.appendChild(timingEl);
     }
 
     const wrapRect = wrap.getBoundingClientRect();
     tooltip.style.left = `${clientX - wrapRect.left}px`;
-    tooltip.style.top = `${clientY - wrapRect.top - 12}px`;
+    // Well clear of a fingertip on touch, not just a mouse cursor - 12px
+    // (fine for a mouse pointer) left the tooltip hidden under the finger
+    // that triggered it on phones (same fix as the hormone chart's tooltip).
+    tooltip.style.top = `${clientY - wrapRect.top - 44}px`;
     tooltip.hidden = false;
     crosshair.setAttribute("x1", xFor(i));
     crosshair.setAttribute("x2", xFor(i));
@@ -4359,6 +4392,104 @@ function renderCycleEnergyChart(points) {
   hitRect.addEventListener("pointerleave", hideTooltip);
 }
 initTogglePopover(document.getElementById("cycle-energy-info-btn"), document.getElementById("cycle-energy-info-popover"));
+
+// Average energy for each distinct food logged before a workout - grouped
+// case/whitespace-insensitively (typing "Banana" one day and "banana"
+// another shouldn't split into two rows) but displayed using whichever
+// casing was typed first for that group. Only entries with both a meal and
+// a logged energy level count - "No meal logged" days have nothing to
+// compare here. Sorted highest-energy-first since that's the point of the
+// chart: which foods this exercise/day pairing actually correlates with
+// feeling good, not which food comes up most often.
+function computeEnergyByMeal(workoutLog) {
+  const groups = {};
+  workoutLog.forEach(w => {
+    const meal = (w.pre_workout_meal || "").trim();
+    if (!meal || w.energy_level == null) return;
+    const key = meal.toLowerCase();
+    if (!groups[key]) groups[key] = { key, label: meal, sum: 0, count: 0 };
+    groups[key].sum += Number(w.energy_level);
+    groups[key].count += 1;
+  });
+  return Object.values(groups)
+    .map(g => ({ key: g.key, label: g.label, value: g.sum / g.count, count: g.count }))
+    .sort((a, b) => b.value - a.value);
+}
+
+// Full list is usually longer than is useful to show at once - defaults to
+// just the top 4 (highest average energy), with "Choose foods to compare"
+// letting her pick a specific subset instead (e.g. only the foods she's
+// actually deciding between, ignoring the rest). null means "no custom
+// pick yet, show the default top 4"; picking zero foods in the modal resets
+// back to null rather than rendering an empty list.
+let mealCompareSelection = null;
+let lastEnergyByMealItems = [];
+
+// Reuses the "Where your PRs happen" row styling (.prphase-*) - a labeled
+// horizontal bar per category is the same right form here (compare a value
+// across a handful of foods), just on a fixed 1-10 scale instead of
+// relative to the biggest bar.
+function renderEnergyByMealList(items) {
+  lastEnergyByMealItems = items;
+  const contentEl = document.getElementById("cycle-energy-meal-content");
+  const emptyEl = document.getElementById("cycle-energy-meal-empty");
+  const compareBtn = document.getElementById("cycle-meal-compare-btn");
+  if (!items.length) {
+    contentEl.innerHTML = "";
+    emptyEl.hidden = false;
+    compareBtn.hidden = true;
+    return;
+  }
+  emptyEl.hidden = true;
+  compareBtn.hidden = items.length <= 4 && !mealCompareSelection;
+
+  const visible = mealCompareSelection
+    ? items.filter(it => mealCompareSelection.has(it.key))
+    : items.slice(0, 4);
+  contentEl.innerHTML = visible.map(it => {
+    const pct = Math.max((it.value / 10) * 100, 4);
+    return `
+      <div class="prphase-row">
+        <div class="prphase-row-top">
+          <span class="prphase-name">${escapeHtml(it.label)}</span>
+          <span class="prphase-count">${it.value.toFixed(1)}/10</span>
+        </div>
+        <div class="prphase-bar-track">
+          <div class="prphase-bar-fill" style="width:${pct}%; background:var(--accent-purple);"></div>
+        </div>
+        <p class="prphase-energy">${it.count} workout${it.count === 1 ? "" : "s"}</p>
+      </div>`;
+  }).join("");
+}
+initTogglePopover(document.getElementById("cycle-meal-info-btn"), document.getElementById("cycle-meal-info-popover"));
+
+// ---------------- Choose foods to compare (Energy by Meal) ----------------
+const mealCompareModal = document.getElementById("meal-compare-modal");
+document.getElementById("cycle-meal-compare-btn").addEventListener("click", () => {
+  // Pre-checks whatever's currently shown - the top 4 if no custom pick
+  // yet, otherwise the existing selection - so opening the picker starts
+  // from what she's already looking at, not a blank slate.
+  const preChecked = mealCompareSelection || new Set(lastEnergyByMealItems.slice(0, 4).map(it => it.key));
+  document.getElementById("meal-compare-list").innerHTML = lastEnergyByMealItems.map(it => `
+    <label class="meal-compare-item">
+      <input type="checkbox" value="${escapeHtml(it.key)}" ${preChecked.has(it.key) ? "checked" : ""}>
+      <span class="meal-compare-item-name">${escapeHtml(it.label)}</span>
+      <span class="meal-compare-item-value">${it.value.toFixed(1)}/10</span>
+    </label>`).join("");
+  mealCompareModal.hidden = false;
+});
+mealCompareModal.addEventListener("click", (e) => { if (e.target === mealCompareModal) mealCompareModal.hidden = true; });
+document.getElementById("meal-compare-reset").addEventListener("click", () => {
+  mealCompareSelection = null;
+  renderEnergyByMealList(lastEnergyByMealItems);
+  mealCompareModal.hidden = true;
+});
+document.getElementById("meal-compare-done").addEventListener("click", () => {
+  const checked = [...document.querySelectorAll("#meal-compare-list input:checked")].map(el => el.value);
+  mealCompareSelection = checked.length ? new Set(checked) : null;
+  renderEnergyByMealList(lastEnergyByMealItems);
+  mealCompareModal.hidden = true;
+});
 
 async function chooseCyclePerfExercise() {
   const history = await getExerciseHistory();
@@ -4582,11 +4713,17 @@ async function renderCyclePerfSection() {
     history.forEach(x => { counts[x.exercise] = (counts[x.exercise] || 0) + 1; });
     cyclePerfExercise = exercises.reduce((best, ex) => (counts[ex] > (counts[best] || 0) ? ex : best), exercises[0]);
   }
-  renderCyclePerfChart(computeExerciseSeries(history, cyclePerfExercise), cyclePerfExercise);
-
   let workoutLog = [];
   try { workoutLog = await api.get("/api/workout-log"); } catch (err) { /* insight/PR-phase/energy cards just show their empty states */ }
+  // Keyed by date for the Performance-by-Time tooltip's energy/meal/timing
+  // lines - workoutLog is already date DESC, id DESC, so the first row seen
+  // per date here is that date's latest entry (matches computeEnergySeries).
+  const workoutByDate = {};
+  workoutLog.forEach(w => { if (!workoutByDate[w.date]) workoutByDate[w.date] = w; });
+
+  renderCyclePerfChart(computeExerciseSeries(history, cyclePerfExercise), cyclePerfExercise, workoutByDate);
   renderCycleEnergyChart(computeEnergySeries(workoutLog));
+  renderEnergyByMealList(computeEnergyByMeal(workoutLog));
   renderPRPhaseBreakdown(history, workoutLog);
   renderCyclePerfInsight(cyclePerfExercise, computeExercisePhaseBests(history, cyclePerfExercise), workoutLog);
 }

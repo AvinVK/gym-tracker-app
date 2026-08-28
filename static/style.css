@@ -1052,7 +1052,8 @@ main {
    a card, that card's 18px padding already provides the inset, so the extra
    4px here just double-counted and pushed "Strength by phase" in further
    than every other card's title (e.g. "Your Cycle"). */
-.cycle-perf-chart-card > .cycle-perf-section-label { padding: 0; }
+.cycle-perf-chart-card > .cycle-perf-section-label,
+.cycle-perf-prphase-card > .cycle-perf-section-label { padding: 0; }
 .cycle-perf-chart-card, .cycle-perf-prphase-card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -1069,14 +1070,6 @@ main {
    on - the old chart had a dedicated .perf-chart-wrap for this; here the
    svg+tooltip sit directly in the card, so the card itself is the anchor. */
 .cycle-perf-chart-card { position: relative; }
-.cycle-perf-prphase-label {
-  margin: 0 0 14px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--muted-2);
-}
 .cycle-perf-subtabs {
   display: flex;
   border: 1px solid var(--border);
@@ -1250,6 +1243,10 @@ main {
 .perf-tooltip-date { color: var(--muted); font-size: 11px; }
 .perf-tooltip-edited { color: var(--accent-dark); font-size: 11px; font-weight: 700; }
 .perf-tooltip-edited-prev { color: var(--muted); font-size: 11px; }
+/* Energy/meal/timing context lines - kept visually distinct from the
+   red/pink "Edited" flag above (a warning-ish color that fits an edit, not
+   a plain fact about the day) using the app's purple accent instead. */
+.perf-tooltip-context { color: var(--accent-purple); font-size: 11px; font-weight: 700; }
 
 .prphase-row {
   padding: 12px 0;
@@ -1320,6 +1317,30 @@ main {
   font-size: 12px;
   color: var(--muted);
 }
+
+.cycle-meal-compare-btn { margin: 10px 0 0; }
+.meal-compare-list {
+  max-height: 50vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 16px;
+}
+.meal-compare-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.meal-compare-item:last-child { border-bottom: none; }
+.meal-compare-item input { flex: none; width: 18px; height: 18px; accent-color: var(--accent-purple); }
+.meal-compare-item-name { flex: 1; min-width: 0; }
+.meal-compare-item-value { flex: none; font-size: 12px; font-weight: 700; color: var(--muted); }
 /* Each PR its own row instead of one comma-joined paragraph (see
    renderPRPhaseBreakdown) - a phase with a lot of PRs stays scannable
    instead of wrapping into a wall of text, and it's tucked behind

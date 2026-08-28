@@ -219,6 +219,18 @@
   </div>
 </div>
 
+<div id="meal-compare-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>Choose foods to compare</h2>
+    <p class="modal-sub">Pick which foods show in the Energy by Meal list, instead of just the top 4.</p>
+    <div class="meal-compare-list" id="meal-compare-list"></div>
+    <div class="confirm-actions">
+      <button type="button" class="secondary" id="meal-compare-reset">Reset to top 4</button>
+      <button type="button" class="primary" id="meal-compare-done">Done</button>
+    </div>
+  </div>
+</div>
+
 <div id="date-picker-modal" class="modal-overlay" hidden>
   <div class="modal-card date-picker-card">
     <div class="date-picker-header">
@@ -611,7 +623,7 @@
     <p class="cycle-perf-section-label" id="cycle-perf-empty" hidden>Log a few sets to see your strength-by-phase chart here.</p>
     <div id="cycle-perf-content" hidden>
       <div class="cycle-perf-chart-card">
-        <p class="cycle-perf-section-label">Strength by phase</p>
+        <p class="cycle-perf-section-label">Time based analysis</p>
 
         <div class="cycle-perf-subtabs" role="tablist">
           <button type="button" class="cycle-perf-subtab active" id="cycle-perf-subtab-performance" data-perf-view="performance" role="tab" aria-selected="true">Performance by Time</button>
@@ -646,8 +658,28 @@
       </div>
 
       <div class="cycle-perf-prphase-card">
-        <p class="cycle-perf-prphase-label">Where your PRs happen</p>
-        <div id="cycle-perf-prphase-content"></div>
+        <p class="cycle-perf-section-label">Phase based analysis</p>
+
+        <div class="cycle-perf-subtabs" role="tablist">
+          <button type="button" class="cycle-perf-subtab active" id="cycle-phase-subtab-prs" data-phase-view="prs" role="tab" aria-selected="true">Where your PRs happen</button>
+          <button type="button" class="cycle-perf-subtab" id="cycle-phase-subtab-meal" data-phase-view="meal" role="tab" aria-selected="false">Energy by Meal</button>
+        </div>
+
+        <div id="cycle-phase-view-prs">
+          <div id="cycle-perf-prphase-content"></div>
+        </div>
+
+        <div id="cycle-phase-view-meal" hidden>
+          <div class="cycle-perf-chart-header">
+            <span class="cycle-perf-chart-title">
+              <button type="button" class="cycle-perf-info-btn" id="cycle-meal-info-btn" aria-expanded="false" aria-label="About this chart"><span aria-hidden="true">i</span></button>
+              <div class="cycle-perf-info-popover" id="cycle-meal-info-popover" hidden>Your average logged energy level for each food you've logged before a workout, highest first. Meals logged only once are still shown - just weigh those less confidently.</div>
+            </span>
+          </div>
+          <div id="cycle-energy-meal-content"></div>
+          <p class="cycle-energy-empty" id="cycle-energy-meal-empty" hidden>Log what you ate along with your energy level to see this here.</p>
+          <button type="button" class="edit-link-btn cycle-meal-compare-btn" id="cycle-meal-compare-btn" hidden>Choose foods to compare</button>
+        </div>
       </div>
 
       <div class="cycle-perf-insight-card" id="cycle-perf-insight-card" hidden>
