@@ -21,8 +21,8 @@ capped at MAX_SHIELDS. Milestone progress is scoped to the *current* streak
 resets too (shields already banked are not taken away, only the progress
 toward earning the next one).
 
-A week that overlaps the user's period (per cycle.py's projection from
-last_period_date) gets the same steady-hold treatment as a shielded week,
+A week that overlaps the user's period (per cycle.py's projection from the
+user's logged period_logs) gets the same steady-hold treatment as a shielded week,
 but for free - no shield spent, nothing persisted. It's recomputed live
 every call, same as everything else here. This is naturally bounded, not a
 loophole: a period only overlaps at most 2 of the ~4 streak-weeks in any
@@ -75,15 +75,15 @@ def compute_streak_status(db, user_id, today=None):
     today = today or date.today()
 
     user = db.execute(
-        "SELECT shield_count, shield_milestone_progress, longest_streak, last_period_date, "
-        "period_length_days FROM users WHERE id = ?",
+        "SELECT shield_count, shield_milestone_progress, longest_streak FROM users WHERE id = ?",
         (user_id,),
     ).fetchone()
     shield_count = user["shield_count"]
     milestone_progress = user["shield_milestone_progress"]
     longest_streak = user["longest_streak"]
-    last_period = date.fromisoformat(user["last_period_date"]) if user["last_period_date"] else None
-    period_length_days = user["period_length_days"]
+    periods = db.execute(
+        "SELECT start_date, length_days FROM period_logs WHERE user_id = ?", (user_id,)
+    ).fetchall()
 
     log_dates = [date.fromisoformat(r["date"]) for r in db.execute(
         "SELECT DISTINCT date FROM workout_log WHERE user_id = ?", (user_id,)
@@ -148,7 +148,7 @@ def compute_streak_status(db, user_id, today=None):
             # collapsing to 0 once shields ran out - a confusing climb-then-
             # crash with no real activity behind it.
             pass
-        elif earliest_week and wk >= earliest_week and week_overlaps_period(wk_date, last_period, period_length_days):
+        elif earliest_week and wk >= earliest_week and week_overlaps_period(wk_date, periods):
             # Free pass, not a shield use: a week she fell short on because
             # it overlapped her period shouldn't cost a banked shield, and
             # shouldn't need one either. Same earliest_week floor as a real

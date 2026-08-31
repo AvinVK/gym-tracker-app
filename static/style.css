@@ -81,6 +81,13 @@
    works since "manipulation" only drops double-tap, not pinch. */
 html { touch-action: manipulation; }
 
+/* Kills the WebView's default blue/gray tap-highlight rectangle that
+   flashes over a button/link on tap or long-press - same "feels native, not
+   a webpage" reasoning as touch-action above. Buttons/links still get their
+   own :active/:hover styling for press feedback; this only removes the
+   browser's own overlay. */
+* { -webkit-tap-highlight-color: transparent; }
+
 body {
   margin: 0;
   font-family: "Josefin Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -2939,6 +2946,33 @@ button:disabled {
   color: var(--muted);
 }
 .phase-legend-item { display: inline-flex; align-items: center; }
+
+/* Plain text+dot pills, no button chrome - dropping the box/border (and
+   the "All" pill - see renderPhaseLegend) is what makes 4 phases fit one
+   line without cutting off, where a bordered/backgrounded pill row and a
+   3rd "All" item didn't. */
+#workout-log-phase-legend {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 14px;
+  margin: 0 0 18px;
+  white-space: nowrap;
+}
+.history-phase-pill {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 2px 0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+.history-phase-pill.active { color: var(--ink); }
 #perf-phase-legend { margin: 14px 0 0; }
 /* Forced onto one line (unlike the base .phase-legend's wrap) - the chart
    card is narrow enough that 4 wrapped phase names read as clutter; an
@@ -2974,49 +3008,231 @@ button:disabled {
   font-weight: 700;
 }
 
-.history-list { display: flex; flex-direction: column; gap: 10px; }
-.history-card {
+/* ---------------- History toolbar (date search + PR-by-exercise filter) --- */
+.history-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.history-search-field { flex: 1 1 0; min-width: 0; }
+/* Centered like its neighbor "Find PRs" - space-between (the base
+   .date-field-btn's usual layout, for when it also has a trailing icon)
+   left this text hugging the left edge instead, now that the icon's gone. */
+.history-search-field .date-field-btn { width: 100%; justify-content: center; text-align: center; }
+/* Same surface/border/radius as .date-field-btn right next to it in the
+   toolbar - they were two different neutrals (--card vs --surface-2)
+   before, which read as a mismatch even though both were "just a plain
+   button". */
+.history-pr-filter-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 14px 16px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--accent-purple);
+  cursor: pointer;
   transition: background .15s ease;
 }
-.history-card.clickable-row { cursor: pointer; }
-.history-card.clickable-row:hover { background: var(--surface-2); }
-.history-card-top {
+.history-pr-filter-btn:hover { background: var(--surface-3); }
+
+/* Same soft purple-tint treatment as .cycle-power-stat ("What a Diva!") -
+   a tinted background in the accent color reads as a friendly status note,
+   not the alarm-red .tint/.tint-border pairing (that's used for
+   destructive/warning contexts elsewhere). */
+.history-active-filter {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-size: 13.5px;
+  background: rgba(183, 177, 246, .12);
+  border: none;
+  border-radius: 10px;
+  padding: 8px 10px 8px 12px;
+  margin-bottom: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent-purple);
+}
+.history-active-filter-clear {
+  flex: none;
+  background: none;
+  border: none;
+  color: var(--accent-purple);
+  font-size: 16px;
+  line-height: 1;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-family: inherit;
+  opacity: .8;
+}
+.history-active-filter-clear:hover { background: rgba(183, 177, 246, .2); opacity: 1; }
+
+.history-list { display: flex; flex-direction: column; }
+
+/* ---------------- Timeline rail ----------------
+   A continuous vertical line down the whole list, not a border per day -
+   each row contributes its own top/bottom half of the line (.tl-rail::before,
+   spanning from above the dot to below it) so consecutive rows chain into
+   one unbroken rail, phase-colored dot per session. A day is a plain text
+   header sitting outside the rail column, not its own boxed card - grouping
+   now comes from the rail/dots themselves, the way the rest of this list
+   reads as a log rather than a stack of forms. */
+.tl-day {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 18px 0 8px;
+  font-size: 15px;
   font-weight: 700;
 }
-.history-card-badges {
+.tl-week-body > .tl-day:first-child { padding-top: 4px; }
+.tl-day-date { color: var(--ink); }
+
+.tl-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 2px 6px 12px 0;
+  border-radius: 10px;
+  transition: background .15s ease;
+}
+.tl-row.clickable-row { cursor: pointer; }
+.tl-row.clickable-row:hover { background: var(--surface-2); }
+
+.tl-rail {
+  flex: none;
+  position: relative;
+  width: 16px;
+  align-self: stretch;
+  display: flex;
+  justify-content: center;
+}
+.tl-rail::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  bottom: -12px;
+  width: 1.5px;
+  background: var(--border);
+}
+/* Trimmed to the dot itself at the start/end of each day's own run of
+   rows (see renderTimelineList/timelineRowHtml, which mark these) - so the
+   rail reads as one continuous line within a day but doesn't visually
+   bleed into the day header above or below it. */
+.tl-row-first .tl-rail::before { top: 5px; }
+.tl-row-last .tl-rail::before { bottom: 5px; }
+.tl-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-top: 5px;
+  box-shadow: 0 0 0 3px var(--card);
+  position: relative;
+  z-index: 1;
+}
+
+.tl-content { flex: 1 1 auto; min-width: 0; }
+.tl-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  font-size: 13.5px;
+  padding-top: 3px;
+}
+.tl-line .muscle { font-weight: 700; }
+.tl-line-empty { color: var(--muted); font-style: italic; }
+
+/* Icon-only edit trigger, one per rail row - the full text "Edit" link used
+   to take its own row per session, which is what made a multi-session day
+   feel like a stack of small forms instead of a log. */
+/* Just the glyph, no filled background box - same red as the old "Edit"
+   text link (--accent-dark) so the icon swap didn't also change its color,
+   but a plain icon button rather than a tinted square around it. */
+.edit-btn-icon {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--accent-dark);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  margin-top: 2px;
+}
+.edit-btn-icon:hover { background: var(--surface-2); }
+
+/* Small static info tag - energy/edited on a session line. Deliberately
+   not .chip (that's a clickable filter/selector pill with its own hover/
+   active states); this is inert, read-only metadata. */
+.history-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.history-chip.history-chip-edited { color: var(--muted-2); }
+.history-session-chips {
   display: inline-flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 4px;
+  gap: 5px;
 }
-.history-card-muscles {
-  margin: 6px 0 4px;
-  font-size: 16px;
-  font-weight: 700;
+/* Inline with the energy/edited chips (same .tl-line), not forced onto its
+   own row below them - flows right after the chips, wrapping naturally
+   with them only if it doesn't fit, rather than always starting fresh. */
+.history-session-note {
+  color: var(--accent-2);
+  font-style: italic;
+  font-size: 12.5px;
 }
-.history-card-meta {
-  margin: 0;
-  font-size: 13px;
-  color: var(--muted);
+
+.tl-row-edit { padding-bottom: 14px; }
+.history-card-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
-.history-card-note { color: var(--accent-dark); font-style: italic; }
+/* The energy/meal-timing field buttons default to width:100% (right for
+   where they're normally used, one per row) - here they need to share one
+   row instead, so pin each to half the row like the Today screen's
+   session-strip chips already do (see .session-strip overrides above). */
+.history-card-edit-row .energy-field,
+.history-card-edit-row .meal-timing-field {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.history-card-edit-row .energy-field-btn,
+.history-card-edit-row .meal-timing-field-btn {
+  width: 100%;
+  min-width: 0;
+}
 .history-card-actions {
   display: flex;
   justify-content: flex-end;
   gap: 4px;
   margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border);
 }
-.history-card-actions .edit-btn,
 .history-card-actions .save-btn,
 .history-card-actions .cancel-btn {
   background: none;
@@ -3030,18 +3246,10 @@ button:disabled {
   transition: background .15s ease;
   font-family: inherit;
 }
-.history-card-actions .edit-btn:hover,
 .history-card-actions .save-btn:hover,
 .history-card-actions .cancel-btn:hover { background: var(--surface-2); }
 .history-card-actions .cancel-btn { color: var(--muted); }
-.history-card-edit-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.history-card .edit-notes, .history-card .edit-meal,
-.history-session-row .edit-notes, .history-session-row .edit-meal {
+.tl-row .edit-notes, .tl-row .edit-meal {
   width: 100%;
   margin-top: 8px;
   font-size: 13px;
@@ -3052,64 +3260,40 @@ button:disabled {
   background: var(--surface-2);
   color: var(--ink);
 }
-.history-card .edit-notes:focus, .history-card .edit-meal:focus,
-.history-session-row .edit-notes:focus, .history-session-row .edit-meal:focus {
+.tl-row .edit-notes:focus, .tl-row .edit-meal:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
-.history-sessions-count { font-style: italic; }
-.history-sessions { display: flex; flex-direction: column; margin-top: 6px; }
-.history-session-row {
-  padding: 10px 0;
-  border-top: 1px solid var(--border);
-}
-.history-session-row-top {
+/* Collapsible section per week (see renderTimelineList) - the header is a
+   real button (not just a label) so the whole week's days/rows can be
+   folded away, with a chevron on the left that rotates to show state. */
+.history-list > .tl-week:first-child .tl-week-header { border-top: none; margin-top: 0; padding-top: 0; }
+.tl-week-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: .02em;
-}
-.history-session-row .history-card-meta { margin-top: 4px; }
-.history-session-row .history-card-actions {
-  margin-top: 8px;
-  padding-top: 0;
-  border-top: none;
-}
-.history-card-meta-empty { font-style: italic; opacity: .7; }
-
-.history-pager {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 14px;
-}
-.history-pager-label {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--muted);
-}
-.history-pager-btn {
-  background: var(--surface-2);
+  gap: 6px;
+  width: 100%;
+  background: none;
   border: none;
-  color: var(--accent-purple);
-  cursor: pointer;
-  font-size: 12.5px;
+  border-top: 1px solid var(--border);
+  margin-top: 16px;
+  padding: 20px 0 4px;
+  font: inherit;
+  font-size: 11px;
   font-weight: 700;
-  padding: 8px 14px;
-  border-radius: var(--radius-sm);
-  transition: background .15s ease;
-  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted-2);
+  cursor: pointer;
+  text-align: left;
 }
-.history-pager-btn:hover:not(:disabled) { background: var(--surface-3); }
-.history-pager-btn:disabled { opacity: .4; cursor: default; }
+.tl-week-chevron {
+  display: inline-flex;
+  transition: transform .15s ease;
+}
+.tl-week-header.collapsed .tl-week-chevron { transform: rotate(-90deg); }
 
 @media (max-width: 700px) {
   .history-card-edit-row .date-field { flex: 1 1 auto; }

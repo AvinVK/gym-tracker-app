@@ -511,14 +511,22 @@
   <section id="maintab-history" class="main-tab-panel main-tab-panel-padded">
     <div class="card" id="card-workout-log">
       <h2>Workout Log</h2>
+      <div class="history-toolbar">
+        <div class="date-field history-search-field" data-date-field data-max="today">
+          <button type="button" class="date-field-btn">
+            <span class="date-field-value placeholder">Jump to a date</span>
+          </button>
+          <input type="hidden" id="history-search-date">
+        </div>
+        <button type="button" class="history-pr-filter-btn" id="history-pr-filter-btn">Find PRs</button>
+      </div>
+      <div class="history-active-filter" id="history-active-filter" hidden>
+        <span id="history-active-filter-label"></span>
+        <button type="button" class="history-active-filter-clear" id="history-active-filter-clear" aria-label="Clear filter">&times;</button>
+      </div>
       <div class="phase-legend" id="workout-log-phase-legend" hidden></div>
       <p class="placeholder-text" id="history-empty" hidden></p>
       <div class="history-list" id="history-list"></div>
-      <div class="history-pager" id="history-pager">
-        <button type="button" class="history-pager-btn" id="history-pager-newer">&larr; Newer</button>
-        <span class="history-pager-label"></span>
-        <button type="button" class="history-pager-btn" id="history-pager-older">Older &rarr;</button>
-      </div>
     </div>
 
     <div class="card" id="card-exercise-detail" hidden>

@@ -97,6 +97,21 @@ CREATE TABLE IF NOT EXISTS streak_shield_uses (
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE(user_id, week_start)
 );
+
+-- One row per period the user has actually logged, each keeping its own
+-- length_days - see cycle.py for why: period length isn't constant
+-- cycle-to-cycle, so a 7-day period logged this month must not repaint any
+-- other month's phase boundaries. users.last_period_date/period_length_days
+-- (below) stay in sync with whichever row here has the latest start_date,
+-- purely as a fast "most recent period" lookup for callers that don't need
+-- the full history.
+CREATE TABLE IF NOT EXISTS period_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    start_date TEXT NOT NULL,
+    length_days INTEGER NOT NULL,
+    UNIQUE(user_id, start_date)
+);
 """
 
 
@@ -204,6 +219,13 @@ def init_db():
     _ensure_column(conn, "exercise_plan", "proposed_by", "INTEGER REFERENCES users(id)")
     _ensure_column(conn, "exercise_plan", "proposed_at", "TEXT")
     _ensure_column(conn, "users", "is_admin", "INTEGER NOT NULL DEFAULT 0")
+    # Backfill one period_logs row per existing user's single last-known
+    # period, so upgrading to per-cycle length loses no one's current data.
+    # INSERT OR IGNORE: safe to re-run every startup once the row exists.
+    conn.execute(
+        "INSERT OR IGNORE INTO period_logs (user_id, start_date, length_days) "
+        "SELECT id, last_period_date, period_length_days FROM users WHERE last_period_date IS NOT NULL"
+    )
     if first_run:
         conn.executemany(
             "INSERT INTO exercise_plan (target_muscle, exercise, images, curated) VALUES (?, ?, ?, ?)",
