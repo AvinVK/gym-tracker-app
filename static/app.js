@@ -368,6 +368,19 @@ function openLandingMain() {
 
 landingSplash.addEventListener("click", openLandingMain);
 
+// Auto-advance past the splash after a few seconds even with no tap/
+// swipe - it's a brief brand moment, not something a first-time visitor
+// should have to know to dismiss. Guarded on landing-page still being the
+// visible screen (not hidden by a fast checkAuth() login, and not already
+// past the splash) so this can't fire the transition after the user's
+// moved on some other way.
+setTimeout(() => {
+  const landingPage = document.getElementById("landing-page");
+  if (!landingPage.hidden && !landingTrack.classList.contains("is-open")) {
+    openLandingMain();
+  }
+}, 5000);
+
 let landingTouchStartX = null;
 landingSplash.addEventListener("touchstart", (e) => {
   landingTouchStartX = e.touches[0].clientX;
@@ -752,19 +765,67 @@ document.getElementById("pending-exercises-list").addEventListener("click", asyn
 wireCycleOptIn(document.getElementById("profile-track-cycle"), document.getElementById("profile-period-date-label"));
 
 // ---------------- Your Cycle ----------------
-// No per-user cycle length is collected, so this estimates every cycle as
-// a standard 28 days from the last period date - the simplified 4-phase
-// model most consumer cycle-tracking apps use absent more history. Period
-// (menstrual phase) length IS per-user, adjustable via the Log Period
-// button, so the phase boundaries are computed fresh from currentUser
-// rather than a fixed array - call getCyclePhases() once per render and
-// reuse that same array/objects (each call builds new objects, so a phase
-// object from one call won't === one from another).
+// Every cycle is still estimated as a standard 28 days - the simplified
+// 4-phase model most consumer cycle-tracking apps use absent more history.
+// Period (menstrual phase) length is NOT one constant across all cycles
+// though - each period the user actually logs (currentUser.period_logs,
+// one row per Log Period save, see routes/auth.py's log_period) keeps its
+// own length, so a 7-day period logged this month doesn't repaint any other
+// month's phase boundaries. A date that isn't covered by a logged period's
+// own ~28-day window (a future cycle nobody's confirmed yet, or before
+// tracking started) falls back to DEFAULT_PERIOD_DAYS. Mirrors cycle.py's
+// governing_period()/period_length_for_date() so client and server never
+// disagree. Phase boundaries are computed per-date rather than once per
+// render - call getCyclePhases(dateStr) once per date you need and reuse
+// that array/objects (each call builds new objects, so a phase object from
+// one call won't === one from another).
 const CYCLE_LENGTH_DAYS = 28;
 const DEFAULT_PERIOD_DAYS = 5;
 
-function getCyclePhases() {
-  const periodDays = (currentUser && currentUser.period_length_days) || DEFAULT_PERIOD_DAYS;
+function daysBetweenIso(fromIso, toIso) {
+  const from = new Date(fromIso + "T00:00:00");
+  const to = new Date(toIso + "T00:00:00");
+  return Math.floor((to - from) / 86400000);
+}
+
+// The logged period (from currentUser.period_logs) that governs dateStr -
+// the latest one starting on or before it. If dateStr is earlier than every
+// logged period, falls back to the *earliest* one instead of null, so a
+// date before any tracked period still gets a projected phase (28-day cycle
+// math is symmetric - it works extrapolating backward from an anchor the
+// same way it works extrapolating forward). null only if nothing's been
+// logged at all. Note this means the days-since-start below can come back
+// negative - periodLengthForDate/cyclePhaseForDate account for that by only
+// trusting the governing period's own logged length when days-since is
+// also >= 0.
+function governingPeriod(dateStr) {
+  const periods = (currentUser && currentUser.period_logs) || [];
+  let governing = null;
+  for (const p of periods) {
+    if (p.start_date > dateStr) break;
+    governing = p;
+  }
+  if (!governing && periods.length) governing = periods[0];
+  return governing;
+}
+
+// The menstrual-phase length that applies to dateStr's cycle: the governing
+// period's own logged length if dateStr falls within *that* period's own
+// 28-day window, otherwise DEFAULT_PERIOD_DAYS - a later, unconfirmed
+// projected cycle (or an earlier one being extrapolated backward from the
+// earliest logged period) never inherits a different cycle's custom length.
+function periodLengthForDate(dateStr) {
+  const governing = governingPeriod(dateStr);
+  if (!governing) return DEFAULT_PERIOD_DAYS;
+  const daysSince = daysBetweenIso(governing.start_date, dateStr);
+  return daysSince >= 0 && daysSince < CYCLE_LENGTH_DAYS ? governing.length_days : DEFAULT_PERIOD_DAYS;
+}
+
+// dateStr defaults to today - most callers (phase legends, the phase-key
+// scaffolding for a byPhase map, PR-phase sorting) just want "the current
+// set of phase boundaries" for display, not a specific date's.
+function getCyclePhases(dateStr = todayStr) {
+  const periodDays = periodLengthForDate(dateStr);
   return [
     { key: "menstrual", label: "Menstrual Phase", startDay: 1, endDay: periodDays, color: "#f4436c" },
     { key: "follicular", label: "Follicular Phase", startDay: periodDays + 1, endDay: 13, color: "#17c993" },
@@ -773,27 +834,28 @@ function getCyclePhases() {
   ];
 }
 
-function cyclePhaseForDay(day) {
-  const phases = getCyclePhases();
+// day/phases must come from the same dateStr (e.g. cycleDayForDate(dateStr)
+// and getCyclePhases(dateStr)) - phases aren't looked up internally here so
+// a caller that already has both (renderPhaseList/renderCycleTab, both for
+// "today") isn't forced to recompute phases twice.
+function cyclePhaseForDay(day, phases = getCyclePhases()) {
   return phases.find(p => day >= p.startDay && day <= p.endDay) || phases[phases.length - 1];
 }
 
 // Cycle day (1-28) for an arbitrary date, not just today - shared by the
 // Your Cycle tab summary and the phase dot next to each date in workout
-// history. Returns null if the user hasn't opted into cycle tracking.
+// history. Returns null if there's no logged period on or before dateStr.
 function cycleDayForDate(dateStr) {
-  const lastPeriod = currentUser && currentUser.last_period_date;
-  if (!lastPeriod) return null;
-  const start = new Date(lastPeriod + "T00:00:00");
-  const target = new Date(dateStr + "T00:00:00");
-  const daysSince = Math.floor((target - start) / 86400000);
-  // +1 so the last period date itself is cycle day 1, not day 0.
+  const governing = governingPeriod(dateStr);
+  if (!governing) return null;
+  const daysSince = daysBetweenIso(governing.start_date, dateStr);
+  // +1 so the governing period's start_date itself is cycle day 1, not day 0.
   return (((daysSince % CYCLE_LENGTH_DAYS) + CYCLE_LENGTH_DAYS) % CYCLE_LENGTH_DAYS) + 1;
 }
 
 function cyclePhaseForDate(dateStr) {
   const day = cycleDayForDate(dateStr);
-  return day == null ? null : cyclePhaseForDay(day);
+  return day == null ? null : cyclePhaseForDay(day, getCyclePhases(dateStr));
 }
 
 // Kept in sync here (not left as static HTML) since period length is
@@ -802,7 +864,7 @@ function cyclePhaseForDate(dateStr) {
 // phase-info modal (opened from Today's phase label), since both display
 // the same four phase cards.
 function renderPhaseList() {
-  const phasesForList = getCyclePhases();
+  const phasesForList = getCyclePhases(todayStr);
   const menstrualPhase = phasesForList.find(p => p.key === "menstrual");
   const follicularPhase = phasesForList.find(p => p.key === "follicular");
   document.getElementById("cycle-phase-days-menstrual").textContent =
@@ -810,7 +872,7 @@ function renderPhaseList() {
   document.getElementById("cycle-phase-days-follicular").textContent = `Day ${follicularPhase.startDay}-${follicularPhase.endDay}`;
 
   const cycleDay = cycleDayForDate(todayStr);
-  const currentPhase = cycleDay == null ? null : cyclePhaseForDay(cycleDay);
+  const currentPhase = cycleDay == null ? null : cyclePhaseForDay(cycleDay, phasesForList);
   document.querySelectorAll(".cycle-phase-card").forEach(c => c.classList.toggle("active", !!currentPhase && c.dataset.phase === currentPhase.key));
 }
 
@@ -837,7 +899,7 @@ async function renderCycleTab() {
   // Looked up against one phases array (not cyclePhaseForDay's own internal
   // call) so currentPhase is === one of this array's own objects - needed
   // for indexOf to find it below.
-  const phases = getCyclePhases();
+  const phases = getCyclePhases(todayStr);
   const currentPhase = phases.find(p => cycleDay >= p.startDay && cycleDay <= p.endDay) || phases[phases.length - 1];
   const currentIndex = phases.indexOf(currentPhase);
   const nextPhase = phases[(currentIndex + 1) % phases.length];
@@ -1005,6 +1067,14 @@ document.getElementById("cycle-cal-log-save").addEventListener("click", async ()
     const res = await api.put(`/api/user/${currentUserId}/period`, { last_period_date: start, period_length_days: periodLengthDays });
     currentUser.last_period_date = res.last_period_date;
     currentUser.period_length_days = res.period_length_days;
+    // Upsert this cycle's own entry by start_date, mirroring the backend's
+    // period_logs row - keeps this specific cycle's length isolated from
+    // every other logged cycle (see getCyclePhases/periodLengthForDate).
+    if (!currentUser.period_logs) currentUser.period_logs = [];
+    const existing = currentUser.period_logs.find(p => p.start_date === start);
+    if (existing) existing.length_days = periodLengthDays;
+    else currentUser.period_logs.push({ start_date: start, length_days: periodLengthDays });
+    currentUser.period_logs.sort((a, b) => a.start_date < b.start_date ? -1 : a.start_date > b.start_date ? 1 : 0);
     periodLogging = false;
     periodLogDates = new Set();
     toast("Period logged");
@@ -1026,6 +1096,17 @@ document.getElementById("form-profile").addEventListener("submit", async (e) => 
   try {
     await api.put(`/api/user/${currentUser.id}`, body);
     currentUser = { ...currentUser, ...body };
+    // Mirrors the backend's INSERT OR IGNORE: this form has no length
+    // field, so a genuinely new last_period_date starts at the same 5-day
+    // default every unconfirmed cycle gets, without touching an
+    // already-logged date's real length.
+    if (body.last_period_date) {
+      if (!currentUser.period_logs) currentUser.period_logs = [];
+      if (!currentUser.period_logs.some(p => p.start_date === body.last_period_date)) {
+        currentUser.period_logs.push({ start_date: body.last_period_date, length_days: 5 });
+        currentUser.period_logs.sort((a, b) => a.start_date < b.start_date ? -1 : a.start_date > b.start_date ? 1 : 0);
+      }
+    }
     showGreeting(currentUser.name);
     closeProfileEditModal();
     toast("Profile updated");
@@ -3290,8 +3371,10 @@ const cardExerciseDetail = document.getElementById("card-exercise-detail");
 let currentWorkouts = [];
 let currentExerciseLogs = [];
 let currentDetailDate = null;
-let historyPage = 0; // 0 = this calendar week, 1 = last week, etc.
 let historyPhaseFilter = null; // null = All, else a CYCLE_PHASES key
+let historyExerciseFilter = null; // null = off, else an exercise name - shows only that exercise's own PR days
+let historyHighlightDate = null; // ISO date to scroll to, set by the date-search field
+let currentExerciseHistory = []; // full exercise_log history, cached each showWorkoutLog() for the PR filter to compute from without a re-fetch
 
 // Monday-start week containing dateStr, as a local midnight Date.
 function weekStartDate(dateStr) {
@@ -3301,18 +3384,17 @@ function weekStartDate(dateStr) {
   return d;
 }
 
-function weekIndexFor(dateStr) {
-  const msPerWeek = 7 * 86400000;
-  return Math.round((weekStartDate(todayStr) - weekStartDate(dateStr)) / msPerWeek);
-}
-
-function formatWeekRangeLabel(page) {
-  const start = weekStartDate(todayStr);
-  start.setDate(start.getDate() - page * 7);
+// "This Week (Aug 31 – Sep 6)" or, for any earlier week, just the range -
+// the small header dropped into the timeline wherever a new week starts
+// (see renderTimelineList), now that the list is one continuous scroll
+// instead of paged a week at a time.
+function formatWeekLabelForDate(dateStr) {
+  const start = weekStartDate(dateStr);
   const end = new Date(start);
   end.setDate(end.getDate() + 6);
   const fmt = d => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  return page === 0 ? `This Week (${fmt(start)} – ${fmt(end)})` : `${fmt(start)} – ${fmt(end)}`;
+  const isThisWeek = start.getTime() === weekStartDate(todayStr).getTime();
+  return isThisWeek ? `This Week (${fmt(start)} – ${fmt(end)})` : `${fmt(start)} – ${fmt(end)}`;
 }
 
 // Re-fetches rather than reusing whatever was already rendered - editing a
@@ -3321,12 +3403,18 @@ function formatWeekRangeLabel(page) {
 // visibility back to the already-rendered table would leave that badge
 // (and any other edit made while in the detail view) stale until a full
 // page reload.
-async function showWorkoutLog() {
+async function showWorkoutLog({ resetCollapse = false } = {}) {
   cardExerciseDetail.hidden = true;
   cardWorkoutLog.hidden = false;
   const [workouts, history] = await Promise.all([api.get("/api/workout-log"), getExerciseHistory()]);
   currentWorkouts = workouts;
+  currentExerciseHistory = history;
   currentPRDaysByDate = computePRDaysByDate(history);
+  // Only on a fresh entry into the tab (loadHistory), not when this just
+  // re-fetches to come back from exercise detail - otherwise returning
+  // from a detail view would silently re-collapse whatever the user had
+  // manually expanded.
+  if (resetCollapse) collapsedWeeks = defaultCollapsedWeeks(currentWorkouts);
   renderWorkoutTable();
 }
 
@@ -3387,6 +3475,33 @@ function computePRDaysByDate(history) {
 // reads from it to tag a day's Date cell with e.g. "CHEST PR".
 let currentPRDaysByDate = new Map();
 
+// This one exercise's own PR days - same "beats every strictly earlier
+// day's best" rule as computePRDaysByDate above, just scoped to a single
+// exercise instead of bucketed by muscle group, for the "PRs for..." filter
+// (a user picks one exercise and sees only the days it hit a new best).
+function computeExercisePRDates(history, exerciseName) {
+  const rows = history.filter(x => x.exercise === exerciseName);
+  const weightCount = rows.filter(x => x.weight_kg != null).length;
+  const durationCount = rows.filter(x => x.duration_minutes != null).length;
+  const metricKey = durationCount > weightCount ? "duration_minutes" : "weight_kg";
+
+  const byDate = {};
+  rows.forEach(x => {
+    const v = x[metricKey];
+    if (v == null) return;
+    if (!byDate[x.date] || v > byDate[x.date]) byDate[x.date] = v;
+  });
+
+  const prDates = new Set();
+  let runningMax = null;
+  Object.keys(byDate).sort().forEach(date => {
+    const v = byDate[date];
+    if (runningMax != null && v > runningMax) prDates.add(date);
+    if (runningMax == null || v > runningMax) runningMax = v;
+  });
+  return prDates;
+}
+
 function energyFieldHtml(cls, value) {
   const info = energyLevelInfo(value);
   return `
@@ -3426,77 +3541,144 @@ function groupWorkoutsByDate(workouts) {
   return groups;
 }
 
-function sessionMetaHtml(w) {
-  const editedBadge = w.edited_at ? `<span class="edited-badge">Edited</span>` : "";
-  const metaParts = [];
-  if (w.energy_level != null) metaParts.push(`Energy <strong>${w.energy_level}/10</strong>`);
-  if (w.notes) metaParts.push(`<span class="history-card-note">&ldquo;${w.notes}&rdquo;</span>`);
-  return { editedBadge, metaHtml: metaParts.length ? `<p class="history-card-meta">${metaParts.join(" &middot; ")}</p>` : "" };
+// Small static tags for a session's one-line summary - energy/edited, or
+// a "no details logged" placeholder when there's nothing else to show.
+// Notes render on their own line below (sessionNoteHtml) since they're
+// free text and can run long, unlike these fixed-width tags.
+function sessionChipsHtml(w) {
+  const chips = [];
+  if (w.energy_level != null) chips.push(`<span class="history-chip">&#9889; ${w.energy_level}/10</span>`);
+  if (w.edited_at) chips.push(`<span class="history-chip history-chip-edited">edited</span>`);
+  if (!chips.length && !w.notes) chips.push(`<span class="history-chip">no details logged</span>`);
+  return chips.join("");
 }
 
-function workoutCardView(group) {
-  const { date, sessions } = group;
-  const phase = cyclePhaseForDate(date);
-  const dot = phase ? `<span class="phase-dot" style="background:${phase.color}" title="${phase.label}"></span>` : "";
+function sessionNoteHtml(w) {
+  return w.notes ? `<span class="history-session-note">&ldquo;${w.notes}&rdquo;</span>` : "";
+}
+
+// Timeline rail: a continuous vertical line down the whole list (built from
+// each row's own top/bottom half-segment via .tl-rail::before, so it reads
+// as one unbroken line, not a border per card) with a phase-colored dot per
+// session. A day is a plain text header, not its own boxed card - the rail
+// is what groups sessions visually now, so a day with several sessions
+// doesn't need "Session 1/2" labels or a day-level box to read as a unit.
+function timelineDayHeaderHtml(date) {
   const prMuscles = currentPRDaysByDate.get(date);
   const prTags = prMuscles
     ? [...prMuscles].map(m => `<span class="pr-day-tag">${m}-PR</span>`).join("")
     : "";
-  const muscles = formatMuscles(sessions[0].muscles) || "&mdash;";
+  return `
+    <div class="tl-day">
+      <span class="tl-day-date">${formatHistoryCardDate(date)}</span>
+      <span class="history-card-badges">${prTags}</span>
+    </div>`;
+}
 
-  if (sessions.length === 1) {
-    const w = sessions[0];
-    const { editedBadge, metaHtml } = sessionMetaHtml(w);
+function timelineRowHtml(date, w, posClass) {
+  const phase = cyclePhaseForDate(date);
+  const dotColor = phase ? phase.color : "var(--border)";
+
+  // A date-searched day with nothing logged still needs a row to render, so
+  // the searched date has something to scroll to - see
+  // jumpToHistoryDate/renderWorkoutTable.
+  if (!w) {
     return `
-      <div class="history-card clickable-row" data-date="${date}" data-id="${w.id}">
-        <div class="history-card-top">
-          <span class="date-with-phase">${dot}${formatHistoryCardDate(date)}</span>
-          <span class="history-card-badges">${prTags}${editedBadge}</span>
-        </div>
-        <h3 class="history-card-muscles">${muscles}</h3>
-        ${metaHtml}
-        <div class="history-card-actions">
-          <button class="edit-btn" data-id="${w.id}">Edit</button>
+      <div class="tl-row ${posClass}" data-date="${date}">
+        <div class="tl-rail"><div class="tl-dot" style="background:${dotColor}"></div></div>
+        <div class="tl-content">
+          <div class="tl-line tl-line-empty">No workout logged</div>
         </div>
       </div>`;
   }
 
-  const sessionRows = sessions.map((w, i) => {
-    const { editedBadge, metaHtml } = sessionMetaHtml(w);
-    return `
-      <div class="history-session-row" data-id="${w.id}">
-        <div class="history-session-row-top">
-          <span class="history-session-label">Session ${sessions.length - i}</span>
-          ${editedBadge}
-        </div>
-        ${metaHtml || `<p class="history-card-meta history-card-meta-empty">No details logged</p>`}
-        <div class="history-card-actions">
-          <button class="edit-btn" data-id="${w.id}">Edit</button>
-        </div>
-      </div>`;
-  }).join("");
-
   return `
-    <div class="history-card clickable-row" data-date="${date}">
-      <div class="history-card-top">
-        <span class="date-with-phase">${dot}${formatHistoryCardDate(date)}</span>
-        <span class="history-card-badges">${prTags}</span>
+    <div class="tl-row clickable-row ${posClass}" data-date="${date}" data-id="${w.id}">
+      <div class="tl-rail"><div class="tl-dot" style="background:${dotColor}"></div></div>
+      <div class="tl-content">
+        <div class="tl-line">
+          <span class="muscle">${formatMuscles(w.muscles) || "&mdash;"}</span>
+          <span class="history-session-chips">${sessionChipsHtml(w)}</span>
+          ${sessionNoteHtml(w)}
+        </div>
       </div>
-      <h3 class="history-card-muscles">${muscles}</h3>
-      <p class="history-card-meta history-sessions-count">${sessions.length} sessions logged that day</p>
-      <div class="history-sessions">${sessionRows}</div>
+      <button class="edit-btn edit-btn-icon" data-id="${w.id}" aria-label="Edit">&#9998;</button>
     </div>`;
 }
 
-function sessionEditRow(w) {
-  return `
-    <div class="history-session-row history-session-edit" data-id="${w.id}">
-      ${workoutEditFieldsHtml(w)}
-      <div class="history-card-actions">
-        <button class="save-btn" data-id="${w.id}">Save</button>
-        <button class="cancel-btn" data-id="${w.id}">Cancel</button>
-      </div>
-    </div>`;
+// Week keys the collapsed/expanded state persists across re-renders (see
+// collapsedWeeks) - built by hand rather than Date#toISOString(), which
+// converts to UTC and can shift the date by a day depending on the user's
+// timezone offset (same reason addDaysIso below does its own formatting).
+function weekKeyFor(dateStr) {
+  const d = weekStartDate(dateStr);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+let collapsedWeeks = new Set();
+
+// Only the last month's worth of weeks start expanded - older history is
+// still one tap away, but a year of logging shouldn't all be open (and
+// scrolled through) by default the moment you land on the tab.
+function defaultCollapsedWeeks(workouts) {
+  const cutoff = new Date(todayStr + "T00:00:00");
+  cutoff.setMonth(cutoff.getMonth() - 1);
+  const keys = new Set();
+  workouts.forEach(w => {
+    const key = weekKeyFor(w.date);
+    if (new Date(key + "T00:00:00") < cutoff) keys.add(key);
+  });
+  return keys;
+}
+
+function dayGroupHtml(date, sessions) {
+  const rows = sessions.length ? sessions : [null];
+  const rowsHtml = rows.map((w, i) => {
+    const posClass = [i === 0 ? "tl-row-first" : "", i === rows.length - 1 ? "tl-row-last" : ""].filter(Boolean).join(" ");
+    return timelineRowHtml(date, w, posClass);
+  }).join("");
+  return timelineDayHeaderHtml(date) + rowsHtml;
+}
+
+// One flat list of day headers + rail rows, in the same order groups
+// already come in (descending by date) - the point of the rail is that it
+// runs continuously across the whole list, day boundaries included. Each
+// day's own first/last row is marked (tl-row-first/tl-row-last) so the
+// rail trims cleanly at that day's own dots instead of bleeding into the
+// header above/below it - see the CSS.
+// weeklyHeaders: false for the phase/exercise filters, whose results skip
+// around in time (a collapsible "This Week" section sitting between two
+// PRs 3 months apart would be misleading, not useful) - only the plain,
+// chronological default view gets grouped into (collapsible) weeks.
+function renderTimelineList(groups, weeklyHeaders) {
+  if (!weeklyHeaders) {
+    return groups.map(({ date, sessions }) => dayGroupHtml(date, sessions)).join("");
+  }
+
+  // Bucket the already-ordered day groups into weeks without disturbing
+  // that order, then render each week as a collapsible section.
+  const weeks = [];
+  groups.forEach(g => {
+    const key = weekKeyFor(g.date);
+    let week = weeks[weeks.length - 1];
+    if (!week || week.key !== key) {
+      week = { key, label: formatWeekLabelForDate(g.date), dayGroups: [] };
+      weeks.push(week);
+    }
+    week.dayGroups.push(g);
+  });
+
+  return weeks.map(week => {
+    const collapsed = collapsedWeeks.has(week.key);
+    const bodyHtml = week.dayGroups.map(g => dayGroupHtml(g.date, g.sessions)).join("");
+    return `
+      <div class="tl-week">
+        <button type="button" class="tl-week-header${collapsed ? " collapsed" : ""}" data-week="${week.key}">
+          <span class="tl-week-chevron" aria-hidden="true">&#9662;</span>${week.label}
+        </button>
+        <div class="tl-week-body"${collapsed ? " hidden" : ""}>${bodyHtml}</div>
+      </div>`;
+  }).join("");
 }
 
 // Date is deliberately not editable here - it's what determines which
@@ -3520,22 +3702,28 @@ function workoutEditFieldsHtml(w) {
     <input type="text" class="edit-notes" placeholder="Notes" value="${w.notes || ""}">`;
 }
 
-function workoutCardEdit(w) {
+// Every session is its own rail row now (never a whole-day card), so
+// there's just one edit-row shape regardless of how many sessions a day
+// has - unlike the old sessionEditRow/workoutCardEdit split.
+function timelineEditRowHtml(w, posClass = "") {
   return `
-    <div class="history-card" data-id="${w.id}">
-      <h3 class="history-card-muscles">${formatMuscles(w.muscles) || "&mdash;"}</h3>
-      ${workoutEditFieldsHtml(w)}
-      <div class="history-card-actions">
-        <button class="save-btn" data-id="${w.id}">Save</button>
-        <button class="cancel-btn" data-id="${w.id}">Cancel</button>
+    <div class="tl-row tl-row-edit ${posClass}" data-id="${w.id}">
+      <div class="tl-rail"><div class="tl-dot" style="background:var(--border)"></div></div>
+      <div class="tl-content">
+        ${workoutEditFieldsHtml(w)}
+        <div class="history-card-actions">
+          <button class="save-btn" data-id="${w.id}">Save</button>
+          <button class="cancel-btn" data-id="${w.id}">Cancel</button>
+        </div>
       </div>
     </div>`;
 }
 
-// Doubles as both the phase-color legend and the history filter: each pill
-// is clickable, filters the table to that phase, and shows which filter
-// (if any) is currently active - one control instead of a legend plus a
-// separate filter dropdown.
+// Plain dot+label pills, no button chrome (background/border) - just a
+// legend that also happens to be tappable. No "All" pill either: tapping
+// the already-active phase again clears the filter, so there's no need for
+// a 5th item just to reset it. Dropping both the box styling and the "All"
+// label is what gets 4 phases onto one line without cutting off.
 function renderPhaseLegend() {
   const legend = document.getElementById("workout-log-phase-legend");
   if (!currentUser || !currentUser.last_period_date) {
@@ -3543,82 +3731,164 @@ function renderPhaseLegend() {
     return;
   }
   legend.hidden = false;
-  const allPill = `<button type="button" class="phase-legend-item phase-filter-btn${historyPhaseFilter === null ? " active" : ""}" data-phase="">All</button>`;
+  const allPill = `<button type="button" class="history-phase-pill${historyPhaseFilter === null ? " active" : ""}" data-phase="">All</button>`;
   const phasePills = getCyclePhases().map(p =>
-    `<button type="button" class="phase-legend-item phase-filter-btn${historyPhaseFilter === p.key ? " active" : ""}" data-phase="${p.key}"><span class="phase-dot" style="background:${p.color}"></span>${p.label}</button>`
+    `<button type="button" class="history-phase-pill${historyPhaseFilter === p.key ? " active" : ""}" data-phase="${p.key}"><span class="phase-dot" style="background:${p.color}"></span>${p.label.replace(" Phase", "")}</button>`
   ).join("");
   legend.innerHTML = allPill + phasePills;
-  legend.querySelectorAll(".phase-filter-btn").forEach(btn => {
+  legend.querySelectorAll(".history-phase-pill").forEach(btn => {
     btn.addEventListener("click", () => {
       historyPhaseFilter = btn.dataset.phase || null;
+      historyExerciseFilter = null;
+      historyHighlightDate = null;
       renderWorkoutTable();
     });
   });
 }
 
+// The "PRs for..." exercise chip - the phase filter shows its own active
+// state via the pill row above, but the exercise filter has no fixed set of
+// buttons to highlight, so it gets this one summary row instead (with a
+// clear button, since there's no "All" pill to tap back to).
+function renderActiveFilterChip() {
+  const el = document.getElementById("history-active-filter");
+  if (!historyExerciseFilter) {
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+  document.getElementById("history-active-filter-label").textContent = `Showing PR days for ${historyExerciseFilter}`;
+}
+
+document.getElementById("history-active-filter-clear").addEventListener("click", () => {
+  historyExerciseFilter = null;
+  renderWorkoutTable();
+});
+
+// One continuous scroll of everything ever logged, not a week at a time -
+// a short history was mostly empty space below a Newer/Older pager; a long
+// one just scrolls, with small week headers (see renderTimelineList)
+// dropped in so it's still obvious which week you're looking at.
 function renderWorkoutTable() {
-  const pageWorkouts = historyPhaseFilter
-    ? currentWorkouts.filter(w => cyclePhaseForDate(w.date)?.key === historyPhaseFilter)
-    : currentWorkouts.filter(w => weekIndexFor(w.date) === historyPage);
+  let pageWorkouts;
+  let weeklyHeaders = true;
+  if (historyExerciseFilter) {
+    const prDates = computeExercisePRDates(currentExerciseHistory, historyExerciseFilter);
+    pageWorkouts = currentWorkouts.filter(w => prDates.has(w.date));
+    weeklyHeaders = false;
+  } else if (historyPhaseFilter) {
+    pageWorkouts = currentWorkouts.filter(w => cyclePhaseForDate(w.date)?.key === historyPhaseFilter);
+    weeklyHeaders = false;
+  } else {
+    pageWorkouts = currentWorkouts;
+  }
+
+  const groups = groupWorkoutsByDate(pageWorkouts);
+  // A date search that landed on a day with nothing logged still needs a
+  // card to scroll to, so the search always lands somewhere visible - see
+  // jumpToHistoryDate. Doesn't apply once a phase/exercise filter is active
+  // (those skip around in time - there's no single "day" to insert one at).
+  if (historyHighlightDate && weeklyHeaders && !groups.some(g => g.date === historyHighlightDate)) {
+    const insertAt = groups.findIndex(g => g.date < historyHighlightDate);
+    const emptyGroup = { date: historyHighlightDate, sessions: [] };
+    if (insertAt === -1) groups.push(emptyGroup); else groups.splice(insertAt, 0, emptyGroup);
+  }
+
   const wBody = document.getElementById("history-list");
-  wBody.innerHTML = groupWorkoutsByDate(pageWorkouts).map(workoutCardView).join("");
+  wBody.innerHTML = renderTimelineList(groups, weeklyHeaders);
   bindWorkoutRowEvents();
   renderPhaseLegend();
-
-  document.getElementById("history-pager").hidden = !!historyPhaseFilter;
-  if (!historyPhaseFilter) renderHistoryPager();
+  renderActiveFilterChip();
 
   const emptyEl = document.getElementById("history-empty");
-  if (historyPhaseFilter && pageWorkouts.length === 0) {
+  if (historyExerciseFilter && pageWorkouts.length === 0) {
+    emptyEl.textContent = `No PRs yet for ${historyExerciseFilter}.`;
+    emptyEl.hidden = false;
+  } else if (historyPhaseFilter && pageWorkouts.length === 0) {
     const phase = getCyclePhases().find(p => p.key === historyPhaseFilter);
     emptyEl.textContent = `No workouts logged during your ${phase.label} yet.`;
     emptyEl.hidden = false;
   } else {
     emptyEl.hidden = true;
   }
+
+  if (historyHighlightDate) {
+    wBody.querySelector(`.tl-row[data-date="${historyHighlightDate}"]`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 }
 
-function renderHistoryPager() {
-  const maxPage = currentWorkouts.length
-    ? Math.max(...currentWorkouts.map(w => weekIndexFor(w.date)))
-    : 0;
-  document.querySelector("#history-pager .history-pager-label").textContent = formatWeekRangeLabel(historyPage);
-  document.getElementById("history-pager-newer").disabled = historyPage === 0;
-  document.getElementById("history-pager-older").disabled = historyPage >= maxPage;
+// Scrolls straight to the searched date in the full list - synthesizing an
+// empty placeholder row for it first if nothing was logged that day (see
+// renderWorkoutTable), so the search always lands somewhere visible
+// instead of silently doing nothing.
+function jumpToHistoryDate(iso) {
+  if (!iso) return;
+  historyPhaseFilter = null;
+  historyExerciseFilter = null;
+  historyHighlightDate = iso;
+  collapsedWeeks.delete(weekKeyFor(iso)); // the searched date might be in a week that's collapsed by default - expand it so there's something to scroll to
+  renderWorkoutTable();
 }
+document.getElementById("history-search-date").addEventListener("change", (e) => {
+  jumpToHistoryDate(e.target.value);
+});
 
-document.getElementById("history-pager-newer").addEventListener("click", () => {
-  if (historyPage === 0) return;
-  historyPage--;
-  renderWorkoutTable();
-});
-document.getElementById("history-pager-older").addEventListener("click", () => {
-  historyPage++;
-  renderWorkoutTable();
-});
+// Reuses the same detached-field + openOptionPicker pattern as
+// chooseCyclePerfExercise (Your Body's exercise switcher) - a single-select
+// modal listing every exercise ever logged, with no visible dropdown
+// button of its own since "PRs for..." is a plain trigger, not a field.
+async function chooseHistoryPRExercise() {
+  const exercises = [...new Set(currentExerciseHistory.map(x => x.exercise))].sort();
+  if (!exercises.length) { toast("Log a few sets first"); return; }
+  const field = document.createElement("div");
+  field.dataset.title = "PRs for which exercise?";
+  field.innerHTML = `<button type="button" class="option-field-btn"><span class="option-field-value placeholder">Select...</span></button><input type="hidden">`;
+  const hidden = field.querySelector("input[type=hidden]");
+  hidden.value = historyExerciseFilter || "";
+  setOptionFieldOptions(field, exercises);
+  hidden.addEventListener("change", () => {
+    historyExerciseFilter = hidden.value;
+    historyPhaseFilter = null;
+    historyHighlightDate = null;
+    renderWorkoutTable();
+  }, { once: true });
+  openOptionPicker(field);
+}
+document.getElementById("history-pr-filter-btn").addEventListener("click", chooseHistoryPRExercise);
 
 function bindWorkoutRowEvents() {
   const wBody = document.getElementById("history-list");
-  wBody.querySelectorAll(".history-card.clickable-row").forEach(card => {
-    card.addEventListener("click", () => showExerciseDetail(card.dataset.date));
+  wBody.querySelectorAll(".tl-row.clickable-row").forEach(row => {
+    row.addEventListener("click", () => showExerciseDetail(row.dataset.date));
+  });
+  // Toggling is a plain DOM flip (not a full re-render) so it's instant -
+  // collapsedWeeks just needs to stay in sync so the state survives the
+  // next real re-render (e.g. after saving an edit).
+  wBody.querySelectorAll(".tl-week-header").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.week;
+      const body = btn.nextElementSibling;
+      const collapsing = !body.hidden;
+      body.hidden = collapsing;
+      btn.classList.toggle("collapsed", collapsing);
+      if (collapsing) collapsedWeeks.add(key); else collapsedWeeks.delete(key);
+    });
   });
   wBody.querySelectorAll(".edit-btn").forEach(btn => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const w = currentWorkouts.find(x => x.id == btn.dataset.id);
-      const sessionRow = btn.closest(".history-session-row");
-      if (sessionRow) {
-        sessionRow.outerHTML = sessionEditRow(w);
-      } else {
-        btn.closest(".history-card").outerHTML = workoutCardEdit(w);
-      }
+      const row = btn.closest(".tl-row");
+      const posClass = ["tl-row-first", "tl-row-last"].filter(c => row.classList.contains(c)).join(" ");
+      row.outerHTML = timelineEditRowHtml(w, posClass);
       bindWorkoutEditRowEvents(w.id);
     });
   });
 }
 
 function bindWorkoutEditRowEvents(id) {
-  const row = document.querySelector(`#history-list .history-card[data-id="${id}"], #history-list .history-session-row[data-id="${id}"]`);
+  const row = document.querySelector(`#history-list .tl-row[data-id="${id}"]`);
   initEnergyField(row.querySelector(".energy-field"));
   initMealTimingField(row.querySelector(".meal-timing-field"));
   row.querySelector(".save-btn").addEventListener("click", async (e) => {
@@ -3646,9 +3916,10 @@ function bindWorkoutEditRowEvents(id) {
 }
 
 async function loadHistory() {
-  historyPage = 0;
   historyPhaseFilter = null;
-  await showWorkoutLog();
+  historyExerciseFilter = null;
+  historyHighlightDate = null;
+  await showWorkoutLog({ resetCollapse: true });
 }
 
 // Shared chart canvas size - originally the Your Performance tab's PR
