@@ -62,10 +62,22 @@ def _valid_email(email):
     return bool(email) and bool(EMAIL_RE.match(email))
 
 
-def _user_public_dict(row):
+def _user_public_dict(row, db=None):
     d = dict(row)
     d.pop("password_hash", None)
     d.pop("username", None)
+    # Full per-cycle period history (see period_logs in db.py) - the client
+    # needs every logged cycle's own length, not just last_period_date/
+    # period_length_days, so an earlier or later cycle's phase display never
+    # gets repainted by a different cycle's length.
+    if db is not None:
+        d["period_logs"] = [
+            {"start_date": r["start_date"], "length_days": r["length_days"]}
+            for r in db.execute(
+                "SELECT start_date, length_days FROM period_logs WHERE user_id = ? ORDER BY start_date",
+                (d["id"],),
+            ).fetchall()
+        ]
     return d
 
 
@@ -79,7 +91,7 @@ def get_me():
     if not row:
         session.clear()
         return jsonify(None)
-    return jsonify(_user_public_dict(row))
+    return jsonify(_user_public_dict(row, db))
 
 
 @bp.route("/api/check-email", methods=["POST"])
@@ -180,10 +192,20 @@ def signup():
     if db.execute("SELECT 1 FROM users WHERE email = ?", (email,)).fetchone():
         return jsonify({"error": "that email is already registered"}), 409
 
+    last_period_date = data.get("last_period_date") or None
     cur = db.execute(
         "INSERT INTO users (name, email, password_hash, age, last_period_date) VALUES (?, ?, ?, ?, ?)",
-        (name, email, generate_password_hash(pin), data.get("age"), data.get("last_period_date") or None),
+        (name, email, generate_password_hash(pin), data.get("age"), last_period_date),
     )
+    if last_period_date:
+        # Mirrors the users.period_length_days column default (5) - signup
+        # doesn't collect a length yet, so this first period_logs row starts
+        # out the same as every other unconfirmed cycle until the user
+        # explicitly edits it via Log Period.
+        db.execute(
+            "INSERT INTO period_logs (user_id, start_date, length_days) VALUES (?, ?, 5)",
+            (cur.lastrowid, last_period_date),
+        )
     db.commit()
     session.clear()
     session.permanent = True
@@ -203,7 +225,7 @@ def login():
     session.clear()
     session.permanent = True
     session["user_id"] = row["id"]
-    return jsonify(_user_public_dict(row))
+    return jsonify(_user_public_dict(row, db))
 
 
 @bp.route("/api/logout", methods=["POST"])
@@ -225,11 +247,22 @@ def update_user(user_id):
         return jsonify({"error": "name is required"}), 400
     if data.get("last_period_date") and is_future_date(data["last_period_date"]):
         return jsonify({"error": "last_period_date cannot be in the future"}), 400
+    last_period_date = data.get("last_period_date") or None
     db = get_db()
     db.execute(
         "UPDATE users SET name = ?, age = ?, last_period_date = ? WHERE id = ?",
-        (name, data.get("age"), data.get("last_period_date") or None, user_id),
+        (name, data.get("age"), last_period_date, user_id),
     )
+    if last_period_date:
+        # This form has no length field (unlike Log Period's date-range
+        # picker) - INSERT OR IGNORE so re-saving an already-logged date
+        # never clobbers a length the user set elsewhere; a genuinely new
+        # date starts at the same 5-day default every unconfirmed cycle
+        # gets.
+        db.execute(
+            "INSERT OR IGNORE INTO period_logs (user_id, start_date, length_days) VALUES (?, ?, 5)",
+            (user_id, last_period_date),
+        )
     db.commit()
     return jsonify({"id": user_id})
 
@@ -258,12 +291,29 @@ def log_period(user_id):
     if not (MIN_PERIOD_DAYS <= period_length_days <= MAX_PERIOD_DAYS):
         return jsonify({"error": f"period length must be between {MIN_PERIOD_DAYS} and {MAX_PERIOD_DAYS} days"}), 400
     db = get_db()
+    # Its own row, keyed by start_date - re-logging the same start_date
+    # updates that cycle's length rather than adding a duplicate, but never
+    # touches any other cycle's row (see cycle.py: length is per-cycle, not
+    # a single constant).
+    db.execute(
+        "INSERT INTO period_logs (user_id, start_date, length_days) VALUES (?, ?, ?) "
+        "ON CONFLICT(user_id, start_date) DO UPDATE SET length_days = excluded.length_days",
+        (user_id, last_period_date, period_length_days),
+    )
+    # Denormalized "most recent period" on users, derived from period_logs
+    # rather than trusting this call's own payload directly - so a
+    # retroactively-backfilled older period can't knock "today"'s anchor
+    # backwards.
+    latest = db.execute(
+        "SELECT start_date, length_days FROM period_logs WHERE user_id = ? ORDER BY start_date DESC LIMIT 1",
+        (user_id,),
+    ).fetchone()
     db.execute(
         "UPDATE users SET last_period_date = ?, period_length_days = ? WHERE id = ?",
-        (last_period_date, period_length_days, user_id),
+        (latest["start_date"], latest["length_days"], user_id),
     )
     db.commit()
-    return jsonify({"last_period_date": last_period_date, "period_length_days": period_length_days})
+    return jsonify({"last_period_date": latest["start_date"], "period_length_days": latest["length_days"]})
 
 
 @bp.route("/api/user/<int:user_id>/avatar", methods=["POST"])
