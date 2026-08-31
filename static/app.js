@@ -659,12 +659,11 @@ document.getElementById("profile-edit-modal").addEventListener("click", (e) => {
   if (e.target === e.currentTarget) closeProfileEditModal();
 });
 
-// ---------------- Your Body tab ----------------
+// ---------------- Discover tab (data-maintab/id stay "you" - see the HTML
+// comment above #maintab-you for why) ----------------
 function renderYouTab() {
   document.getElementById("card-pending-exercises").hidden = !currentUser.is_admin;
   if (currentUser.is_admin) loadPendingExercises();
-
-  renderCyclePerfSection();
 }
 
 // ---------------- Pending exercise approvals (admin only) ----------------
@@ -721,6 +720,14 @@ async function loadPendingExercises() {
       </div>
     </div>`).join("");
 }
+
+// Now a modal-overlay (relocated out of Discover's tab content, see the
+// HTML comment by #card-pending-exercises) rather than an always-inline
+// card, so it needs its own close affordance - same click-outside-to-close
+// pattern as the other modal-overlays (e.g. phaseInfoModal above).
+const pendingExercisesModal = document.getElementById("card-pending-exercises");
+document.getElementById("pending-exercises-close").addEventListener("click", () => { pendingExercisesModal.hidden = true; });
+pendingExercisesModal.addEventListener("click", (e) => { if (e.target === pendingExercisesModal) pendingExercisesModal.hidden = true; });
 
 document.getElementById("pending-exercises-list").addEventListener("click", async (e) => {
   const row = e.target.closest(".pending-exercise-row");
@@ -1153,7 +1160,7 @@ function switchTab(name) {
   if (name === "today") renderTodayScreen();
   else if (name === "log") renderLogScreen();
   else if (name === "history") loadHistory();
-  else if (name === "cycle") renderCycleTab();
+  else if (name === "cycle") { renderCycleTab(); renderCyclePerfSection(); }
   else if (name === "you") renderYouTab();
 }
 
@@ -1185,8 +1192,8 @@ const TOUR_STEPS = [
   },
   {
     target: () => document.querySelector('.bottom-nav-item[data-maintab="you"]'),
-    title: "Your Body tab",
-    body: "See your body stats, personal records, and trends over time here.",
+    title: "Discover tab",
+    body: "See how your hormones typically shift across your cycle, plus what's coming next in Fuel.",
   },
 ];
 
@@ -2591,13 +2598,13 @@ function addExerciseBlock(container = exercisesContainer) {
       <div class="set-actions">
         <button type="button" class="add-set secondary">+ Add Set</button>
         <button type="button" class="add-set-same secondary">Same as Above</button>
-        <button type="button" class="add-set-voice secondary" aria-label="Add a set by voice" title="Say something like &quot;20 reps with 30 kgs&quot;">🎤</button>
+        <button type="button" class="add-set-voice secondary" aria-label="Add a set by voice" title="Say something like &quot;20 reps with 30 kgs&quot;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M9 21h6"/></svg></button>
       </div>
     </div>
     <label class="full">Notes for this exercise
       <div class="note-field">
         <input type="text" class="ex-notes" placeholder="optional">
-        <button type="button" class="note-mic-btn secondary" aria-label="Dictate note" title="Speak your note">🎤</button>
+        <button type="button" class="note-mic-btn secondary" aria-label="Dictate note" title="Speak your note"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M9 21h6"/></svg></button>
       </div>
     </label>`;
 
@@ -2799,10 +2806,10 @@ function renderSessionStrip() {
     const parts = [];
     if (sessionFields.pre_workout_meal) parts.push(sessionFields.pre_workout_meal);
     if (sessionFields.hours_since_meal) parts.push(formatMealTimingLabel(sessionFields.hours_since_meal));
-    mealValueEl.textContent = `\u{1F37D}️ ${parts.join(" · ")}`;
+    mealValueEl.textContent = parts.join(" · ");
     mealValueEl.classList.remove("placeholder");
   } else {
-    mealValueEl.textContent = "\u{1F37D} Add fuel";
+    mealValueEl.textContent = "Add fuel";
     mealValueEl.classList.add("placeholder");
   }
   const noteChip = document.getElementById("log-note-chip");
@@ -3693,7 +3700,8 @@ function workoutEditFieldsHtml(w) {
       ${energyFieldHtml("edit-energy", w.energy_level)}
       <div class="meal-timing-field" data-meal-timing-field>
         <button type="button" class="meal-timing-field-btn">
-          <span class="meal-timing-field-value placeholder">&#127869; How long ago?</span>
+          <span class="meal-timing-field-value placeholder">How long ago?</span>
+          <span class="meal-timing-field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/></svg></span>
         </button>
         <input type="hidden" class="edit-hours-since-meal" value="${w.hours_since_meal ?? ""}">
       </div>
