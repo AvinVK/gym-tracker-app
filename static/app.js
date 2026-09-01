@@ -2939,7 +2939,14 @@ document.getElementById("session-meal-modal").addEventListener("click", (e) => {
   e.currentTarget.hidden = true;
 });
 document.getElementById("session-meal-next").addEventListener("click", () => {
-  sessionFields.pre_workout_meal = document.getElementById("session-meal-input").value.trim();
+  const mealInput = document.getElementById("session-meal-input");
+  const meal = mealInput.value.trim();
+  if (!meal) {
+    toast("Enter what you ate (or \"nothing\" if you haven't)");
+    mealInput.focus();
+    return;
+  }
+  sessionFields.pre_workout_meal = meal;
   document.getElementById("session-meal-modal").hidden = true;
   // Chains straight into the existing hours-since-eating wheel - one chip,
   // two fields, per the design handoff (they're both "when/what did you
