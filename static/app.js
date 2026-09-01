@@ -1393,8 +1393,15 @@ function closeEnergyPicker() {
   epActiveContainer = null;
 }
 
-document.getElementById("ep-cancel").addEventListener("click", closeEnergyPicker);
-epModal.addEventListener("click", (e) => { if (e.target === epModal) closeEnergyPicker(); });
+document.getElementById("ep-cancel").addEventListener("click", () => {
+  if (checkInFlowActive) checkInCancelled = true;
+  closeEnergyPicker();
+});
+epModal.addEventListener("click", (e) => {
+  if (e.target !== epModal) return;
+  if (checkInFlowActive) checkInCancelled = true;
+  closeEnergyPicker();
+});
 document.getElementById("ep-done").addEventListener("click", () => {
   if (!epActiveContainer) return;
   setEnergyFieldValue(epActiveContainer, epSelected);
@@ -1501,8 +1508,15 @@ function closeMealTimingPicker() {
   mtpActiveContainer = null;
 }
 
-document.getElementById("mtp-cancel").addEventListener("click", closeMealTimingPicker);
-mtpModal.addEventListener("click", (e) => { if (e.target === mtpModal) closeMealTimingPicker(); });
+document.getElementById("mtp-cancel").addEventListener("click", () => {
+  if (checkInFlowActive) checkInCancelled = true;
+  closeMealTimingPicker();
+});
+mtpModal.addEventListener("click", (e) => {
+  if (e.target !== mtpModal) return;
+  if (checkInFlowActive) checkInCancelled = true;
+  closeMealTimingPicker();
+});
 document.getElementById("mtp-done").addEventListener("click", () => {
   if (!mtpActiveContainer) return;
   setMealTimingFieldValue(mtpActiveContainer, mtpSelected);
@@ -1776,6 +1790,24 @@ function applyCheckInCopy() {
   document.getElementById("mtp-modal-title").textContent = past ? "How long before the workout had you eaten?" : "How long ago did you eat?";
   document.getElementById("session-meal-modal-sub").textContent = past ? "Before that session, if anything." : "Before today's session, if anything.";
   document.getElementById("session-note-modal-sub").textContent = past ? "How did that session feel?" : "How did today's session feel?";
+}
+
+// True only for the duration of the auto-chained first-open prompt (see
+// promptSessionFeelAndFood). Cancel and tap-outside-to-dismiss both still
+// work exactly as normal on all three steps - what's mandatory is that
+// answering the prompt is the only way to actually *start* the workout:
+// canceling any one of the three steps aborts the whole check-in and
+// leaves the user back on Today (see checkInCancelled below, checked
+// after each step) rather than quietly skipping ahead into the Log screen
+// with the rest of the questions unasked. The user can always tap "Start"
+// again later - whatever they did answer before canceling is already
+// saved (each field's own "change" listener persists it immediately), so
+// resuming doesn't lose that partial progress.
+let checkInFlowActive = false;
+let checkInCancelled = false;
+function setCheckInFlowActive(active) {
+  checkInFlowActive = active;
+  if (active) checkInCancelled = false;
 }
 
 function currentSessionBody() {
@@ -2286,10 +2318,13 @@ function parseSpokenSet(text) {
 // happened to parse cleanly, even wrongly, would win over a mostly-correct
 // top alternative just for being more "complete", which made results worse
 // on a phone than doing nothing beyond alternative #1 at all.
+// `results` is a plain array of transcript strings (both the native plugin's
+// `matches` and the Web Speech API path's mapped alternatives - see
+// recognizeSpeechOnce - end up in this same shape).
 function bestSpeechParse(results, parseFn) {
   let merged = null;
   for (let i = 0; i < results.length; i++) {
-    const parsed = parseFn(results[i].transcript);
+    const parsed = parseFn(results[i]);
     if (!merged) {
       merged = parsed;
     } else {
@@ -2299,7 +2334,7 @@ function bestSpeechParse(results, parseFn) {
     }
     if (Object.values(merged).every(v => v != null)) break;
   }
-  return merged || parseFn(results[0]?.transcript || "");
+  return merged || parseFn(results[0] || "");
 }
 
 // Same idea as parseSpokenSet, but for cardio: "15 minutes at level 6",
@@ -2320,50 +2355,139 @@ function parseSpokenCardioSet(text) {
   return { duration, level };
 }
 
+// Two recognizer backends, picked once at load: the native plugin only
+// exists inside the wrapped app (window.Capacitor.Plugins.SpeechRecognition,
+// registered by @capacitor-community/speech-recognition), never in a plain
+// browser tab - it talks to the OS's own SpeechRecognizer/Speech framework
+// directly, which is what makes it work on Android at all, since Android's
+// stock WebView doesn't implement webkitSpeechRecognition (the Web Speech
+// API path below) the way Chrome-for-Android or a desktop browser does.
+const NativeSpeechRecognition = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins)
+  ? window.Capacitor.Plugins.SpeechRecognition
+  : null;
 const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+const canRecognizeSpeech = !!NativeSpeechRecognition || !!SpeechRecognitionCtor;
 
-function initVoiceSetButton(block) {
-  const btn = block.querySelector(".add-set-voice");
-  if (!SpeechRecognitionCtor) {
-    btn.disabled = true;
-    btn.title = "Voice input isn't supported in this browser";
-    return;
+// Every dictation button (session note/meal, per-set voice entry) needs
+// mic access under the hood - left to itself, the OS only asks for that
+// the first time someone actually taps one of those buttons, mid-workout,
+// which reads as a random interruption with no context. Asking once,
+// right when the app first opens, up front and out of the way instead.
+// Deliberately NOT gated on canRecognizeSpeech - the native plugin above
+// requests RECORD_AUDIO itself when it needs to, but priming it via a
+// plain getUserMedia call up front (Capacitor's bundled
+// BridgeWebChromeClient.onPermissionRequest handles that) means the OS
+// dialog shows up right when the app first opens instead of the first time
+// a mic button is tapped, on either recognizer backend. Gated on a
+// localStorage flag so it only happens once ever on this device, not on
+// every open - and immediately stops the stream, since this is only about
+// surfacing the permission prompt early, not actually recording anything.
+(function requestMicPermissionOnFirstOpen() {
+  if (localStorage.getItem("micPermissionRequested")) return;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+  localStorage.setItem("micPermissionRequested", "1");
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => stream.getTracks().forEach(track => track.stop()))
+    .catch(() => { /* denied or no mic available - voice buttons already handle SpeechRecognition failing gracefully */ });
+})();
+
+// One-shot "listen, then resolve with what was heard" - the one shape both
+// voice buttons need (initVoiceSetButton/initNoteMicButtonGeneric below),
+// backed by whichever recognizer this platform actually has. Resolves
+// { transcript, alternatives } (alternatives is always a plain array of
+// transcript strings, top guess included as alternatives[0]) or rejects
+// with { code: "not-allowed" | "no-match" | "error" }.
+function recognizeSpeechOnce({ maxAlternatives = 1 } = {}) {
+  const attempt = NativeSpeechRecognition ? recognizeSpeechNative(maxAlternatives) : recognizeSpeechWeb(maxAlternatives);
+  // Belt-and-suspenders: neither backend is guaranteed to always settle on
+  // its own (seen on some platforms when the mic/permission flow stalls
+  // instead of erroring out) - force a rejection so the calling button
+  // doesn't get stuck in "listening" forever.
+  const safety = new Promise((resolve, reject) => setTimeout(() => reject({ code: "error" }), 8000));
+  return Promise.race([attempt, safety]);
+}
+
+async function recognizeSpeechNative(maxAlternatives) {
+  let matches;
+  try {
+    ({ matches } = await NativeSpeechRecognition.start({
+      language: "en-US",
+      maxResults: maxAlternatives,
+      popup: false, // our own "listening" button state is the UI, not the OS's
+      partialResults: false, // only want the final transcript
+    }));
+  } catch (err) {
+    // The plugin rejects with a message string, not a typed error code -
+    // spot-checking the wording is the only reliable way to tell "you said
+    // no" apart from "something else went wrong".
+    const msg = ((err && err.message) || "").toLowerCase();
+    throw { code: msg.includes("permission") || msg.includes("denied") ? "not-allowed" : "error" };
   }
-  btn.addEventListener("click", () => {
+  if (!matches || !matches.length) throw { code: "no-match" };
+  return { transcript: matches[0], alternatives: matches };
+}
+
+function recognizeSpeechWeb(maxAlternatives) {
+  return new Promise((resolve, reject) => {
     const recognition = new SpeechRecognitionCtor();
     recognition.lang = "en-US";
     recognition.interimResults = false;
-    // >1 so a mis-transcribed "reps" in the top guess can still be caught by
-    // checking the recognizer's other candidate transcripts (bestSpeechParse
-    // below) instead of failing outright on whichever one happened to be
-    // ranked first. Kept small, not maxed out - alternatives past the first
-    // couple are usually low-confidence noise on a phone mic, and
-    // bestSpeechParse only consults them to fill in a field the top
-    // alternative missed entirely, not to second-guess one it already got.
-    recognition.maxAlternatives = 3;
-
-    btn.classList.add("listening");
-    btn.disabled = true;
-
-    // Belt-and-suspenders: if the browser never fires a terminal event at
-    // all (seen on some platforms when the mic/permission flow stalls
-    // instead of erroring out), force a stop so the button doesn't get
-    // stuck in "listening" forever.
-    const safetyTimer = setTimeout(() => {
-      try { recognition.stop(); } catch (err) { /* already stopped */ }
-    }, 8000);
-
+    recognition.maxAlternatives = maxAlternatives;
+    let settled = false;
     recognition.addEventListener("result", (e) => {
+      settled = true;
       // Force the mic to release the moment we have a final result instead
       // of waiting on the browser's own end-of-speech detection - on iOS
       // Safari that detection can lag well behind the result event, so the
       // "browser is listening" indicator stays lit even though we're done
       // with it.
       try { recognition.stop(); } catch (err) { /* already stopped */ }
-      const transcript = e.results[0][0].transcript;
+      resolve({
+        transcript: e.results[0][0].transcript,
+        alternatives: [...e.results[0]].map(r => r.transcript),
+      });
+    });
+    recognition.addEventListener("error", (e) => {
+      if (settled) return;
+      settled = true;
+      reject({ code: e.error === "not-allowed" ? "not-allowed" : "error" });
+    });
+    recognition.addEventListener("end", () => {
+      if (settled) return;
+      settled = true;
+      reject({ code: "no-match" });
+    });
+    try {
+      recognition.start();
+    } catch (err) {
+      reject({ code: "error" });
+    }
+  });
+}
+
+function initVoiceSetButton(block) {
+  const btn = block.querySelector(".add-set-voice");
+  if (!canRecognizeSpeech) {
+    btn.disabled = true;
+    btn.title = "Voice input isn't supported on this device";
+    return;
+  }
+  btn.addEventListener("click", async () => {
+    btn.classList.add("listening");
+    btn.disabled = true;
+    try {
+      // maxAlternatives >1 so a mis-transcribed "reps" in the top guess can
+      // still be caught by checking the recognizer's other candidate
+      // transcripts (bestSpeechParse below) instead of failing outright on
+      // whichever one happened to be ranked first. Kept small, not maxed
+      // out - alternatives past the first couple are usually low-confidence
+      // noise on a phone mic, and bestSpeechParse only consults them to
+      // fill in a field the top alternative missed entirely, not to
+      // second-guess one it already got.
+      const { transcript, alternatives } = await recognizeSpeechOnce({ maxAlternatives: 3 });
       const isCardio = block.dataset.exerciseType === "cardio";
       if (isCardio) {
-        const { duration, level } = bestSpeechParse(e.results[0], parseSpokenCardioSet);
+        const { duration, level } = bestSpeechParse(alternatives, parseSpokenCardioSet);
         if (duration == null && level == null) {
           toast(`Didn't catch that: "${transcript}"`);
           return;
@@ -2380,7 +2504,7 @@ function initVoiceSetButton(block) {
         if (duration != null) checkForPR(block, targetRow, block.querySelector(".ex-exercise").value, true);
         return;
       }
-      const { reps, weight } = bestSpeechParse(e.results[0], parseSpokenSet);
+      const { reps, weight } = bestSpeechParse(alternatives, parseSpokenSet);
       if (reps == null && weight == null) {
         toast(`Didn't catch that: "${transcript}"`);
         return;
@@ -2398,30 +2522,21 @@ function initVoiceSetButton(block) {
       }
       const parts = [reps != null ? `${reps} reps` : null, weight != null ? `${weight} kg` : null].filter(Boolean);
       toast(`Added set: ${parts.join(", ")}`);
-    });
-    recognition.addEventListener("error", (e) => {
-      toast(e.error === "not-allowed" ? "Microphone access denied" : "Didn't catch that — try again");
-    });
-    recognition.addEventListener("end", () => {
-      clearTimeout(safetyTimer);
-      btn.classList.remove("listening");
-      btn.disabled = false;
-    });
-
-    try {
-      recognition.start();
     } catch (err) {
-      clearTimeout(safetyTimer);
+      const code = err && err.code;
+      if (code === "not-allowed") toast("Microphone access denied");
+      else if (code === "no-match") toast("Didn't catch that — try again");
+      else toast("Couldn't start voice input");
+    } finally {
       btn.classList.remove("listening");
       btn.disabled = false;
-      toast("Couldn't start voice input");
     }
   });
 }
 
 // Dictate-a-note button on the shared per-exercise note field. Mirrors
-// initVoiceSetButton's pattern (safety timer, listening/disabled state) but
-// just appends the transcript to the note text instead of parsing it.
+// initVoiceSetButton's pattern (listening/disabled state) but just appends
+// the transcript to the note text instead of parsing it.
 function initNoteMicButton(block) {
   initNoteMicButtonGeneric(block.querySelector(".note-mic-btn"), block.querySelector(".ex-notes"));
 }
@@ -2430,48 +2545,24 @@ function initNoteMicButton(block) {
 // session note/meal modals (see renderSessionStrip) reuse this same
 // dictation behavior on their own plain inputs.
 function initNoteMicButtonGeneric(btn, input) {
-  if (!SpeechRecognitionCtor) {
+  if (!canRecognizeSpeech) {
     btn.disabled = true;
-    btn.title = "Voice input isn't supported in this browser";
+    btn.title = "Voice input isn't supported on this device";
     return;
   }
-  btn.addEventListener("click", () => {
-    const recognition = new SpeechRecognitionCtor();
-    recognition.lang = "en-US";
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
+  btn.addEventListener("click", async () => {
     btn.classList.add("listening");
     btn.disabled = true;
-
-    const safetyTimer = setTimeout(() => {
-      try { recognition.stop(); } catch (err) { /* already stopped */ }
-    }, 8000);
-
-    recognition.addEventListener("result", (e) => {
-      // See initVoiceSetButton - stop right away so the mic indicator
-      // doesn't linger on iOS Safari after we've already got our result.
-      try { recognition.stop(); } catch (err) { /* already stopped */ }
-      const transcript = e.results[0][0].transcript;
+    try {
+      const { transcript } = await recognizeSpeechOnce({ maxAlternatives: 1 });
       input.value = input.value ? `${input.value} ${transcript}` : transcript;
       input.dispatchEvent(new Event("input", { bubbles: true }));
-    });
-    recognition.addEventListener("error", (e) => {
-      toast(e.error === "not-allowed" ? "Microphone access denied" : "Didn't catch that — try again");
-    });
-    recognition.addEventListener("end", () => {
-      clearTimeout(safetyTimer);
-      btn.classList.remove("listening");
-      btn.disabled = false;
-    });
-
-    try {
-      recognition.start();
     } catch (err) {
-      clearTimeout(safetyTimer);
+      const code = err && err.code;
+      toast(code === "not-allowed" ? "Microphone access denied" : "Didn't catch that — try again");
+    } finally {
       btn.classList.remove("listening");
       btn.disabled = false;
-      toast("Couldn't start voice input");
     }
   });
 }
@@ -2744,7 +2835,10 @@ async function submitExerciseLog({ auto = false } = {}) {
     if (savedWorkoutId) {
       try { await api.del(`/api/workout-log/${savedWorkoutId}`); } catch { /* best-effort cleanup */ }
     }
-    if (!auto) toast("No workout was logged for today");
+    if (!auto) {
+      const dateLabel = logSessionDate === todayStr ? "today" : formatDateDisplay(logSessionDate);
+      toast(`No workout was logged for ${dateLabel}`);
+    }
     clearDraft();
     resetWorkoutFlowUI();
     switchTab("today");
@@ -2833,9 +2927,14 @@ document.getElementById("log-meal-btn").addEventListener("click", () => {
   applyCheckInCopy();
   modal.hidden = false;
 });
-document.getElementById("session-meal-cancel").addEventListener("click", () => { document.getElementById("session-meal-modal").hidden = true; });
+document.getElementById("session-meal-cancel").addEventListener("click", () => {
+  if (checkInFlowActive) checkInCancelled = true;
+  document.getElementById("session-meal-modal").hidden = true;
+});
 document.getElementById("session-meal-modal").addEventListener("click", (e) => {
-  if (e.target === e.currentTarget) e.currentTarget.hidden = true;
+  if (e.target !== e.currentTarget) return;
+  if (checkInFlowActive) checkInCancelled = true;
+  e.currentTarget.hidden = true;
 });
 document.getElementById("session-meal-next").addEventListener("click", () => {
   sessionFields.pre_workout_meal = document.getElementById("session-meal-input").value.trim();
@@ -3233,22 +3332,36 @@ function waitUntilHidden(el) {
 // later. Reuses the real session-strip elements and their existing "change"
 // listeners (see renderSessionStrip et al.) so values persist exactly as
 // they already do when set from the chips themselves.
+//
+// Returns true if the check-in was completed (all three steps answered),
+// false if the user canceled out of any one of them - the caller uses that
+// to decide whether to actually enter the Log screen (see the
+// today-cta-start click handler) or leave them on Today instead.
 async function promptSessionFeelAndFood() {
-  const energyField = document.querySelector("#session-strip .energy-field");
-  openEnergyPicker(energyField);
-  await waitUntilHidden(epModal);
+  setCheckInFlowActive(true);
+  try {
+    const energyField = document.querySelector("#session-strip .energy-field");
+    openEnergyPicker(energyField);
+    await waitUntilHidden(epModal);
+    if (checkInCancelled) return false;
 
-  document.getElementById("session-meal-input").value = sessionFields.pre_workout_meal || "";
-  applyCheckInCopy();
-  document.getElementById("session-meal-modal").hidden = false;
-  await waitUntilHidden(document.getElementById("session-meal-modal"));
-  // "Next" on the meal-name modal chains straight into the hours-since
-  // wheel (see the session-meal-next handler) - "Cancel" doesn't, so only
-  // wait on it if it's actually open.
-  if (!mtpModal.hidden) await waitUntilHidden(mtpModal);
+    document.getElementById("session-meal-input").value = sessionFields.pre_workout_meal || "";
+    applyCheckInCopy();
+    document.getElementById("session-meal-modal").hidden = false;
+    await waitUntilHidden(document.getElementById("session-meal-modal"));
+    if (checkInCancelled) return false;
+    // "Next" on the meal-name modal chains straight into the hours-since
+    // wheel (see the session-meal-next handler) - "Cancel" doesn't, so only
+    // wait on it if it's actually open.
+    if (!mtpModal.hidden) await waitUntilHidden(mtpModal);
+    if (checkInCancelled) return false;
+  } finally {
+    setCheckInFlowActive(false);
+  }
 
   renderSessionStrip();
   ensureVisitSaved();
+  return true;
 }
 
 // Starts (or re-enters) the Log screen. opts.repeatFrom, when given, is a
@@ -3289,7 +3402,10 @@ document.getElementById("today-cta-start").addEventListener("click", async () =>
   // block whose muscle got picked but whose exercise pick was abandoned
   // (see collectExerciseBlocksDraft's docstring) and wrongly skip the
   // check-in on what the label still correctly calls a fresh start.
-  if (!isWorkoutInProgress()) await promptSessionFeelAndFood();
+  if (!isWorkoutInProgress()) {
+    const completed = await promptSessionFeelAndFood();
+    if (!completed) { renderTodayCtaState(); return; } // canceled out of the check-in - stay on Today, nothing was started (but refresh the CTA in case a step got answered before the cancel)
+  }
   startLogSession();
 });
 document.getElementById("today-cta-log-old").addEventListener("click", async () => {
@@ -3311,7 +3427,8 @@ document.getElementById("today-cta-log-old").addEventListener("click", async () 
   openDatePicker({ container: logDateCarrier, max: maxDate });
   await waitUntilHidden(dpModal);
   if (logSessionDate === beforeDate) return; // closed without picking a date
-  await promptSessionFeelAndFood(); // reads logSessionDate itself, so the prompts already read in past tense
+  const completed = await promptSessionFeelAndFood(); // reads logSessionDate itself, so the prompts already read in past tense
+  if (!completed) return; // canceled out of the check-in - stay on Today, nothing was started
   startLogSession();
 });
 document.getElementById("today-all-history-link").addEventListener("click", () => switchTab("history"));
