@@ -262,6 +262,7 @@ body {
 }
 .today-avatar-menu-item:hover { background: var(--surface-2); }
 .today-avatar-menu-item-danger { color: var(--danger); }
+a.today-avatar-menu-item { display: block; text-decoration: none; }
 
 .today-card-wrap { padding: 14px 16px 0; }
 .today-streak-card {
@@ -1665,6 +1666,23 @@ main {
   font-size: 18px;
   font-weight: 700;
 }
+
+.contact-us-list { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+.contact-us-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  text-decoration: none;
+  transition: background .15s ease;
+}
+.contact-us-row:hover { background: var(--surface-3); }
+.contact-us-icon { flex: none; display: flex; }
+.contact-us-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.contact-us-label { font-size: 12px; font-weight: 700; color: var(--muted); }
+.contact-us-value { font-size: 14px; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .modal-sub {
   margin: 0 0 16px;
   font-size: 13px;
