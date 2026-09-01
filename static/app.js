@@ -645,7 +645,10 @@ document.getElementById("today-avatar-view-profile-btn").addEventListener("click
   closeAvatarMenu();
   openProfileEditModal();
 });
-document.getElementById("today-avatar-contact-btn").addEventListener("click", closeAvatarMenu);
+document.getElementById("today-avatar-contact-btn").addEventListener("click", () => {
+  closeAvatarMenu();
+  document.getElementById("contact-us-modal").hidden = false;
+});
 document.getElementById("today-avatar-logout-btn").addEventListener("click", () => {
   closeAvatarMenu();
   handleLogout();
@@ -661,6 +664,10 @@ document.getElementById("profile-edit-modal").addEventListener("click", (e) => {
 });
 
 // ---------------- Privacy info modal ----------------
+const contactUsModal = document.getElementById("contact-us-modal");
+document.getElementById("contact-us-close").addEventListener("click", () => { contactUsModal.hidden = true; });
+contactUsModal.addEventListener("click", (e) => { if (e.target === contactUsModal) contactUsModal.hidden = true; });
+
 const privacyInfoModal = document.getElementById("privacy-info-modal");
 document.getElementById("profile-privacy-link-btn").addEventListener("click", () => { privacyInfoModal.hidden = false; });
 document.getElementById("privacy-info-close").addEventListener("click", () => { privacyInfoModal.hidden = true; });
