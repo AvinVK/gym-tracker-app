@@ -108,25 +108,34 @@ def week_overlaps_period(week_start, periods):
 
 
 def compute_period_power(db, user_id, today=None):
-    """Count of distinct logged workout days *this calendar month* that fall
-    on a period day, per the user's logged periods (each cycle's own length,
-    defaulting to DEFAULT_PERIOD_DAYS where nothing's been explicitly
-    logged). Not a running counter for the same reason streak state isn't
-    one - logged dates can be added, edited, or backfilled at any time, and
-    logging/editing a period should only move which days count for *that*
-    cycle, so it's recomputed from the log every time rather than
-    persisted."""
+    """Count of distinct logged workout days within the *current* period
+    only - the one governing `today` (see governing_period) - and only
+    while today itself is still one of that period's days. Deliberately not
+    "any period day this calendar month": a calendar month can span the
+    tail of one logged period and the start of a projected future one, and
+    counting both would resurface an old period's gym visits as "what a
+    diva" long after that period ended, or count days from a future
+    estimated period nobody has lived through yet. Not a running counter
+    for the same reason streak state isn't one - logged dates can be added,
+    edited, or backfilled at any time, and logging/editing a period should
+    only move which days count for *that* cycle, so it's recomputed from
+    the log every time rather than persisted."""
     today = today or date.today()
     periods = _parse_periods(db.execute(
         "SELECT start_date, length_days FROM period_logs WHERE user_id = ?", (user_id,)
     ).fetchall())
     if not periods:
         return 0
+    governing = governing_period(today, periods)
+    if governing is None:
+        return 0
+    start, length = governing
+    days_since_today = (today - start).days
+    applicable_length = length if 0 <= days_since_today < CYCLE_LENGTH_DAYS else DEFAULT_PERIOD_DAYS
+    period_end = start + timedelta(days=applicable_length - 1)
+    if not (start <= today <= period_end):
+        return 0
     log_dates = [date.fromisoformat(r["date"]) for r in db.execute(
         "SELECT DISTINCT date FROM workout_log WHERE user_id = ?", (user_id,)
     ).fetchall()]
-    return sum(
-        1 for d in log_dates
-        if d.year == today.year and d.month == today.month
-        and _is_period_day_parsed(d, periods)
-    )
+    return sum(1 for d in log_dates if start <= d <= period_end)
