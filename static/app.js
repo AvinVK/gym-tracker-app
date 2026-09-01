@@ -645,6 +645,7 @@ document.getElementById("today-avatar-view-profile-btn").addEventListener("click
   closeAvatarMenu();
   openProfileEditModal();
 });
+document.getElementById("today-avatar-contact-btn").addEventListener("click", closeAvatarMenu);
 document.getElementById("today-avatar-logout-btn").addEventListener("click", () => {
   closeAvatarMenu();
   handleLogout();

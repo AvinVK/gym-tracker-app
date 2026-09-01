@@ -262,6 +262,7 @@ body {
 }
 .today-avatar-menu-item:hover { background: var(--surface-2); }
 .today-avatar-menu-item-danger { color: var(--danger); }
+a.today-avatar-menu-item { display: block; text-decoration: none; }
 
 .today-card-wrap { padding: 14px 16px 0; }
 .today-streak-card {
