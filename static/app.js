@@ -659,6 +659,12 @@ document.getElementById("profile-edit-modal").addEventListener("click", (e) => {
   if (e.target === e.currentTarget) closeProfileEditModal();
 });
 
+// ---------------- Privacy info modal ----------------
+const privacyInfoModal = document.getElementById("privacy-info-modal");
+document.getElementById("profile-privacy-link-btn").addEventListener("click", () => { privacyInfoModal.hidden = false; });
+document.getElementById("privacy-info-close").addEventListener("click", () => { privacyInfoModal.hidden = true; });
+privacyInfoModal.addEventListener("click", (e) => { if (e.target === privacyInfoModal) privacyInfoModal.hidden = true; });
+
 // ---------------- Discover tab (data-maintab/id stay "you" - see the HTML
 // comment above #maintab-you for why) ----------------
 function renderYouTab() {

@@ -99,6 +99,7 @@
         <span>Track my menstrual cycle</span>
       </label>
       <p class="field-hint full">Turn this on and Clock It will show your current cycle phase and how it lines up with your workout performance in Your Cycle.</p>
+      <p class="field-hint full">Your cycle data stays on your account only — never sold or shared.</p>
       <label class="full" id="signup-period-date-label" hidden>Last Period Date
         <div class="date-field" data-date-field data-max="today">
           <button type="button" class="date-field-btn">
@@ -339,6 +340,7 @@
         <span>Track my menstrual cycle</span>
       </label>
       <p class="field-hint full">Turn this on and Clock It will show your current cycle phase and how it lines up with your workout performance in Your Cycle.</p>
+      <p class="field-hint full">Your cycle data stays on your account only — never sold or shared.</p>
       <label class="full" id="profile-period-date-label" hidden>Last Period Date
         <div class="date-field" data-date-field data-max="today">
           <button type="button" class="date-field-btn">
@@ -348,9 +350,24 @@
           <input type="hidden" name="last_period_date" id="profile-last-period">
         </div>
       </label>
+      <div class="full">
+        <button type="button" class="edit-link-btn" id="profile-privacy-link-btn">Privacy</button>
+      </div>
       <button type="submit" class="primary">Save Changes</button>
       <button type="button" class="secondary" id="profile-edit-cancel">Cancel</button>
     </form>
+  </div>
+</div>
+
+<div id="privacy-info-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>Your Privacy</h2>
+    <ul class="streak-info-list">
+      <li>We collect what you choose to log - workouts, energy, meals, and (if you turn it on) your period dates.</li>
+      <li>It's used only to show your own stats back to you - things like cycle phase and how it lines up with your training. It's never sold or shared with third parties or advertisers.</li>
+      <li>Want it gone? Turn off cycle tracking in your profile to stop logging new period dates, or contact support to have your data deleted.</li>
+    </ul>
+    <button type="button" class="primary" id="privacy-info-close">Got it</button>
   </div>
 </div>
 
