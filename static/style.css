@@ -1948,24 +1948,31 @@ button:disabled {
 .meal-timing-field-value.placeholder { color: var(--muted-2); }
 .meal-timing-field-icon { font-size: 13px; flex-shrink: 0; }
 
-.energy-picker-wheel .time-picker-col { width: 100px; }
+/* Wide enough for the longest label ("Absolutely unstoppable") to sit
+   beside the emoji/number on the selected row without wrapping - see
+   .time-picker-option-label below and #energy-picker-modal .time-picker-card's
+   matching width bump. */
+.energy-picker-wheel .time-picker-col { width: 230px; }
 .meal-timing-picker-wheel .time-picker-col { width: 180px; }
+#energy-picker-modal .time-picker-card { max-width: 340px; }
 
-.energy-picker-caption {
-  text-align: center;
-  margin-top: 12px;
+.energy-picker-wheel .time-picker-option {
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 0 14px;
 }
-.energy-picker-emoji {
-  display: block;
-  font-size: 34px;
-  line-height: 1.2;
-}
-.energy-picker-label {
-  display: block;
-  margin-top: 2px;
-  font-size: 13px;
+.time-picker-option-emoji { flex: none; }
+.time-picker-option-value { flex: none; }
+.time-picker-option-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
   font-weight: 700;
   color: var(--muted);
+  text-align: left;
 }
 
 .time-picker-card { max-width: 320px; padding: 18px; }
@@ -2034,6 +2041,7 @@ button:disabled {
   color: var(--ink);
   font-weight: 700;
 }
+.time-picker-option.selected .time-picker-option-label { color: var(--ink); }
 .time-picker-option:disabled {
   color: #3a362a;
   cursor: not-allowed;
