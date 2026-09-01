@@ -1836,6 +1836,18 @@ function ensureVisitSaved() {
   return visitSaveChain;
 }
 async function ensureVisitSavedNow() {
+  // Nothing to attach a visit row to yet - the check-in chips (energy/meal/
+  // notes) call this eagerly as each one settles, but answering them alone
+  // isn't a gym visit. A "rest day" isn't something the app records; if the
+  // user never adds an exercise, there should be no workout_log row at all
+  // for the day, not an empty one. submitExerciseLog() calls this again
+  // once a real exercise exists, which is when the row actually gets
+  // created (or, if one already exists from earlier in this same session,
+  // kept up to date below).
+  if (!savedWorkoutId && exercisesContainer.children.length === 0) {
+    saveWorkoutDraft();
+    return;
+  }
   const body = currentSessionBody();
   try {
     if (savedWorkoutId) {
