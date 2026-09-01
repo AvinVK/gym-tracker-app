@@ -1289,8 +1289,8 @@ const ENERGY_LEVELS = [
   { emoji: "😔", label: "Really low energy" },
   { emoji: "😕", label: "Below average" },
   { emoji: "😐", label: "A little sluggish" },
-  { emoji: "🙂", label: "Feeling okay" },
-  { emoji: "🙃", label: "Decent energy" },
+  { emoji: "🙃", label: "Feeling okay" },
+  { emoji: "🙂", label: "Decent energy" },
   { emoji: "😊", label: "Feeling good" },
   { emoji: "💪", label: "Strong and ready" },
   { emoji: "🔥", label: "Highly energized" },
@@ -1299,13 +1299,15 @@ const ENERGY_LEVELS = [
 
 const epModal = document.getElementById("energy-picker-modal");
 const epLevelsCol = document.getElementById("ep-levels");
-const epEmoji = document.getElementById("ep-emoji");
-const epLabel = document.getElementById("ep-label");
 let epActiveContainer = null;
 let epSelected = null;
 
+// The label only ever shows on whichever row is currently selected/centered
+// (see highlightEnergyPickerSelection) - a fixed .time-picker-option-label
+// span sits in every row so its width doesn't jump the layout around as
+// selection moves, just empty until that row becomes the selected one.
 epLevelsCol.innerHTML = ENERGY_LEVELS
-  .map((lvl, i) => `<button type="button" class="time-picker-option" data-value="${i + 1}">${lvl.emoji} ${i + 1}</button>`)
+  .map((lvl, i) => `<button type="button" class="time-picker-option" data-value="${i + 1}"><span class="time-picker-option-emoji">${lvl.emoji}</span><span class="time-picker-option-value">${i + 1}</span><span class="time-picker-option-label"></span></button>`)
   .join("");
 
 function energyLevelInfo(value) {
@@ -1334,12 +1336,12 @@ function setEnergyFieldValue(container, value) {
 }
 
 function highlightEnergyPickerSelection() {
-  epLevelsCol.querySelectorAll(".time-picker-option").forEach(b => b.classList.toggle("selected", b.dataset.value === String(epSelected)));
-  const info = energyLevelInfo(epSelected);
-  if (info) {
-    epEmoji.textContent = info.emoji;
-    epLabel.textContent = info.label;
-  }
+  epLevelsCol.querySelectorAll(".time-picker-option").forEach(b => {
+    const isSelected = b.dataset.value === String(epSelected);
+    b.classList.toggle("selected", isSelected);
+    const info = isSelected ? energyLevelInfo(b.dataset.value) : null;
+    b.querySelector(".time-picker-option-label").textContent = info ? info.label : "";
+  });
 }
 
 function jumpToEnergyOption(value) {
