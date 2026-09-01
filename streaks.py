@@ -39,7 +39,7 @@ were already healed by a shield) every time compute_streak_status() runs.
 """
 from datetime import date, timedelta
 
-from cycle import week_overlaps_period
+from cycle import DEFAULT_CYCLE_LENGTH_DAYS, week_overlaps_period
 
 MAX_SHIELDS = 3
 MIN_VISITS_PER_WEEK = 4
@@ -75,12 +75,13 @@ def compute_streak_status(db, user_id, today=None):
     today = today or date.today()
 
     user = db.execute(
-        "SELECT shield_count, shield_milestone_progress, longest_streak FROM users WHERE id = ?",
+        "SELECT shield_count, shield_milestone_progress, longest_streak, cycle_length_days FROM users WHERE id = ?",
         (user_id,),
     ).fetchone()
     shield_count = user["shield_count"]
     milestone_progress = user["shield_milestone_progress"]
     longest_streak = user["longest_streak"]
+    cycle_length = user["cycle_length_days"] or DEFAULT_CYCLE_LENGTH_DAYS
     periods = db.execute(
         "SELECT start_date, length_days FROM period_logs WHERE user_id = ?", (user_id,)
     ).fetchall()
@@ -157,7 +158,7 @@ def compute_streak_status(db, user_id, today=None):
             # collapsing to 0 once shields ran out - a confusing climb-then-
             # crash with no real activity behind it.
             pass
-        elif earliest_week and wk >= earliest_week and week_overlaps_period(wk_date, periods):
+        elif earliest_week and wk >= earliest_week and week_overlaps_period(wk_date, periods, cycle_length):
             # Free pass, not a shield use: a week she fell short on because
             # it overlapped her period shouldn't cost a banked shield, and
             # shouldn't need one either. Same earliest_week floor as a real

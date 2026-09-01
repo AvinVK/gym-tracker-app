@@ -141,7 +141,36 @@
         <input type="password" name="pin" placeholder="4-digit PIN" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="current-password">
       </label>
       <button type="submit" class="primary">Log In</button>
+      <button type="button" class="auth-forgot-btn" id="auth-login-forgot">Forgot PIN?</button>
       <button type="button" class="secondary" id="auth-login-back">&larr; Not you?</button>
+    </form>
+  </div>
+</div>
+
+<div id="auth-reset-otp-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>Check your inbox 📬</h2>
+    <p class="modal-sub">We sent a 6-digit code to <span id="auth-reset-otp-email"></span> to reset your PIN.</p>
+    <form id="form-auth-reset-otp" class="grid-form">
+      <label class="full">Code
+        <input type="text" name="code" placeholder="123456" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code">
+      </label>
+      <button type="submit" class="primary">Verify</button>
+      <button type="button" class="secondary" id="auth-reset-otp-resend">Resend code</button>
+      <button type="button" class="secondary" id="auth-reset-otp-back">&larr; Back</button>
+    </form>
+  </div>
+</div>
+
+<div id="auth-reset-pin-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>Set a new PIN 🔐</h2>
+    <p class="modal-sub">Choose a new 4-digit PIN for your account.</p>
+    <form id="form-auth-reset-pin" class="grid-form">
+      <label class="full">New PIN
+        <input type="password" name="pin" placeholder="4-digit PIN" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password">
+      </label>
+      <button type="submit" class="primary">Reset PIN</button>
     </form>
   </div>
 </div>
@@ -200,7 +229,7 @@
         <div class="cycle-phase-info">
           <div class="cycle-phase-header">
             <h3>Ovulation Phase</h3>
-            <span class="cycle-phase-days">Day 14</span>
+            <span class="cycle-phase-days" id="cycle-phase-days-ovulation">Day 14</span>
           </div>
           <p>An egg is released.</p>
         </div>
@@ -210,13 +239,27 @@
         <div class="cycle-phase-info">
           <div class="cycle-phase-header">
             <h3>Luteal Phase</h3>
-            <span class="cycle-phase-days">Day 15-28</span>
+            <span class="cycle-phase-days" id="cycle-phase-days-luteal">Day 15-28</span>
           </div>
           <p>Progesterone rises, then drops toward the end of the phase — PMS symptoms are common near the end.</p>
         </div>
       </div>
     </div>
     <button type="button" class="primary phase-info-close" id="phase-info-close">Got it</button>
+  </div>
+</div>
+
+<div id="cycle-length-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>Cycle Length</h2>
+    <p class="modal-sub">Days from the start of one period to the next. Most cycles run 21-35 days.</p>
+    <form id="form-cycle-length" class="grid-form">
+      <label class="full">Cycle Length (days)
+        <input type="number" name="cycle_length_days" id="cycle-length-input" min="21" max="45" required>
+      </label>
+      <button type="submit" class="primary">Save</button>
+      <button type="button" class="secondary" id="cycle-length-cancel">Cancel</button>
+    </form>
   </div>
 </div>
 
@@ -608,7 +651,10 @@
         <div class="cycle-title-wrap">
           <h2>Your Cycle</h2>
           <button type="button" class="cycle-title-info-btn" id="cycle-estimate-info-btn" aria-expanded="false" aria-label="How cycle days are calculated" hidden>&#9432;</button>
-          <div class="cycle-estimate-popover" id="cycle-estimate-popover" hidden>Estimated from a standard 28-day cycle starting on your last period date.</div>
+          <div class="cycle-estimate-popover" id="cycle-estimate-popover" hidden>
+            Estimated from your <strong id="cycle-estimate-length">28</strong>-day cycle, starting on your last period date.
+            <button type="button" class="edit-link-btn cycle-length-edit-btn" id="cycle-length-edit-btn">Edit cycle length</button>
+          </div>
         </div>
         <span class="cycle-cal-legend"><span class="cycle-cal-legend-dot" aria-hidden="true"></span>Estimated period</span>
       </div>

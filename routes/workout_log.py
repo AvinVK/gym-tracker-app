@@ -29,7 +29,7 @@ def add_workout_log():
     user_id = get_current_user_id()
     if not user_id:
         return jsonify({"error": "missing user"}), 401
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
     date = (data.get("date") or "").strip()
     if not date:
         return jsonify({"error": "date is required"}), 400
@@ -53,7 +53,7 @@ def update_workout_log(row_id):
     user_id = get_current_user_id()
     if not user_id:
         return jsonify({"error": "missing user"}), 401
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
     date = (data.get("date") or "").strip()
     if not date:
         return jsonify({"error": "date is required"}), 400
@@ -86,6 +86,20 @@ def delete_workout_log(row_id):
     if not user_id:
         return jsonify({"error": "missing user"}), 401
     db = get_db()
+    row = db.execute("SELECT date FROM workout_log WHERE id = ? AND user_id = ?", (row_id, user_id)).fetchone()
+    if row:
+        # Enforces the invariant this endpoint's callers already rely on
+        # (see the docstring above) - exercise_log rows for the date are
+        # matched by (user_id, date), not this row's id, so deleting the
+        # visit out from under them would silently orphan them: still in
+        # History's date grouping, but no longer counted as "a visit" (e.g.
+        # add_exercise_log's visit-count gate).
+        has_exercises = db.execute(
+            "SELECT 1 FROM exercise_log WHERE user_id = ? AND date = ? AND deleted_at IS NULL LIMIT 1",
+            (user_id, row["date"]),
+        ).fetchone()
+        if has_exercises:
+            return jsonify({"error": "can't delete a visit that has logged exercises"}), 409
     db.execute("DELETE FROM workout_log WHERE id = ? AND user_id = ?", (row_id, user_id))
     db.commit()
     return jsonify({"id": row_id})

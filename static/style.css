@@ -787,6 +787,12 @@ main {
   line-height: 1.5;
   color: var(--muted);
 }
+.cycle-length-edit-btn {
+  display: block;
+  margin: 8px 0 0;
+  font-size: 10.5px;
+  padding: 3px 10px;
+}
 .cycle-power-stat {
   display: flex;
   align-items: center;
@@ -1793,6 +1799,18 @@ main {
   transition: background .15s ease;
 }
 .edit-link-btn:hover { background: var(--surface-3); }
+
+.auth-forgot-btn {
+  background: none;
+  border: none;
+  color: var(--accent-purple);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 2px;
+  justify-self: center;
+}
+.auth-forgot-btn:hover { text-decoration: underline; }
 
 /* ---------------- Profile ---------------- */
 .profile-avatar-row {
