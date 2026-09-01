@@ -5,7 +5,7 @@ actually logged - it just keeps the chain from breaking.
 
 Most people don't hit the gym daily - 4-5x/week is a realistic routine - so
 the streak unit is a week, not the day. A week "succeeds" once it has at
-least MIN_VISITS_PER_WEEK distinct logged workout_log dates in it.
+least MIN_VISITS_PER_WEEK distinct logged exercise_log dates in it.
 
 The week isn't a fixed Monday-Sunday calendar week - it's anchored to
 whatever weekday the user logged their very first workout on, so "this
@@ -31,7 +31,7 @@ shields and eventually breaks the streak on the non-period weeks in
 between.
 
 Nothing about the streak is stored as a running counter - a user's
-workout_log dates can be added, edited, or backfilled for a past date at
+exercise_log dates can be added, edited, or backfilled for a past date at
 any time, so the only source of truth is the actual set of logged dates.
 current_streak/longest_streak/shield state (and the week anchor itself)
 are recomputed from that set (plus the persisted record of which weeks
@@ -85,8 +85,17 @@ def compute_streak_status(db, user_id, today=None):
         "SELECT start_date, length_days FROM period_logs WHERE user_id = ?", (user_id,)
     ).fetchall()
 
+    # Counts exercise_log dates, not workout_log dates - a workout_log row
+    # can exist with nothing logged against it yet (created lazily the
+    # moment the session-strip's energy/meal chips are touched, before any
+    # exercise is added - see ensureVisitSaved() in app.js), and starting a
+    # workout without finishing it (backgrounding the app, tapping the "X"
+    # close button) shouldn't count as a day toward the streak. It only
+    # counts once a real exercise is actually added; the visit row itself
+    # can be resumed and filled in later without losing that in-progress
+    # state either way.
     log_dates = [date.fromisoformat(r["date"]) for r in db.execute(
-        "SELECT DISTINCT date FROM workout_log WHERE user_id = ?", (user_id,)
+        "SELECT DISTINCT date FROM exercise_log WHERE user_id = ?", (user_id,)
     ).fetchall()]
 
     # Anchored to the weekday of the user's first-ever logged workout, not a
