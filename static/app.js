@@ -3337,24 +3337,44 @@ function waitUntilHidden(el) {
 // false if the user canceled out of any one of them - the caller uses that
 // to decide whether to actually enter the Log screen (see the
 // today-cta-start click handler) or leave them on Today instead.
+// Which of the two check-in questions still needs asking - hours_since_meal
+// is the food question's true completion marker (not pre_workout_meal):
+// the meal-name field commits the instant "Next" is tapped, mid-chain,
+// before the hours-since wheel even opens, so a cancel on *that* second
+// half would otherwise look "answered" if this checked the name field
+// instead.
+function checkInStepsRemaining() {
+  return {
+    energy: !sessionFields.energy_level,
+    food: sessionFields.hours_since_meal == null || sessionFields.hours_since_meal === "",
+  };
+}
+
 async function promptSessionFeelAndFood() {
+  const remaining = checkInStepsRemaining();
+  if (!remaining.energy && !remaining.food) return true; // nothing left to ask - e.g. resuming after a previous cancel that got this far
+
   setCheckInFlowActive(true);
   try {
-    const energyField = document.querySelector("#session-strip .energy-field");
-    openEnergyPicker(energyField);
-    await waitUntilHidden(epModal);
-    if (checkInCancelled) return false;
+    if (remaining.energy) {
+      const energyField = document.querySelector("#session-strip .energy-field");
+      openEnergyPicker(energyField);
+      await waitUntilHidden(epModal);
+      if (checkInCancelled) return false;
+    }
 
-    document.getElementById("session-meal-input").value = sessionFields.pre_workout_meal || "";
-    applyCheckInCopy();
-    document.getElementById("session-meal-modal").hidden = false;
-    await waitUntilHidden(document.getElementById("session-meal-modal"));
-    if (checkInCancelled) return false;
-    // "Next" on the meal-name modal chains straight into the hours-since
-    // wheel (see the session-meal-next handler) - "Cancel" doesn't, so only
-    // wait on it if it's actually open.
-    if (!mtpModal.hidden) await waitUntilHidden(mtpModal);
-    if (checkInCancelled) return false;
+    if (remaining.food) {
+      document.getElementById("session-meal-input").value = sessionFields.pre_workout_meal || "";
+      applyCheckInCopy();
+      document.getElementById("session-meal-modal").hidden = false;
+      await waitUntilHidden(document.getElementById("session-meal-modal"));
+      if (checkInCancelled) return false;
+      // "Next" on the meal-name modal chains straight into the hours-since
+      // wheel (see the session-meal-next handler) - "Cancel" doesn't, so
+      // only wait on it if it's actually open.
+      if (!mtpModal.hidden) await waitUntilHidden(mtpModal);
+      if (checkInCancelled) return false;
+    }
   } finally {
     setCheckInFlowActive(false);
   }
@@ -3395,18 +3415,19 @@ async function startLogSession({ repeatFrom } = {}) {
   switchTab("log");
 }
 
+// Shared by both "start"/"resume" entry points below: runs whatever's left
+// of the energy/food check-in (promptSessionFeelAndFood already skips a
+// question that's already answered, so resuming after a cancel picks up
+// right where it left off instead of re-asking everything or asking
+// nothing) and only then enters the Log screen.
+async function startLogSessionAfterCheckIn(opts) {
+  const completed = await promptSessionFeelAndFood();
+  if (!completed) { renderTodayCtaState(); return; } // canceled out of the check-in - stay on Today (refresh the CTA in case a step got answered before the cancel)
+  startLogSession(opts);
+}
+
 document.getElementById("today-cta-start").addEventListener("click", async () => {
-  // Same "anything real to resume" check renderTodayCtaState() uses for the
-  // Start-vs-Continue label (see below) - deliberately not a raw
-  // exercisesContainer.children.length check, which would also count a
-  // block whose muscle got picked but whose exercise pick was abandoned
-  // (see collectExerciseBlocksDraft's docstring) and wrongly skip the
-  // check-in on what the label still correctly calls a fresh start.
-  if (!isWorkoutInProgress()) {
-    const completed = await promptSessionFeelAndFood();
-    if (!completed) { renderTodayCtaState(); return; } // canceled out of the check-in - stay on Today, nothing was started (but refresh the CTA in case a step got answered before the cancel)
-  }
-  startLogSession();
+  await startLogSessionAfterCheckIn();
 });
 document.getElementById("today-cta-log-old").addEventListener("click", async () => {
   // Only one workout can be "in progress" at a time (single-draft model).
@@ -3418,7 +3439,7 @@ document.getElementById("today-cta-log-old").addEventListener("click", async () 
   // instead of just redirecting.
   if (isWorkoutInProgress()) {
     if (logSessionDate === todayStr) toast("Finish or save today's workout first");
-    switchTab("log");
+    await startLogSessionAfterCheckIn();
     return;
   }
   const maxDate = addDaysIso(todayStr, -1);
@@ -3427,9 +3448,7 @@ document.getElementById("today-cta-log-old").addEventListener("click", async () 
   openDatePicker({ container: logDateCarrier, max: maxDate });
   await waitUntilHidden(dpModal);
   if (logSessionDate === beforeDate) return; // closed without picking a date
-  const completed = await promptSessionFeelAndFood(); // reads logSessionDate itself, so the prompts already read in past tense
-  if (!completed) return; // canceled out of the check-in - stay on Today, nothing was started
-  startLogSession();
+  await startLogSessionAfterCheckIn();
 });
 document.getElementById("today-all-history-link").addEventListener("click", () => switchTab("history"));
 
