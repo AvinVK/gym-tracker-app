@@ -11,6 +11,7 @@ so this file never causes a merge conflict.
 A real env var always wins, so a production host (e.g. PythonAnywhere)
 can just set PORT / DB_NAME explicitly and ignore branch detection.
 """
+import functools
 import os
 import subprocess
 
@@ -23,7 +24,12 @@ BRANCH_DEFAULTS = {
 FALLBACK_DEFAULTS = {"PORT": "5000", "DB_NAME": "gym_tracker.db"}
 
 
+@functools.lru_cache(maxsize=1)
 def _current_branch():
+    # Cached: the checked-out branch can't change during a running
+    # process, but this is called on every get()/is_dev() - e.g. every
+    # single OTP email send - and each call was spawning a real `git`
+    # subprocess.
     try:
         return subprocess.check_output(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],

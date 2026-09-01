@@ -58,7 +58,7 @@ def exercise_candidates():
     user_id, err = require_login()
     if err:
         return err
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
     muscle = (data.get("muscle") or "").strip()
     name = (data.get("name") or "").strip()
     if not muscle or not name:
@@ -81,7 +81,7 @@ def propose_exercise():
     user_id, err = require_login()
     if err:
         return err
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
     muscle = (data.get("muscle") or "").strip()
     name = (data.get("name") or "").strip()
     if not muscle or not name:

@@ -109,7 +109,7 @@ def add_exercise_log():
     user_id = get_current_user_id()
     if not user_id:
         return jsonify({"error": "missing user"}), 401
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
     date = (data.get("date") or "").strip()
     exercises = data.get("exercises") or []
     if not date or not exercises:
@@ -202,7 +202,7 @@ def update_exercise_log(row_id):
     user_id = get_current_user_id()
     if not user_id:
         return jsonify({"error": "missing user"}), 401
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
     muscle_group = (data.get("muscle_group") or "").strip()
     exercise = (data.get("exercise") or "").strip()
     if not muscle_group or not exercise:

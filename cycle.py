@@ -3,10 +3,11 @@ streak week a free pass if it overlaps the user's period) and by the
 /api/streak period-power count below.
 
 Mirrors the client-side cycleDayForDate()/getCyclePhases() logic in app.js:
-the cycle is a fixed CYCLE_LENGTH_DAYS-day loop, but period length is NOT
+each user has their own cycle_length_days (users.cycle_length_days, default
+DEFAULT_CYCLE_LENGTH_DAYS) which the cycle loops on, but period length is NOT
 constant cycle-to-cycle - each row in period_logs (start_date, length_days)
-is a period the user actually logged, and only governs the ~28-day window
-starting at its own start_date. A date outside any logged window (a future
+is a period the user actually logged, and only governs the one-cycle-length
+window starting at its own start_date. A date outside any logged window (a future
 cycle the user hasn't confirmed yet, or before cycle tracking started)
 defaults to DEFAULT_PERIOD_DAYS, never to whatever length a *different*
 cycle happened to use. Same projection every phase-aware view in the app
@@ -17,7 +18,7 @@ put.
 """
 from datetime import date, timedelta
 
-CYCLE_LENGTH_DAYS = 28
+DEFAULT_CYCLE_LENGTH_DAYS = 28
 DEFAULT_PERIOD_DAYS = 5
 
 
@@ -54,7 +55,7 @@ def governing_period(d, periods):
     return governing
 
 
-def cycle_day_for_date(d, periods):
+def cycle_day_for_date(d, periods, cycle_length=DEFAULT_CYCLE_LENGTH_DAYS):
     """1-indexed day within the cycle; the governing period's start_date is
     day 1. None if there's no logged period on or before d. `periods` is raw
     (unparsed) start_date/length_days rows."""
@@ -63,46 +64,46 @@ def cycle_day_for_date(d, periods):
         return None
     start, _length = governing
     days_since = (d - start).days
-    return ((days_since % CYCLE_LENGTH_DAYS) + CYCLE_LENGTH_DAYS) % CYCLE_LENGTH_DAYS + 1
+    return ((days_since % cycle_length) + cycle_length) % cycle_length + 1
 
 
-def period_length_for_date(d, periods):
+def period_length_for_date(d, periods, cycle_length=DEFAULT_CYCLE_LENGTH_DAYS):
     """The menstrual-phase length that applies to d's cycle: the governing
-    period's own logged length if d falls within *that* period's own 28-day
-    window (days_since < CYCLE_LENGTH_DAYS), otherwise DEFAULT_PERIOD_DAYS -
-    a later, unconfirmed projected cycle never inherits an earlier cycle's
+    period's own logged length if d falls within *that* period's own cycle
+    window (days_since < cycle_length), otherwise DEFAULT_PERIOD_DAYS - a
+    later, unconfirmed projected cycle never inherits an earlier cycle's
     custom length. `periods` is raw (unparsed) start_date/length_days rows."""
     governing = governing_period(d, _parse_periods(periods))
     if governing is None:
         return DEFAULT_PERIOD_DAYS
     start, length = governing
     days_since = (d - start).days
-    return length if 0 <= days_since < CYCLE_LENGTH_DAYS else DEFAULT_PERIOD_DAYS
+    return length if 0 <= days_since < cycle_length else DEFAULT_PERIOD_DAYS
 
 
-def _is_period_day_parsed(d, parsed_periods):
+def _is_period_day_parsed(d, parsed_periods, cycle_length):
     governing = governing_period(d, parsed_periods)
     if governing is None:
         return False
     start, length = governing
     days_since = (d - start).days
-    cycle_day = ((days_since % CYCLE_LENGTH_DAYS) + CYCLE_LENGTH_DAYS) % CYCLE_LENGTH_DAYS + 1
-    applicable_length = length if 0 <= days_since < CYCLE_LENGTH_DAYS else DEFAULT_PERIOD_DAYS
+    cycle_day = ((days_since % cycle_length) + cycle_length) % cycle_length + 1
+    applicable_length = length if 0 <= days_since < cycle_length else DEFAULT_PERIOD_DAYS
     return cycle_day <= applicable_length
 
 
-def is_period_day(d, periods):
+def is_period_day(d, periods, cycle_length=DEFAULT_CYCLE_LENGTH_DAYS):
     """`periods` is raw (unparsed) start_date/length_days rows."""
-    return _is_period_day_parsed(d, _parse_periods(periods))
+    return _is_period_day_parsed(d, _parse_periods(periods), cycle_length)
 
 
-def week_overlaps_period(week_start, periods):
+def week_overlaps_period(week_start, periods, cycle_length=DEFAULT_CYCLE_LENGTH_DAYS):
     """True if any of the 7 days starting week_start falls on a period day."""
     parsed = _parse_periods(periods)
     if not parsed:
         return False
     return any(
-        _is_period_day_parsed(week_start + timedelta(days=i), parsed)
+        _is_period_day_parsed(week_start + timedelta(days=i), parsed, cycle_length)
         for i in range(7)
     )
 
@@ -127,6 +128,9 @@ def compute_period_power(db, user_id, today=None):
     which days count for *that* cycle, so it's recomputed from the log
     every time rather than persisted."""
     today = today or date.today()
+    cycle_length = db.execute(
+        "SELECT cycle_length_days FROM users WHERE id = ?", (user_id,)
+    ).fetchone()["cycle_length_days"] or DEFAULT_CYCLE_LENGTH_DAYS
     periods = _parse_periods(db.execute(
         "SELECT start_date, length_days FROM period_logs WHERE user_id = ?", (user_id,)
     ).fetchall())
@@ -137,7 +141,7 @@ def compute_period_power(db, user_id, today=None):
         return 0
     start, length = governing
     days_since_today = (today - start).days
-    applicable_length = length if 0 <= days_since_today < CYCLE_LENGTH_DAYS else DEFAULT_PERIOD_DAYS
+    applicable_length = length if 0 <= days_since_today < cycle_length else DEFAULT_PERIOD_DAYS
     period_end = start + timedelta(days=applicable_length - 1)
     log_dates = [date.fromisoformat(r["date"]) for r in db.execute(
         "SELECT DISTINCT date FROM exercise_log WHERE user_id = ?", (user_id,)

@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import sqlite3
 
 from flask import g
@@ -115,7 +116,16 @@ CREATE TABLE IF NOT EXISTS period_logs (
 """
 
 
+_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
 def _ensure_column(conn, table, column, coltype):
+    # table/column are always hardcoded literals from the call sites below,
+    # never user input - this check is just so that stays true: f-string SQL
+    # is otherwise the same shape as an injection bug, so a bad copy-paste
+    # here fails loudly instead of quietly building unsafe SQL.
+    if not (_IDENTIFIER_RE.match(table) and _IDENTIFIER_RE.match(column)):
+        raise ValueError(f"unsafe table/column name: {table}.{column}")
     cols = [r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()]
     if column not in cols:
         conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
@@ -203,12 +213,25 @@ def init_db():
     _ensure_column(conn, "users", "password_hash", "TEXT")
     _ensure_column(conn, "users", "email", "TEXT")
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email)")
+    # workout_log/exercise_log/period_logs are queried by (user_id, date) on
+    # nearly every request (history, streaks, cycle phase) - harmless at
+    # today's scale but these are the columns that would matter first if
+    # usage grows.
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_workout_log_user_date ON workout_log(user_id, date)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_exercise_log_user_date ON exercise_log(user_id, date)")
+    # period_logs already gets a (user_id, start_date) index for free from
+    # its UNIQUE(user_id, start_date) constraint (see SCHEMA above) - no
+    # separate index needed here.
     _ensure_column(conn, "exercise_plan", "images", "TEXT")
     _ensure_column(conn, "exercise_plan", "curated", "INTEGER NOT NULL DEFAULT 0")
     _ensure_column(conn, "users", "longest_streak", "INTEGER NOT NULL DEFAULT 0")
     _ensure_column(conn, "users", "shield_count", "INTEGER NOT NULL DEFAULT 0")
     _ensure_column(conn, "users", "shield_milestone_progress", "INTEGER NOT NULL DEFAULT 0")
     _ensure_column(conn, "users", "period_length_days", "INTEGER NOT NULL DEFAULT 5")
+    # Per-user cycle length (see cycle.py) - real cycles vary beyond ~28
+    # days; default matches DEFAULT_CYCLE_LENGTH_DAYS so anyone who hasn't
+    # set their own keeps today's behavior exactly.
+    _ensure_column(conn, "users", "cycle_length_days", "INTEGER NOT NULL DEFAULT 28")
     # status/proposed_by/proposed_at back the new-exercise approval flow (see
     # routes/exercise_plan.py): a row typed by a user with no strong semantic
     # match to the existing catalog lands here as 'pending' - visible only to

@@ -2,7 +2,7 @@ import os
 import secrets
 from datetime import timedelta
 
-from flask import Flask
+from flask import Flask, jsonify
 
 import config
 from db import close_db, init_db
@@ -32,6 +32,16 @@ app.teardown_appcontext(close_db)
 app.secret_key = get_secret_key()
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+# Only the avatar upload accepts a file today, and it's re-encoded to a
+# small JPEG right after - 12MB comfortably covers a raw phone-camera photo
+# (see upload_avatar's own comment) while still rejecting anything wild
+# before Werkzeug spools it or PIL decodes it into memory.
+app.config["MAX_CONTENT_LENGTH"] = 12 * 1024 * 1024
+
+
+@app.errorhandler(413)
+def _request_too_large(e):
+    return jsonify({"error": "file is too large"}), 413
 if config.is_dev():
     # Flask's default 12-hour static-file cache is fine in production but
     # actively harmful here - see config.is_dev()'s docstring.

@@ -288,6 +288,8 @@ function hideAuthModalsOnly() {
   document.getElementById("auth-otp-modal").hidden = true;
   document.getElementById("auth-signup-modal").hidden = true;
   document.getElementById("auth-login-modal").hidden = true;
+  document.getElementById("auth-reset-otp-modal").hidden = true;
+  document.getElementById("auth-reset-pin-modal").hidden = true;
 }
 
 function hideAllAuthModals() {
@@ -548,6 +550,79 @@ document.getElementById("form-auth-login").addEventListener("submit", async (e) 
   }
 });
 
+let resetOtpResendCooldownTimer = null;
+
+function startResetOtpResendCooldown(seconds) {
+  const btn = document.getElementById("auth-reset-otp-resend");
+  clearInterval(resetOtpResendCooldownTimer);
+  let remaining = seconds;
+  btn.disabled = true;
+  btn.textContent = `Resend code (${remaining}s)`;
+  resetOtpResendCooldownTimer = setInterval(() => {
+    remaining -= 1;
+    if (remaining <= 0) {
+      clearInterval(resetOtpResendCooldownTimer);
+      btn.disabled = false;
+      btn.textContent = "Resend code";
+    } else {
+      btn.textContent = `Resend code (${remaining}s)`;
+    }
+  }, 1000);
+}
+
+document.getElementById("auth-login-forgot").addEventListener("click", async () => {
+  try {
+    await api.post("/api/forgot-pin", { email: authDraft.email });
+    document.getElementById("form-auth-reset-otp").reset();
+    document.getElementById("auth-reset-otp-email").textContent = authDraft.email;
+    showAuthModal("auth-reset-otp-modal");
+    startResetOtpResendCooldown(30);
+  } catch (err) {
+    toast(err.message);
+  }
+});
+
+document.getElementById("form-auth-reset-otp").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const code = new FormData(e.target).get("code").trim();
+  try {
+    await api.post("/api/verify-reset-otp", { email: authDraft.email, code });
+    clearInterval(resetOtpResendCooldownTimer);
+    document.getElementById("form-auth-reset-pin").reset();
+    showAuthModal("auth-reset-pin-modal");
+  } catch (err) {
+    toast(err.message);
+  }
+});
+
+document.getElementById("auth-reset-otp-resend").addEventListener("click", async () => {
+  try {
+    await api.post("/api/forgot-pin", { email: authDraft.email });
+    toast("Code resent");
+    startResetOtpResendCooldown(30);
+  } catch (err) {
+    toast(err.message);
+  }
+});
+
+document.getElementById("auth-reset-otp-back").addEventListener("click", () => {
+  clearInterval(resetOtpResendCooldownTimer);
+  showAuthModal("auth-login-modal");
+});
+
+document.getElementById("form-auth-reset-pin").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const pin = new FormData(e.target).get("pin");
+  try {
+    await api.post("/api/reset-pin", { email: authDraft.email, pin });
+    toast("PIN reset - log in with your new PIN");
+    document.getElementById("form-auth-login").reset();
+    showAuthModal("auth-login-modal");
+  } catch (err) {
+    toast(err.message);
+  }
+});
+
 async function handleLogout() {
   document.getElementById("streak-info-modal").hidden = true;
   await api.post("/api/logout", {});
@@ -800,8 +875,20 @@ wireCycleOptIn(document.getElementById("profile-track-cycle"), document.getEleme
 // render - call getCyclePhases(dateStr) once per date you need and reuse
 // that array/objects (each call builds new objects, so a phase object from
 // one call won't === one from another).
-const CYCLE_LENGTH_DAYS = 28;
+const DEFAULT_CYCLE_LENGTH_DAYS = 28;
 const DEFAULT_PERIOD_DAYS = 5;
+
+// Per-user (currentUser.cycle_length_days, set via Edit Profile) - a
+// function, not a cached const, so it always reflects whatever's currently
+// logged in rather than going stale across a profile edit or account switch.
+function cycleLengthDays() {
+  // Number(...): the profile form's own optimistic merge (see
+  // form-profile's submit handler) briefly holds this as a FormData string
+  // until the next full user refetch - the phase math below needs a real
+  // number, not "30", for its arithmetic to behave.
+  const n = currentUser && Number(currentUser.cycle_length_days);
+  return n || DEFAULT_CYCLE_LENGTH_DAYS;
+}
 
 function daysBetweenIso(fromIso, toIso) {
   const from = new Date(fromIso + "T00:00:00");
@@ -839,19 +926,26 @@ function periodLengthForDate(dateStr) {
   const governing = governingPeriod(dateStr);
   if (!governing) return DEFAULT_PERIOD_DAYS;
   const daysSince = daysBetweenIso(governing.start_date, dateStr);
-  return daysSince >= 0 && daysSince < CYCLE_LENGTH_DAYS ? governing.length_days : DEFAULT_PERIOD_DAYS;
+  return daysSince >= 0 && daysSince < cycleLengthDays() ? governing.length_days : DEFAULT_PERIOD_DAYS;
 }
 
 // dateStr defaults to today - most callers (phase legends, the phase-key
 // scaffolding for a byPhase map, PR-phase sorting) just want "the current
 // set of phase boundaries" for display, not a specific date's.
+// Ovulation day is pinned 14 days before the cycle's end rather than a
+// fixed "day 14" - the luteal phase (ovulation to next period) runs a
+// fairly constant ~14 days regardless of overall cycle length, so it's the
+// follicular phase that actually absorbs a longer or shorter cycle. For the
+// default 28-day cycle this is exactly the original fixed day-14 behavior.
 function getCyclePhases(dateStr = todayStr) {
   const periodDays = periodLengthForDate(dateStr);
+  const cycleLength = cycleLengthDays();
+  const ovulationDay = cycleLength - 14;
   return [
     { key: "menstrual", label: "Menstrual Phase", startDay: 1, endDay: periodDays, color: "#f4436c" },
-    { key: "follicular", label: "Follicular Phase", startDay: periodDays + 1, endDay: 13, color: "#17c993" },
-    { key: "ovulation", label: "Ovulation Phase", startDay: 14, endDay: 14, color: "#f5a623" },
-    { key: "luteal", label: "Luteal Phase", startDay: 15, endDay: 28, color: "#22d3ee" },
+    { key: "follicular", label: "Follicular Phase", startDay: periodDays + 1, endDay: ovulationDay - 1, color: "#17c993" },
+    { key: "ovulation", label: "Ovulation Phase", startDay: ovulationDay, endDay: ovulationDay, color: "#f5a623" },
+    { key: "luteal", label: "Luteal Phase", startDay: ovulationDay + 1, endDay: cycleLength, color: "#22d3ee" },
   ];
 }
 
@@ -871,7 +965,8 @@ function cycleDayForDate(dateStr) {
   if (!governing) return null;
   const daysSince = daysBetweenIso(governing.start_date, dateStr);
   // +1 so the governing period's start_date itself is cycle day 1, not day 0.
-  return (((daysSince % CYCLE_LENGTH_DAYS) + CYCLE_LENGTH_DAYS) % CYCLE_LENGTH_DAYS) + 1;
+  const len = cycleLengthDays();
+  return (((daysSince % len) + len) % len) + 1;
 }
 
 function cyclePhaseForDate(dateStr) {
@@ -886,11 +981,16 @@ function cyclePhaseForDate(dateStr) {
 // the same four phase cards.
 function renderPhaseList() {
   const phasesForList = getCyclePhases(todayStr);
-  const menstrualPhase = phasesForList.find(p => p.key === "menstrual");
-  const follicularPhase = phasesForList.find(p => p.key === "follicular");
-  document.getElementById("cycle-phase-days-menstrual").textContent =
-    menstrualPhase.startDay === menstrualPhase.endDay ? `Day ${menstrualPhase.startDay}` : `Day ${menstrualPhase.startDay}-${menstrualPhase.endDay}`;
-  document.getElementById("cycle-phase-days-follicular").textContent = `Day ${follicularPhase.startDay}-${follicularPhase.endDay}`;
+  // Ovulation/luteal used to be safe as static HTML ("Day 14"/"Day 15-28")
+  // since a fixed 28-day cycle never moved them - now that cycle length is
+  // per-user (see cycleLengthDays()), all four need the same dynamic
+  // treatment menstrual/follicular already got, or they'd go stale for
+  // anyone whose cycle isn't ~28 days.
+  ["menstrual", "follicular", "ovulation", "luteal"].forEach(key => {
+    const phase = phasesForList.find(p => p.key === key);
+    document.getElementById(`cycle-phase-days-${key}`).textContent =
+      phase.startDay === phase.endDay ? `Day ${phase.startDay}` : `Day ${phase.startDay}-${phase.endDay}`;
+  });
 
   const cycleDay = cycleDayForDate(todayStr);
   const currentPhase = cycleDay == null ? null : cyclePhaseForDay(cycleDay, phasesForList);
@@ -916,6 +1016,7 @@ async function renderCycleTab() {
   currentBlock.hidden = false;
   nextBlock.hidden = false;
   estimateInfoBtn.hidden = false;
+  document.getElementById("cycle-estimate-length").textContent = cycleLengthDays();
 
   // Looked up against one phases array (not cyclePhaseForDay's own internal
   // call) so currentPhase is === one of this array's own objects - needed
@@ -926,14 +1027,14 @@ async function renderCycleTab() {
   const nextPhase = phases[(currentIndex + 1) % phases.length];
   const daysUntilNext = nextPhase.startDay > cycleDay
     ? nextPhase.startDay - cycleDay
-    : (CYCLE_LENGTH_DAYS - cycleDay) + nextPhase.startDay;
+    : (cycleLengthDays() - cycleDay) + nextPhase.startDay;
 
   const nextPhaseDate = new Date(todayStr + "T00:00:00");
   nextPhaseDate.setDate(nextPhaseDate.getDate() + daysUntilNext);
   const nextPhaseDateLabel = nextPhaseDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
   document.getElementById("cycle-current-phase").textContent = currentPhase.label;
-  document.getElementById("cycle-current-detail").textContent = `Day ${cycleDay} of ~${CYCLE_LENGTH_DAYS}`;
+  document.getElementById("cycle-current-detail").textContent = `Day ${cycleDay} of ~${cycleLengthDays()}`;
   document.getElementById("cycle-next-phase").textContent = nextPhase.label;
   document.getElementById("cycle-next-detail").textContent = `Starts in ${daysUntilNext} day${daysUntilNext === 1 ? "" : "s"} (${nextPhaseDateLabel})`;
 }
@@ -3295,7 +3396,7 @@ async function renderTodayCycleStrip() {
 
   const currentIndex = phases.indexOf(currentPhase);
   const nextPhase = phases[(currentIndex + 1) % phases.length];
-  const daysUntilNext = nextPhase.startDay > cycleDay ? nextPhase.startDay - cycleDay : (CYCLE_LENGTH_DAYS - cycleDay) + nextPhase.startDay;
+  const daysUntilNext = nextPhase.startDay > cycleDay ? nextPhase.startDay - cycleDay : (cycleLengthDays() - cycleDay) + nextPhase.startDay;
   document.getElementById("today-cycle-footnote").textContent =
     `${nextPhase.label.replace(" Phase", "")} in ${daysUntilNext} day${daysUntilNext === 1 ? "" : "s"}`;
 }
@@ -3732,7 +3833,7 @@ function sessionChipsHtml(w) {
 }
 
 function sessionNoteHtml(w) {
-  return w.notes ? `<span class="history-session-note">&ldquo;${w.notes}&rdquo;</span>` : "";
+  return w.notes ? `<span class="history-session-note">&ldquo;${escapeHtml(w.notes)}&rdquo;</span>` : "";
 }
 
 // Timeline rail: a continuous vertical line down the whole list (built from
@@ -3744,7 +3845,7 @@ function sessionNoteHtml(w) {
 function timelineDayHeaderHtml(date) {
   const prMuscles = currentPRDaysByDate.get(date);
   const prTags = prMuscles
-    ? [...prMuscles].map(m => `<span class="pr-day-tag">${m}-PR</span>`).join("")
+    ? [...prMuscles].map(m => `<span class="pr-day-tag">${escapeHtml(m)}-PR</span>`).join("")
     : "";
   return `
     <div class="tl-day">
@@ -3877,8 +3978,8 @@ function workoutEditFieldsHtml(w) {
         <input type="hidden" class="edit-hours-since-meal" value="${w.hours_since_meal ?? ""}">
       </div>
     </div>
-    <input type="text" class="edit-meal" placeholder="What'd you eat before?" value="${w.pre_workout_meal || ""}">
-    <input type="text" class="edit-notes" placeholder="Notes" value="${w.notes || ""}">`;
+    <input type="text" class="edit-meal" placeholder="What'd you eat before?" value="${escapeHtml(w.pre_workout_meal || "")}">
+    <input type="text" class="edit-notes" placeholder="Notes" value="${escapeHtml(w.notes || "")}">`;
 }
 
 // Every session is its own rail row now (never a whole-day card), so
@@ -4310,6 +4411,49 @@ function initTogglePopover(btn, panel) {
 initTogglePopover(document.getElementById("hormone-info-btn"), document.getElementById("hormone-info-popover"));
 initTogglePopover(document.getElementById("hormone-sources-toggle"), document.getElementById("hormone-sources-detail"));
 initTogglePopover(document.getElementById("cycle-estimate-info-btn"), document.getElementById("cycle-estimate-popover"));
+
+// Cycle length is locked behind a confirm - it's a once-in-a-while setting
+// most people should never touch (the 28-day default already works for
+// most cycles), so editing it takes a deliberate second step rather than
+// being a plain always-open field.
+document.getElementById("cycle-length-edit-btn").addEventListener("click", async () => {
+  document.getElementById("cycle-estimate-popover").hidden = true;
+  const ok = await confirmModal(
+    "Only change this if you know your actual cycle length - the default (28 days) already works well for most people. If you're unsure, it's best to leave it as is.",
+    "Yes, Edit"
+  );
+  if (!ok) return;
+  document.getElementById("cycle-length-input").value = cycleLengthDays();
+  document.getElementById("cycle-length-modal").hidden = false;
+});
+
+document.getElementById("cycle-length-cancel").addEventListener("click", () => {
+  document.getElementById("cycle-length-modal").hidden = true;
+});
+
+document.getElementById("form-cycle-length").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const cycle_length_days = new FormData(e.target).get("cycle_length_days");
+  try {
+    // update_user requires the full profile shape (see routes/auth.py) -
+    // sending just cycle_length_days would fail its "name is required"
+    // check, so the rest of the payload is currentUser's own current
+    // values, unchanged.
+    await api.put(`/api/user/${currentUser.id}`, {
+      name: currentUser.name,
+      age: currentUser.age,
+      last_period_date: currentUser.last_period_date || "",
+      cycle_length_days,
+    });
+    currentUser.cycle_length_days = cycle_length_days;
+    document.getElementById("cycle-length-modal").hidden = true;
+    toast("Cycle length updated");
+    if (activeTab === "cycle") renderCycleTab();
+    if (activeTab === "today") renderTodayScreen();
+  } catch (err) {
+    toast(err.message);
+  }
+});
 
 // One point per day: the best set logged that day for that exercise (top
 // set), not every individual set - so the line reads as "how the exercise
@@ -5123,7 +5267,7 @@ function renderCyclePerfInsight(exerciseName, byPhaseForExercise, workoutLog) {
 
   const currentIndex = phases.indexOf(currentPhase);
   const nextPhase = phases[(currentIndex + 1) % phases.length];
-  const daysUntilNext = nextPhase.startDay > cycleDay ? nextPhase.startDay - cycleDay : (CYCLE_LENGTH_DAYS - cycleDay) + nextPhase.startDay;
+  const daysUntilNext = nextPhase.startDay > cycleDay ? nextPhase.startDay - cycleDay : (cycleLengthDays() - cycleDay) + nextPhase.startDay;
   const best = bestPhaseEntry.rows.reduce((m, r) => Math.max(m, r.value), 0);
   const unit = bestPhaseEntry.rows[0].unit;
   const nextLabel = nextPhase.label.replace(" Phase", "").toLowerCase();
@@ -5222,7 +5366,7 @@ function exerciseSetSummary(x) {
   if (x.duration_minutes != null) parts.push(`${x.duration_minutes} min`);
   const ls = levelSpeedDisplay(x);
   if (ls) parts.push(ls);
-  if (x.notes) parts.push(x.notes);
+  if (x.notes) parts.push(escapeHtml(x.notes));
   return parts.join(" · ") || "—";
 }
 
@@ -5269,7 +5413,7 @@ function exerciseGroupView(group) {
   return `
     <div class="exercise-detail-group">
       <div class="exercise-detail-group-header">
-        <span class="exercise-detail-group-title">${group.muscle_group} — ${group.exercise}</span>
+        <span class="exercise-detail-group-title">${escapeHtml(group.muscle_group)} — ${escapeHtml(group.exercise)}</span>
         <span class="exercise-detail-group-actions">
           <button type="button" class="edit-btn group-edit-btn">Edit</button>
           <button type="button" class="del-btn group-del-btn">Delete</button>

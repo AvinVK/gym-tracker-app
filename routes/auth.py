@@ -2,6 +2,7 @@
 import os
 import random
 import re
+import sqlite3
 import time
 import uuid
 
@@ -12,7 +13,7 @@ from werkzeug.utils import secure_filename
 
 from db import get_db
 from helpers import get_current_user_id, is_future_date, require_login
-from mail import send_otp_email
+from mail import send_otp_email, send_pin_reset_email
 from paths import UPLOAD_DIR
 
 bp = Blueprint("auth", __name__)
@@ -29,11 +30,33 @@ OTP_LENGTH = 6
 OTP_TTL_SECONDS = 10 * 60
 OTP_RESEND_COOLDOWN_SECONDS = 30
 OTP_MAX_ATTEMPTS = 5
+RESET_OTP_MAX_PER_HOUR = 5
+RESET_OTP_RATE_WINDOW_SECONDS = 60 * 60
+# A 4-digit PIN is only 10,000 combinations - without a lockout it's
+# brute-forceable over the API. In-memory (not DB/session) since this needs
+# to catch attempts across different devices/cookies for the same email, not
+# just repeats from one browser.
+LOGIN_MAX_ATTEMPTS = 5
+LOGIN_ATTEMPT_WINDOW_SECONDS = 15 * 60
+LOGIN_LOCKOUT_SECONDS = 15 * 60
 # 1, not higher: the Your Cycle calendar lets a period be logged as a single
 # tapped day (Log Period -> tap one day -> Save), which is a legitimate,
 # easily-produced selection, not an input error.
 MIN_PERIOD_DAYS = 1
 MAX_PERIOD_DAYS = 10
+DEFAULT_CYCLE_LENGTH_DAYS = 28
+# Real menstrual cycles commonly range ~21-35 days; a wider band up to 45
+# still covers longer irregular cycles without accepting obvious typos.
+MIN_CYCLE_LENGTH_DAYS = 21
+MAX_CYCLE_LENGTH_DAYS = 45
+
+
+def _valid_cycle_length(value):
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        return None
+    return n if MIN_CYCLE_LENGTH_DAYS <= n <= MAX_CYCLE_LENGTH_DAYS else None
 
 
 def _valid_pin(pin):
@@ -99,7 +122,7 @@ def check_email():
     """Step 2 of the login wizard: does this email already have an account?
     Drives whether the frontend shows the new-user setup step or the
     returning-user PIN step next."""
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
     email = _normalize_email(data.get("email"))
     if not _valid_email(email):
         return jsonify({"error": "enter a valid email"}), 400
@@ -119,7 +142,7 @@ def send_otp():
     """Emails a 6-digit code to prove the signup step 2 owns this address,
     before it becomes their login key. Session-stored (not DB-stored): it's
     only ever needed for the lifetime of this one signup attempt."""
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
     email = _normalize_email(data.get("email"))
     if not _valid_email(email):
         return jsonify({"error": "enter a valid email"}), 400
@@ -147,7 +170,7 @@ def send_otp():
 
 @bp.route("/api/verify-otp", methods=["POST"])
 def verify_otp():
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
     email = _normalize_email(data.get("email"))
     code = (data.get("code") or "").strip()
 
@@ -173,7 +196,7 @@ def verify_otp():
 
 @bp.route("/api/signup", methods=["POST"])
 def signup():
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
     name = _capitalize_name(data.get("name"))
     email = _normalize_email(data.get("email"))
     pin = data.get("pin") or ""
@@ -193,10 +216,18 @@ def signup():
         return jsonify({"error": "that email is already registered"}), 409
 
     last_period_date = data.get("last_period_date") or None
-    cur = db.execute(
-        "INSERT INTO users (name, email, password_hash, age, last_period_date) VALUES (?, ?, ?, ?, ?)",
-        (name, email, generate_password_hash(pin), data.get("age"), last_period_date),
-    )
+    try:
+        cur = db.execute(
+            "INSERT INTO users (name, email, password_hash, age, last_period_date) VALUES (?, ?, ?, ?, ?)",
+            (name, email, generate_password_hash(pin), data.get("age"), last_period_date),
+        )
+    except sqlite3.IntegrityError:
+        # Two signups for the same email raced past the SELECT check above -
+        # the UNIQUE index on users.email is the real guard; this just turns
+        # its rejection into the same clean 409 the check above normally
+        # gives, instead of an unhandled 500.
+        db.rollback()
+        return jsonify({"error": "that email is already registered"}), 409
     if last_period_date:
         # Mirrors the users.period_length_days column default (5) - signup
         # doesn't collect a length yet, so this first period_logs row starts
@@ -213,15 +244,44 @@ def signup():
     return jsonify({"id": cur.lastrowid}), 201
 
 
+_login_attempts = {}  # email -> {"count", "window_start", "locked_until"}
+
+
+def _login_lockout_remaining(email):
+    rec = _login_attempts.get(email)
+    if not rec or not rec["locked_until"]:
+        return None
+    remaining = rec["locked_until"] - time.time()
+    return int(remaining) if remaining > 0 else None
+
+
+def _record_login_failure(email):
+    now = time.time()
+    rec = _login_attempts.get(email)
+    if not rec or now - rec["window_start"] > LOGIN_ATTEMPT_WINDOW_SECONDS:
+        rec = {"count": 0, "window_start": now, "locked_until": None}
+    rec["count"] += 1
+    if rec["count"] >= LOGIN_MAX_ATTEMPTS:
+        rec["locked_until"] = now + LOGIN_LOCKOUT_SECONDS
+    _login_attempts[email] = rec
+
+
 @bp.route("/api/login", methods=["POST"])
 def login():
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
     email = _normalize_email(data.get("email"))
     pin = data.get("pin") or ""
+
+    wait = _login_lockout_remaining(email)
+    if wait:
+        return jsonify({"error": f"too many attempts - try again in {wait // 60 + 1} min"}), 429
+
     db = get_db()
     row = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
     if not row or not row["password_hash"] or not check_password_hash(row["password_hash"], pin):
+        _record_login_failure(email)
         return jsonify({"error": "incorrect email or PIN"}), 401
+    _login_attempts.pop(email, None)
     session.clear()
     session.permanent = True
     session["user_id"] = row["id"]
@@ -234,6 +294,98 @@ def logout():
     return jsonify({"ok": True})
 
 
+@bp.route("/api/forgot-pin", methods=["POST"])
+def forgot_pin():
+    """Step 1 of PIN reset, reached from the login modal's "Forgot PIN?"
+    link - only ever shown once /api/check-email has already confirmed this
+    email has an account, so (unlike send_otp) this is the one place a
+    missing account is reported as an error rather than stayed silent
+    about."""
+    data = request.get_json(force=True) or {}
+    email = _normalize_email(data.get("email"))
+    if not _valid_email(email):
+        return jsonify({"error": "enter a valid email"}), 400
+
+    db = get_db()
+    if not db.execute("SELECT 1 FROM users WHERE email = ?", (email,)).fetchone():
+        return jsonify({"error": "no account with that email"}), 404
+
+    now = time.time()
+    existing = session.get("reset_otp")
+    if existing and existing["email"] == email and now - existing["sent_at"] < OTP_RESEND_COOLDOWN_SECONDS:
+        wait = int(OTP_RESEND_COOLDOWN_SECONDS - (now - existing["sent_at"]))
+        return jsonify({"error": f"wait {wait}s before requesting another code"}), 429
+
+    # Caps total codes sent per hour (on top of the 30s resend cooldown
+    # above) - without this, someone could keep requesting fresh codes
+    # forever, each one giving them another 5 guesses (OTP_MAX_ATTEMPTS) at
+    # the 6-digit code via /api/verify-reset-otp.
+    rate = session.get("reset_otp_rate")
+    if not rate or rate["email"] != email or now - rate["window_start"] > RESET_OTP_RATE_WINDOW_SECONDS:
+        rate = {"email": email, "window_start": now, "count": 0}
+    if rate["count"] >= RESET_OTP_MAX_PER_HOUR:
+        return jsonify({"error": "too many reset attempts - try again later"}), 429
+
+    code = _generate_otp()
+    try:
+        send_pin_reset_email(email, code)
+    except Exception:
+        return jsonify({"error": "couldn't send the verification email - try again"}), 502
+
+    rate["count"] += 1
+    session["reset_otp_rate"] = rate
+    session["reset_otp"] = {"email": email, "code": code, "sent_at": now, "attempts": 0}
+    session.pop("reset_verified_email", None)
+    return jsonify({"ok": True})
+
+
+@bp.route("/api/verify-reset-otp", methods=["POST"])
+def verify_reset_otp():
+    data = request.get_json(force=True) or {}
+    email = _normalize_email(data.get("email"))
+    code = (data.get("code") or "").strip()
+
+    otp = session.get("reset_otp")
+    if not otp or otp["email"] != email:
+        return jsonify({"error": "request a new code"}), 400
+    if time.time() - otp["sent_at"] > OTP_TTL_SECONDS:
+        session.pop("reset_otp", None)
+        return jsonify({"error": "code expired - request a new one"}), 400
+    if otp["attempts"] >= OTP_MAX_ATTEMPTS:
+        session.pop("reset_otp", None)
+        return jsonify({"error": "too many attempts - request a new code"}), 400
+
+    if code != otp["code"]:
+        otp["attempts"] += 1
+        session["reset_otp"] = otp
+        return jsonify({"error": "incorrect code"}), 401
+
+    session.pop("reset_otp", None)
+    session["reset_verified_email"] = email
+    return jsonify({"ok": True})
+
+
+@bp.route("/api/reset-pin", methods=["POST"])
+def reset_pin():
+    data = request.get_json(force=True) or {}
+    email = _normalize_email(data.get("email"))
+    pin = data.get("pin") or ""
+    if session.get("reset_verified_email") != email:
+        return jsonify({"error": "verify your email first"}), 403
+    if not _valid_pin(pin):
+        return jsonify({"error": f"PIN must be exactly {PIN_LENGTH} digits"}), 400
+
+    db = get_db()
+    row = db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+    if not row:
+        return jsonify({"error": "no account with that email"}), 404
+
+    db.execute("UPDATE users SET password_hash = ? WHERE id = ?", (generate_password_hash(pin), row["id"]))
+    db.commit()
+    session.pop("reset_verified_email", None)
+    return jsonify({"ok": True})
+
+
 @bp.route("/api/user/<int:user_id>", methods=["PUT"])
 def update_user(user_id):
     current_id, err = require_login()
@@ -241,17 +393,27 @@ def update_user(user_id):
         return err
     if current_id != user_id:
         return jsonify({"error": "forbidden"}), 403
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
     name = _capitalize_name(data.get("name"))
     if not name:
         return jsonify({"error": "name is required"}), 400
     if data.get("last_period_date") and is_future_date(data["last_period_date"]):
         return jsonify({"error": "last_period_date cannot be in the future"}), 400
+    # Optional: absent (e.g. a plain name/age edit from a form that doesn't
+    # carry this field) must leave the existing value alone, not silently
+    # reset it back to the 28-day default - COALESCE(?, cycle_length_days)
+    # below is what makes "not sent" and "cleared to null" behave the same.
+    cycle_length_days = None
+    if data.get("cycle_length_days") is not None:
+        cycle_length_days = _valid_cycle_length(data["cycle_length_days"])
+        if cycle_length_days is None:
+            return jsonify({"error": f"cycle length must be between {MIN_CYCLE_LENGTH_DAYS} and {MAX_CYCLE_LENGTH_DAYS} days"}), 400
     last_period_date = data.get("last_period_date") or None
     db = get_db()
     db.execute(
-        "UPDATE users SET name = ?, age = ?, last_period_date = ? WHERE id = ?",
-        (name, data.get("age"), last_period_date, user_id),
+        "UPDATE users SET name = ?, age = ?, last_period_date = ?, "
+        "cycle_length_days = COALESCE(?, cycle_length_days) WHERE id = ?",
+        (name, data.get("age"), last_period_date, cycle_length_days, user_id),
     )
     if last_period_date:
         # This form has no length field (unlike Log Period's date-range
@@ -278,7 +440,7 @@ def log_period(user_id):
         return err
     if current_id != user_id:
         return jsonify({"error": "forbidden"}), 403
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
     last_period_date = (data.get("last_period_date") or "").strip()
     if not last_period_date:
         return jsonify({"error": "date is required"}), 400
