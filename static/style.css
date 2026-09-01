@@ -2397,11 +2397,11 @@ button:disabled {
   cursor: default;
 }
 /* Period reads as a soft wash across the whole stretch rather than an
-   outlined ring per day, and today is just solid-filled - two rings
-   stacking together (the old .today.period look) got unreadable fast. */
+   outlined ring per day. Today is an outlined ring (no fill) so it stays
+   legible layered on top of the period wash instead of the two colliding. */
 .cycle-cal-day.period { color: #f4436c; background: rgba(244, 67, 108, .18); }
-.cycle-cal-day.today { background: var(--ink); color: var(--bg); }
-.cycle-cal-day.today.period { background: #f4436c; color: #fff; }
+.cycle-cal-day.today { box-shadow: inset 0 0 0 2px var(--ink); }
+.cycle-cal-day.today.period { color: #f4436c; box-shadow: inset 0 0 0 2px var(--ink); }
 .cycle-cal-day.selectable { cursor: pointer; transition: background .15s ease; }
 .cycle-cal-day.selectable:hover { background: var(--surface-2); }
 .cycle-cal-day:disabled { opacity: .55; cursor: not-allowed; }
