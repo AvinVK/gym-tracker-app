@@ -232,6 +232,10 @@ def init_db():
     # days; default matches DEFAULT_CYCLE_LENGTH_DAYS so anyone who hasn't
     # set their own keeps today's behavior exactly.
     _ensure_column(conn, "users", "cycle_length_days", "INTEGER NOT NULL DEFAULT 28")
+    # Display/entry unit preference ('kg' or 'lb') - exercise_log.weight_kg
+    # itself always stays kg regardless (see routes/exercise_log.py); this
+    # only controls what the client shows/accepts.
+    _ensure_column(conn, "users", "weight_unit", "TEXT NOT NULL DEFAULT 'kg'")
     # status/proposed_by/proposed_at back the new-exercise approval flow (see
     # routes/exercise_plan.py): a row typed by a user with no strong semantic
     # match to the existing catalog lands here as 'pending' - visible only to

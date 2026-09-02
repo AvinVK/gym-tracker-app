@@ -678,9 +678,17 @@ function renderProfileAvatar() {
 // Editing profile fields moved off the Your Body tab and behind a tap on
 // the Today screen's avatar - Your Body is now just body-performance data
 // (Strength by phase / Fuel), not account settings.
+function setProfileWeightUnitToggle(unit) {
+  document.getElementById("profile-weight-unit-input").value = unit;
+  document.querySelectorAll("#profile-weight-unit-toggle .set-type-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.unit === unit);
+  });
+}
+
 function openProfileEditModal() {
   document.getElementById("profile-name").value = currentUser.name || "";
   document.getElementById("profile-age").value = currentUser.age ?? "";
+  setProfileWeightUnitToggle(currentUser.weight_unit || "kg");
   const tracksCycle = !!currentUser.last_period_date;
   document.getElementById("profile-track-cycle").checked = tracksCycle;
   document.getElementById("profile-period-date-label").hidden = !tracksCycle;
@@ -747,6 +755,40 @@ const privacyInfoModal = document.getElementById("privacy-info-modal");
 document.getElementById("profile-privacy-link-btn").addEventListener("click", () => { privacyInfoModal.hidden = false; });
 document.getElementById("privacy-info-close").addEventListener("click", () => { privacyInfoModal.hidden = true; });
 privacyInfoModal.addEventListener("click", (e) => { if (e.target === privacyInfoModal) privacyInfoModal.hidden = true; });
+
+// ---------------- Delete account ----------------
+// Two-step, not one: a plain confirmModal first (catches "I didn't mean to
+// tap that"), then a second modal that re-checks the PIN itself (catches a
+// session left open on a shared/unlocked phone) - the same "measure twice"
+// treatment reset-pin's OTP re-verification gets, for the one action here
+// that can't be undone afterward.
+document.getElementById("profile-delete-account-btn").addEventListener("click", async () => {
+  const ok = await confirmModal(
+    "This permanently deletes your account and everything logged under it — workouts, PRs, cycle history, streaks. This can't be undone.",
+    "Continue"
+  );
+  if (!ok) return;
+  document.getElementById("form-delete-account").reset();
+  document.getElementById("delete-account-modal").hidden = false;
+});
+
+document.getElementById("delete-account-cancel").addEventListener("click", () => {
+  document.getElementById("delete-account-modal").hidden = true;
+});
+
+document.getElementById("form-delete-account").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const pin = new FormData(e.target).get("pin");
+  try {
+    await api.post(`/api/user/${currentUser.id}/delete-account`, { pin });
+    document.getElementById("delete-account-modal").hidden = true;
+    closeProfileEditModal();
+    toast("Account deleted");
+    await handleLogout();
+  } catch (err) {
+    toast(err.message);
+  }
+});
 
 // ---------------- Discover tab (data-maintab/id stay "you" - see the HTML
 // comment above #maintab-you for why) ----------------
@@ -860,6 +902,10 @@ document.getElementById("pending-exercises-list").addEventListener("click", asyn
 
 wireCycleOptIn(document.getElementById("profile-track-cycle"), document.getElementById("profile-period-date-label"));
 
+document.querySelectorAll("#profile-weight-unit-toggle .set-type-btn").forEach(btn => {
+  btn.addEventListener("click", () => setProfileWeightUnitToggle(btn.dataset.unit));
+});
+
 // ---------------- Your Cycle ----------------
 // Every cycle is still estimated as a standard 28 days - the simplified
 // 4-phase model most consumer cycle-tracking apps use absent more history.
@@ -877,6 +923,12 @@ wireCycleOptIn(document.getElementById("profile-track-cycle"), document.getEleme
 // one call won't === one from another).
 const DEFAULT_CYCLE_LENGTH_DAYS = 28;
 const DEFAULT_PERIOD_DAYS = 5;
+// Mirrors routes/auth.py's MIN/MAX_PERIOD_DAYS - checked client-side before
+// Save so a selection spanning two far-apart months gets a clear "why"
+// (the gap between the earliest and latest tapped day, not the count of
+// days actually tapped) instead of the backend's generic rejection.
+const MIN_PERIOD_DAYS = 1;
+const MAX_PERIOD_DAYS = 10;
 
 // Per-user (currentUser.cycle_length_days, set via Edit Profile) - a
 // function, not a cached const, so it always reflects whatever's currently
@@ -1042,23 +1094,35 @@ async function renderCycleTab() {
 // ---------------- Period calendar ----------------
 // Normally a read-only month view marking every projected menstrual-phase
 // day - reuses cyclePhaseForDate so it never drifts from the phase math
-// already driving the summary above and the History dots. Log Period
-// switches it into a logging mode instead: the projected marks clear and
-// day cells become individually toggleable - tap an unselected day to add
-// it, tap a selected one to remove it. The very first tap (starting from
-// an empty selection) also auto-fills forward to the user's usual period
-// length as a convenience - today obviously isn't the end of a period that
-// starts today - which the user can then freely add to or remove days
-// from. Only the *first* tap is restricted to today-or-earlier (you can't
-// say your period will begin in the future); once at least one day is
-// selected, any day (past or future) can be toggled. Save submits the
-// selection's min..max span as last_period_date + period_length_days,
-// since that's all the backend model can represent - a day deselected from
-// the middle of an otherwise-contiguous run won't be reflected as a gap
-// once saved, only shrinking the ends actually changes what's stored.
+// already driving the summary above and the History dots.
+//
+// Log Period switches it into a logging mode where every day currently
+// covered by a real logged period (currentUser.period_logs) starts out
+// already selected - solid fill, exactly like a fresh tap - rather than
+// some separate "already logged" look. That was tried (an outline, then a
+// dot) specifically to avoid this, but both ended up reading as "not
+// really selected", so tapping a day to remove it looked like nothing
+// happened and got tapped again, re-adding it. One state is simpler and
+// can't be misread: solid = currently included, blank = not. Tap a solid
+// day to remove it, tap a blank one to add it - identical either way,
+// whether the day came from real history or a fresh tap this session.
+//
+// originalPeriodLogs snapshots currentUser.period_logs at the moment
+// logging mode opens, so Save can work out which whole periods got fully
+// deselected (delete those rows) versus which still have at least one
+// selected day (upsert, same as ever) - see the save handler below.
+//
+// A gap between selected days (not consecutive dates) means separate
+// periods - see clusterPeriodDates - so logging two different past
+// periods at once is one Save, not one Log Period trip per period. Only
+// the very first tap (when nothing at all is selected yet) is restricted
+// to today-or-earlier, since you can't say a period starts in the future;
+// with any real history already pre-selected, that restriction naturally
+// doesn't apply from the moment logging mode opens.
 let cycleCalViewYear, cycleCalViewMonth;
 let periodLogging = false;
 let periodLogDates = new Set();
+let originalPeriodLogs = [];
 
 // Dates (YYYY-MM-DD) with an actual workout logged (has exercises, not just
 // a rest-day check-in) - drives the calendar's gym-visit dot. Refetched
@@ -1090,16 +1154,6 @@ function renderCycleCalendar() {
   document.getElementById("cycle-log-period-btn").hidden = periodLogging || !hasPeriodDate;
   document.getElementById("cycle-cal-log-hint").hidden = !periodLogging;
   document.getElementById("cycle-cal-log-actions").hidden = !periodLogging;
-  const countEl = document.getElementById("cycle-cal-log-count");
-  countEl.hidden = !periodLogging || periodLogDates.size === 0;
-  if (periodLogging && periodLogDates.size > 0) {
-    // Surfaced so a mis-tap (e.g. the auto-fill silently reusing a
-    // previously-saved period_length_days that was itself a mistake) is
-    // visible before Save, instead of quietly re-saving the same wrong
-    // length forever - trimming days is the only way to correct it, so the
-    // count needs to be seen to be trimmed.
-    countEl.textContent = `${periodLogDates.size} day${periodLogDates.size === 1 ? "" : "s"} selected`;
-  }
 
   document.getElementById("cycle-cal-month-label").textContent = new Date(cycleCalViewYear, cycleCalViewMonth, 1)
     .toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -1124,13 +1178,36 @@ function renderCycleCalendar() {
         cell.classList.add("selectable");
         cell.addEventListener("click", () => selectPeriodLogDay(iso));
       }
-      if (periodLogDates.has(iso)) cell.classList.add("period");
+      // Solid fill = currently included (real history that's still
+      // selected, or a fresh tap - no distinction, see the comment above
+      // this section). Blank = not included, whether that's a day that was
+      // never logged or one that just got deselected. Dashed outline, no
+      // fill = not real, just the same 28-day-cycle projection the
+      // read-only view below also shows dashed (the "Estimated" legend) -
+      // same treatment in both places now, so it can never be mistaken for
+      // an actual selection (a solid wash) but still doesn't look like the
+      // day went blank for no reason.
+      if (periodLogDates.has(iso)) {
+        cell.classList.add("period");
+      } else {
+        const phase = cyclePhaseForDate(iso);
+        if (phase && phase.key === "menstrual") cell.classList.add("period-predicted");
+      }
     } else if (hasPeriodDate) {
       // Not disabled here (unlike a future day during logging) - just a
       // plain inert button with no click handler, so it reads as normal
       // text rather than the dimmed :disabled style.
       const phase = cyclePhaseForDate(iso);
-      if (phase && phase.key === "menstrual") cell.classList.add("period");
+      if (phase && phase.key === "menstrual") {
+        // Solid = an actually-logged day (currentUser.period_logs). Dashed
+        // outline, no fill = the same 28-day-cycle projection this whole
+        // view is otherwise built on (the "Estimated period" legend) but
+        // with nothing real backing this particular day - e.g. the next
+        // cycle's guessed-at period before it's actually happened. Was
+        // solid red for both until now, which read as "already logged"
+        // for a date that's sometimes still days away.
+        cell.classList.add(isLoggedPeriodDay(iso) ? "period" : "period-predicted");
+      }
     }
     grid.appendChild(cell);
   }
@@ -1144,62 +1221,177 @@ document.getElementById("cycle-cal-next").addEventListener("click", () => {
   cycleCalViewMonth++; if (cycleCalViewMonth > 11) { cycleCalViewMonth = 0; cycleCalViewYear++; }
   renderCycleCalendar();
 });
-document.getElementById("cycle-calendar-add-date-btn").addEventListener("click", () => switchTab("you"));
+// Was switchTab("you") - a leftover from before profile editing moved off
+// that tab (now "Discover") and into its own modal off the Today avatar
+// (see openProfileEditModal). Left un-updated, this sent "Go to Profile"
+// to a tab with no profile fields on it at all.
+document.getElementById("cycle-calendar-add-date-btn").addEventListener("click", openProfileEditModal);
+
+// True if iso falls inside an actually-saved period (currentUser.period_logs)
+// - not the phase-projected estimate every menstrual-phase day otherwise
+// gets colored by, a real start_date/length_days row. Used by the
+// read-only calendar to tell a real logged day (solid) apart from a purely
+// projected one (dashed) - see renderCycleCalendar.
+function isLoggedPeriodDay(iso) {
+  const periods = (currentUser && currentUser.period_logs) || [];
+  return periods.some(p => iso >= p.start_date && iso <= addDaysIso(p.start_date, p.length_days - 1));
+}
 
 // ---------------- Log Period ----------------
+// Groups a Set of tapped ISO dates into separate periods, splitting on any
+// gap (a day not immediately following the previous one) - dates is
+// unordered so this sorts first. Each returned {start, end, length} is one
+// contiguous run, always <= MAX_PERIOD_DAYS worth of *possible* days by
+// construction only if the caller checks it (this just clusters, it
+// doesn't validate).
+function clusterPeriodDates(dates) {
+  const sorted = [...dates].sort();
+  const clusters = [];
+  let current = [];
+  for (const iso of sorted) {
+    if (current.length && addDaysIso(current[current.length - 1], 1) !== iso) {
+      clusters.push(current);
+      current = [];
+    }
+    current.push(iso);
+  }
+  if (current.length) clusters.push(current);
+  return clusters.map(days => ({ start: days[0], end: days[days.length - 1], length: days.length }));
+}
+
 function selectPeriodLogDay(iso) {
   if (periodLogDates.has(iso)) {
     periodLogDates.delete(iso);
   } else {
-    const startingFresh = periodLogDates.size === 0;
     periodLogDates.add(iso);
-    if (startingFresh) {
-      // Convenience auto-fill for the common case (today obviously isn't
-      // the end of a period that starts today) - the user is then free to
-      // toggle any of these back off, or add more days, before Save.
-      const usualLength = (currentUser && currentUser.period_length_days) || DEFAULT_PERIOD_DAYS;
-      for (let i = 1; i < usualLength; i++) periodLogDates.add(addDaysIso(iso, i));
-    }
   }
   renderCycleCalendar();
 }
 
 document.getElementById("cycle-log-period-btn").addEventListener("click", () => {
   periodLogging = true;
+  // Pre-load every day of every already-logged period as selected (see the
+  // comment above this section) - a deep-ish copy since length_days gets
+  // read from this snapshot after currentUser.period_logs itself may have
+  // already moved on (deletes below update it mid-save).
+  originalPeriodLogs = (currentUser.period_logs || []).map(p => ({ ...p }));
   periodLogDates = new Set();
+  originalPeriodLogs.forEach(p => {
+    for (let i = 0; i < p.length_days; i++) periodLogDates.add(addDaysIso(p.start_date, i));
+  });
   renderCycleCalendar();
 });
 
 document.getElementById("cycle-cal-log-cancel").addEventListener("click", () => {
   periodLogging = false;
   periodLogDates = new Set();
+  originalPeriodLogs = [];
   renderCycleCalendar();
 });
 
+// Deletes one period_logs row and re-derives last_period_date/
+// period_length_days from whatever's now the latest remaining one (mirrors
+// the backend's own recompute) - used by Save for every originally-logged
+// period that ended up with no selected days left in it at all.
+async function deletePeriodRow(startDate) {
+  const res = await api.del(`/api/user/${currentUserId}/period/${startDate}`);
+  if (!res.ok) throw new Error((await res.json()).error || "Couldn't update that period");
+  const data = await res.json();
+  currentUser.period_logs = (currentUser.period_logs || []).filter(p => p.start_date !== startDate);
+  currentUser.last_period_date = data.last_period_date;
+  currentUser.period_length_days = data.period_length_days;
+}
+
+// Every phase-aware chart (PR-by-phase, Performance-by-Time, History's
+// phase dots, the hormone-pattern day marker) computes phase live from
+// cyclePhaseForDate on every render - see the Period calendar comment
+// above - rather than storing it on the workout when logged, so it can
+// backfill correctly (see Log Period's own "if you missed logging it").
+// That means editing or deleting a period can silently reshuffle which
+// phase a *past* workout is attributed to, with no chart-side signal that
+// it happened. These three make that visible in the Save toast instead.
+async function snapshotWorkoutPhasesByDate() {
+  const history = await getExerciseHistory();
+  const dates = [...new Set(history.map(x => x.date))];
+  const map = new Map();
+  for (const d of dates) {
+    const phase = cyclePhaseForDate(d);
+    map.set(d, phase ? phase.key : null);
+  }
+  return map;
+}
+function countPhaseChanges(before, after) {
+  let count = 0;
+  for (const [date, phase] of before) {
+    if (after.get(date) !== phase) count++;
+  }
+  return count;
+}
+function withPhaseChangeSuffix(baseMessage, changedCount) {
+  if (changedCount === 0) return baseMessage;
+  // The Cycle tab's charts (Performance by Time, PR-by-phase, ...) aren't
+  // part of what Save re-renders (see renderCycleTab vs renderCyclePerfSection)
+  // - flagging this is what makes the reload button in their header appear.
+  setCyclePerfStale(true);
+  return `${baseMessage} - phases recalculated for ${changedCount} past workout${changedCount === 1 ? "" : "s"}`;
+}
+
 document.getElementById("cycle-cal-log-save").addEventListener("click", async () => {
-  if (periodLogDates.size === 0) {
+  if (periodLogDates.size === 0 && originalPeriodLogs.length === 0) {
     toast("Tap at least one day first");
     return;
   }
-  const sorted = [...periodLogDates].sort();
-  const start = sorted[0];
-  const end = sorted[sorted.length - 1];
-  const periodLengthDays = Math.round((new Date(end + "T00:00:00") - new Date(start + "T00:00:00")) / 86400000) + 1;
+  // A gap between selected days (not consecutive dates) means separate
+  // periods, not one long one - e.g. a day logged in July and another in
+  // September are two different cycles, not a 43-day period. Each
+  // contiguous run becomes its own start_date/length_days entry, so
+  // logging two (or more) past periods is one Save, not one Log Period
+  // trip per period.
+  const clusters = clusterPeriodDates(periodLogDates);
+  for (const c of clusters) {
+    if (c.length > MAX_PERIOD_DAYS) {
+      toast(`${formatDateDisplay(c.start)} to ${formatDateDisplay(c.end)} is ${c.length} days - a single period can't span more than ${MAX_PERIOD_DAYS}. Remove the day(s) furthest from the rest, or leave a gap to log it as a separate period.`);
+      return;
+    }
+  }
+  const clusterStarts = new Set(clusters.map(c => c.start));
+  // Every originally-logged period with no cluster still starting on its
+  // exact start_date lost all its selected days (fully deselected, or its
+  // first day got deselected which moves what start_date it'd need) -
+  // either way that row has to go, or upserting the new clusters would
+  // just leave it behind as an orphaned duplicate.
+  const toRemove = originalPeriodLogs.filter(p => !clusterStarts.has(p.start_date));
   try {
-    const res = await api.put(`/api/user/${currentUserId}/period`, { last_period_date: start, period_length_days: periodLengthDays });
-    currentUser.last_period_date = res.last_period_date;
-    currentUser.period_length_days = res.period_length_days;
-    // Upsert this cycle's own entry by start_date, mirroring the backend's
-    // period_logs row - keeps this specific cycle's length isolated from
-    // every other logged cycle (see getCyclePhases/periodLengthForDate).
+    const before = await snapshotWorkoutPhasesByDate();
+    for (const p of toRemove) {
+      await deletePeriodRow(p.start_date);
+    }
     if (!currentUser.period_logs) currentUser.period_logs = [];
-    const existing = currentUser.period_logs.find(p => p.start_date === start);
-    if (existing) existing.length_days = periodLengthDays;
-    else currentUser.period_logs.push({ start_date: start, length_days: periodLengthDays });
+    // Sequential, not Promise.all - each call re-derives "most recent
+    // period" (users.last_period_date) from the full period_logs table on
+    // the backend, so they need to land one at a time for that recompute
+    // to see every earlier one in this same save.
+    for (const c of clusters) {
+      const res = await api.put(`/api/user/${currentUserId}/period`, { last_period_date: c.start, period_length_days: c.length });
+      currentUser.last_period_date = res.last_period_date;
+      currentUser.period_length_days = res.period_length_days;
+      // Upsert this cycle's own entry by start_date, mirroring the
+      // backend's period_logs row - keeps this specific cycle's length
+      // isolated from every other logged cycle (see
+      // getCyclePhases/periodLengthForDate).
+      const existing = currentUser.period_logs.find(p => p.start_date === c.start);
+      if (existing) existing.length_days = c.length;
+      else currentUser.period_logs.push({ start_date: c.start, length_days: c.length });
+    }
     currentUser.period_logs.sort((a, b) => a.start_date < b.start_date ? -1 : a.start_date > b.start_date ? 1 : 0);
+    const changed = countPhaseChanges(before, await snapshotWorkoutPhasesByDate());
     periodLogging = false;
     periodLogDates = new Set();
-    toast("Period logged");
+    originalPeriodLogs = [];
+    const baseMsg = clusters.length === 0
+      ? "All periods removed"
+      : clusters.length > 1 ? `${clusters.length} periods saved` : "Period saved";
+    toast(withPhaseChangeSuffix(baseMsg, changed));
     renderCycleTab();
     refreshStreak();
   } catch (err) {
@@ -1232,10 +1424,15 @@ document.getElementById("form-profile").addEventListener("submit", async (e) => 
     showGreeting(currentUser.name);
     closeProfileEditModal();
     toast("Profile updated");
-    // Opened from - and always closes back to - Today, so refresh it in
-    // place (name/avatar in the greeting, cycle strip if tracking changed)
-    // rather than requiring a manual tab switch to see the change land.
+    // Used to only ever be opened from (and close back to) Today, but the
+    // Cycle tab's "Go to Profile" banner (see cycle-calendar-add-date-btn)
+    // opens this same modal without navigating away from Cycle first - so
+    // whichever tab is actually on screen needs refreshing, not just
+    // Today, or a first-time last_period_date save leaves Cycle stuck on
+    // its "we don't know your last period date yet" banner even though the
+    // save succeeded.
     if (activeTab === "today") renderTodayScreen();
+    else if (activeTab === "cycle") renderCycleTab();
   } catch (err) {
     toast(err.message);
   }
@@ -2082,8 +2279,13 @@ async function checkForPR(block, row, exerciseName, isCardio) {
   if (!exerciseName) return;
   const metricKey = isCardio ? "duration_minutes" : "weight_kg";
   const inputSelector = isCardio ? ".set-duration" : ".set-weight";
-  const value = parseFloat(row.querySelector(inputSelector)?.value);
-  if (isNaN(value) || value <= 0) { delete row.dataset.prValue; syncPrBadge(row); return; }
+  const rawValue = parseFloat(row.querySelector(inputSelector)?.value);
+  if (isNaN(rawValue) || rawValue <= 0) { delete row.dataset.prValue; syncPrBadge(row); return; }
+  // Weight is entered/displayed in the user's chosen unit (see weightUnit())
+  // but every value compared or stored here - row.dataset.prValue included -
+  // is always kg, same as the server's exercise_log.weight_kg, so a unit
+  // switch mid-history can never skew a PR comparison.
+  const value = isCardio ? rawValue : displayWeightToKg(rawValue);
 
   const history = await getExerciseHistory();
   let priorBest = 0;
@@ -2101,8 +2303,8 @@ async function checkForPR(block, row, exerciseName, isCardio) {
   // server, so the 2nd set of a brand new PR streak isn't wrongly re-toasted.
   block.querySelectorAll(".set-row").forEach(r => {
     if (r === row) return;
-    const v = parseFloat(r.querySelector(inputSelector)?.value);
-    if (!isNaN(v)) priorBest = Math.max(priorBest, v);
+    const rv = parseFloat(r.querySelector(inputSelector)?.value);
+    if (!isNaN(rv)) priorBest = Math.max(priorBest, isCardio ? rv : displayWeightToKg(rv));
   });
 
   if (value > priorBest) {
@@ -2125,11 +2327,11 @@ async function checkForPR(block, row, exerciseName, isCardio) {
 // it needs confirmation first - silently editing it away could corrupt the
 // PR history (e.g. accidentally bumping a real 50kg PR to a typo'd 52.5kg).
 // Returns true if it's fine to proceed with the change.
-async function guardPrEdit(row, newValue, unit) {
+async function guardPrEdit(row, newValue, formatValue) {
   const prValue = row.dataset.prValue;
   if (prValue == null || parseFloat(prValue) === newValue) return true;
   const ok = await confirmModal(
-    `This set was recorded as your new PR of ${prValue}${unit} — change it to ${newValue}${unit}?`,
+    `This set was recorded as your new PR of ${formatValue(parseFloat(prValue))} — change it to ${formatValue(newValue)}?`,
     "Yes, Change It"
   );
   if (ok) { delete row.dataset.prValue; syncPrBadge(row); } // re-evaluated fresh by checkForPR right after
@@ -2307,7 +2509,7 @@ function addSetRow(block, { copyLast = false } = {}) {
       ${extraHtml}
     </div>` : `
     <span class="set-row-label set-row-label-1">Reps</span>
-    <span class="set-row-label set-row-label-2">Weight (kg)</span>
+    <span class="set-row-label set-row-label-2">Weight (${weightUnit()})</span>
     <div class="set-row-top">
       <span class="set-number"></span>
       <button type="button" class="set-bodyweight-btn" aria-label="No added weight - bodyweight only">
@@ -2321,9 +2523,9 @@ function addSetRow(block, { copyLast = false } = {}) {
         <input type="number" class="set-reps stepper-input" min="1" placeholder="REPS" aria-label="Reps" required>
         <button type="button" class="stepper-btn stepper-plus" aria-label="Increase reps">+</button>
       </div>
-      <div class="stepper stepper-weight stepper-labeled" data-step="2.5" data-min="0">
+      <div class="stepper stepper-weight stepper-labeled" data-step="${weightUnit() === "lb" ? "5" : "2.5"}" data-min="0">
         <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease weight">&minus;</button>
-        <input type="number" step="0.5" class="set-weight stepper-input" placeholder="KG" aria-label="Weight in kg">
+        <input type="number" step="${weightUnit() === "lb" ? "1" : "0.5"}" class="set-weight stepper-input" placeholder="${weightUnit().toUpperCase()}" aria-label="Weight in ${weightUnit()}">
         <button type="button" class="stepper-btn stepper-plus" aria-label="Increase weight">+</button>
       </div>
     </div>`;
@@ -2360,14 +2562,17 @@ function addSetRow(block, { copyLast = false } = {}) {
       syncBodyweightBtn();
       clearTimeout(weightInput.__prTimer);
       weightInput.__prTimer = setTimeout(async () => {
-        const newValue = parseFloat(weightInput.value);
-        if (isNaN(newValue)) return;
-        const proceed = await guardPrEdit(row, newValue, "kg");
+        const enteredValue = parseFloat(weightInput.value);
+        if (isNaN(enteredValue)) return;
+        const newValueKg = displayWeightToKg(enteredValue);
+        const proceed = await guardPrEdit(row, newValueKg, kg => `${formatWeightNumber(kg)}${weightUnit()}`);
         if (!proceed) {
           // Revert without dispatching "input" - that would just re-enter
           // this same debounce loop. "change" still lets the delegated
-          // draft-autosave listener pick up the reverted value.
-          weightInput.value = row.dataset.prValue;
+          // draft-autosave listener pick up the reverted value. prValue is
+          // always kg (see checkForPR) - convert back to display unit or a
+          // lb-displaying field would revert to a raw kg number.
+          weightInput.value = weightInputValue(parseFloat(row.dataset.prValue));
           weightInput.dispatchEvent(new Event("change", { bubbles: true }));
           return;
         }
@@ -2385,7 +2590,7 @@ function addSetRow(block, { copyLast = false } = {}) {
       durationInput.__prTimer = setTimeout(async () => {
         const newValue = parseFloat(durationInput.value);
         if (isNaN(newValue)) return;
-        const proceed = await guardPrEdit(row, newValue, " min");
+        const proceed = await guardPrEdit(row, newValue, min => `${min} min`);
         if (!proceed) {
           durationInput.value = row.dataset.prValue;
           durationInput.dispatchEvent(new Event("change", { bubbles: true }));
@@ -2416,7 +2621,12 @@ function parseSpokenSet(text) {
   if (/\bbody\s?weight\b|\bno weight\b|\bbodyweight\b/.test(t)) {
     weight = 0;
   } else {
-    const weightMatch = t.match(/(\d+(?:\.\d+)?)\s*(?:kgs?|kilos?|kilograms?)/)
+    // Recognizes either unit word regardless of the current kg/lb setting
+    // (see weightUnit()) - the parsed number is always treated as already
+    // being in whatever unit is currently active (same as typing it into
+    // the weight field directly), so this doesn't attempt to cross-convert
+    // a spoken "30 kg" while lb is selected.
+    const weightMatch = t.match(/(\d+(?:\.\d+)?)\s*(?:kgs?|kilos?|kilograms?|lbs?|pounds?)/)
       || t.match(/weight\D{0,10}?(\d+(?:\.\d+)?)/); // "weight 30" said without a unit
     if (weightMatch) weight = parseFloat(weightMatch[1]);
   }
@@ -2649,7 +2859,7 @@ function initVoiceSetButton(block) {
         input.value = weight;
         input.dispatchEvent(new Event("input", { bubbles: true }));
       }
-      const parts = [reps != null ? `${reps} reps` : null, weight != null ? `${weight} kg` : null].filter(Boolean);
+      const parts = [reps != null ? `${reps} reps` : null, weight != null ? `${weight} ${weightUnit()}` : null].filter(Boolean);
       toast(`Added set: ${parts.join(", ")}`);
     } catch (err) {
       const code = err && err.code;
@@ -2818,7 +3028,7 @@ function addExerciseBlock(container = exercisesContainer) {
       <div class="set-actions">
         <button type="button" class="add-set secondary">+ Add Set</button>
         <button type="button" class="add-set-same secondary">Same as Above</button>
-        <button type="button" class="add-set-voice secondary" aria-label="Add a set by voice" title="Say something like &quot;20 reps with 30 kgs&quot;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M9 21h6"/></svg></button>
+        <button type="button" class="add-set-voice secondary" aria-label="Add a set by voice" title="Say something like &quot;20 reps with 30 ${weightUnit()}${weightUnit() === "kg" ? "s" : ""}&quot;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M9 21h6"/></svg></button>
       </div>
     </div>
     <label class="full">Notes for this exercise
@@ -2903,13 +3113,57 @@ function addExerciseBlock(container = exercisesContainer) {
   return block;
 }
 
+// ---------------- Weight unit (kg/lb) ----------------
+// Every stored weight (exercise_log.weight_kg, PR history, chart data) is
+// always kg - this is purely a display/entry preference (currentUser.weight_unit,
+// set via Edit Profile). Converting at the two boundaries (parseWeightKg on
+// the way in, kgToDisplayWeight on the way out) keeps every internal
+// comparison - PR detection, chart scales, cross-session history - working
+// in one consistent unit regardless of what the user currently has the UI
+// set to display.
+function weightUnit() {
+  return (currentUser && currentUser.weight_unit) || "kg";
+}
+const KG_PER_LB = 0.45359237;
+function kgToDisplayWeight(kg) {
+  if (kg == null) return kg;
+  if (weightUnit() !== "lb") return kg;
+  // Rounded here (not left to each display site) since this return value
+  // also feeds chart axis math (niceStep, SVG point positions), not just
+  // text labels - an unrounded kg/lb conversion (e.g. 134.90124...) would
+  // otherwise show up as label noise in every chart, not just one spot.
+  return Math.round((kg / KG_PER_LB) * 10) / 10;
+}
+function displayWeightToKg(value) {
+  if (value == null || isNaN(value)) return value;
+  return weightUnit() === "lb" ? value * KG_PER_LB : value;
+}
+// Rounds for display so a kg<->lb round-trip's inevitable float noise
+// (e.g. 61.234999999999996) never shows up in the UI - kg entries are
+// typically 0.5kg increments, lb entries typically whole numbers, so 1
+// decimal covers both with trailing ".0" trimmed.
+function formatWeightNumber(kg) {
+  if (kg == null) return "";
+  const rounded = Math.round(kgToDisplayWeight(kg) * 10) / 10;
+  return rounded % 1 === 0 ? String(rounded) : rounded.toFixed(1);
+}
+function weightInputValue(kg) {
+  return kg == null ? "" : formatWeightNumber(kg);
+}
+
 // weight_kg=0 is the bodyweight sentinel (see the BW toggle in addSetRow,
 // which sets the input's value to the string "0") - `parseFloat(...) ||
 // null` would collapse that back to null since 0 is falsy in JS, silently
 // losing the "explicitly bodyweight" signal and making it indistinguishable
-// from "no weight entered". Only a truly empty input means null.
+// from "no weight entered". Only a truly empty input means null. The entered
+// string is in the user's display unit (see weightUnit()) - converted here,
+// not at the call site, so every caller of parseWeightKg gets a real kg
+// value back without having to remember to convert.
 function parseWeightKg(str) {
-  return str === "" ? null : parseFloat(str);
+  if (str === "") return null;
+  const value = parseFloat(str);
+  if (isNaN(value)) return null;
+  return Math.round(displayWeightToKg(value) * 100) / 100;
 }
 
 async function submitExerciseLog({ auto = false } = {}) {
@@ -3145,7 +3399,7 @@ async function updateSetsCardLastTime(exerciseName) {
   const lastSets = rows.filter(x => x.date === lastDate).sort((a, b) => (a.set_number || 0) - (b.set_number || 0));
   lastSessionFor[exerciseName] = lastSets;
   const isCardio = lastSets[0].duration_minutes != null && lastSets[0].reps == null;
-  const summary = lastSets.map(s => isCardio ? `${s.duration_minutes}min` : `${s.reps}×${s.weight_kg}`).join(", ");
+  const summary = lastSets.map(s => isCardio ? `${s.duration_minutes}min` : `${s.reps}×${formatWeightNumber(s.weight_kg)}`).join(", ");
   el.textContent = `Last time: ${summary}`;
 }
 
@@ -3429,7 +3683,7 @@ async function renderTodayLastSession() {
   const bestWeight = dayRows.reduce((max, x) => x.weight_kg != null ? Math.max(max, x.weight_kg) : max, 0);
   const statsEl = document.getElementById("today-last-session-stats");
   const statParts = [`<span>Sets <strong>${setCount}</strong></span>`];
-  if (bestWeight > 0) statParts.push(`<span>Best <strong>${bestWeight} kg</strong></span>`);
+  if (bestWeight > 0) statParts.push(`<span>Best <strong>${formatWeightNumber(bestWeight)} ${weightUnit()}</strong></span>`);
   if (last.energy_level != null) statParts.push(`<span>Energy <strong>${formatEnergyCompact(last.energy_level)}</strong></span>`);
   statsEl.innerHTML = statParts.join("");
 
@@ -3541,7 +3795,7 @@ async function startLogSession({ repeatFrom } = {}) {
       group.sets.forEach(s => {
         const row = addSetRow(block);
         row.querySelector(".set-reps") && (row.querySelector(".set-reps").value = s.reps ?? "");
-        row.querySelector(".set-weight") && (row.querySelector(".set-weight").value = s.weight_kg ?? "");
+        row.querySelector(".set-weight") && (row.querySelector(".set-weight").value = weightInputValue(s.weight_kg));
         row.querySelector(".set-duration") && (row.querySelector(".set-duration").value = s.duration_minutes ?? "");
       });
     }
@@ -4466,7 +4720,8 @@ function computeExerciseSeries(history, exerciseName) {
   const weightCount = rows.filter(x => x.weight_kg != null).length;
   const durationCount = rows.filter(x => x.duration_minutes != null).length;
   const metricKey = durationCount > weightCount ? "duration_minutes" : "weight_kg";
-  const unit = metricKey === "weight_kg" ? "kg" : "min";
+  const isWeight = metricKey === "weight_kg";
+  const unit = isWeight ? weightUnit() : "min";
 
   const byDate = {};
   // Latest edited_at among whichever of that date's sets were edited (not
@@ -4486,10 +4741,13 @@ function computeExerciseSeries(history, exerciseName) {
     if (v == null) return;
     if (!byDate[x.date] || v > byDate[x.date]) byDate[x.date] = v;
   });
+  // byDate/editedPrevByDate stay in kg (server truth) the whole way through
+  // above - converted to the display unit only here, at the boundary into
+  // what the chart actually renders.
   const points = Object.keys(byDate).sort().map(date => ({
-    date, value: byDate[date],
+    date, value: isWeight ? kgToDisplayWeight(byDate[date]) : byDate[date],
     editedAt: editedAtByDate[date] || null,
-    editedPrev: editedAtByDate[date] ? (editedPrevByDate[date] ?? null) : null,
+    editedPrev: editedAtByDate[date] ? (isWeight ? kgToDisplayWeight(editedPrevByDate[date] ?? null) : (editedPrevByDate[date] ?? null)) : null,
   }));
   return { unit, points };
 }
@@ -4542,6 +4800,20 @@ const CYCLE_PERF_CHART_H = 200;
 const CYCLE_PERF_PAD = { left: 34, right: 20, top: 28, bottom: 28 };
 
 let cyclePerfExercise = null;
+
+// Set true when a period edit changes at least one past workout's phase
+// (see withPhaseChangeSuffix in the Log Period section above) while this
+// section's charts are already showing the old, now-stale phase coloring -
+// shows the reload button in the "Time based analysis" header so that can
+// be fixed with one tap in place, instead of needing to leave the Cycle
+// tab and come back to force a re-render.
+let cyclePerfStale = false;
+function setCyclePerfStale(stale) {
+  cyclePerfStale = stale;
+  const btn = document.getElementById("cycle-perf-reload-btn");
+  if (btn) btn.hidden = !stale;
+}
+document.getElementById("cycle-perf-reload-btn").addEventListener("click", () => renderCyclePerfSection());
 
 // Shared by both subtab switchers on this tab - "Time based analysis"
 // (Performance by Time / Energy by Time) and "Phase based analysis" (Where
@@ -5154,9 +5426,10 @@ function computePRPhaseBreakdown(history) {
     const weightCount = rows.filter(x => x.weight_kg != null).length;
     const durationCount = rows.filter(x => x.duration_minutes != null).length;
     const metricKey = durationCount > weightCount ? "duration_minutes" : "weight_kg";
-    const metricCount = metricKey === "weight_kg" ? weightCount : durationCount;
+    const isWeight = metricKey === "weight_kg";
+    const metricCount = isWeight ? weightCount : durationCount;
     if (metricCount < 2) return;
-    const unit = metricKey === "weight_kg" ? "kg" : "min";
+    const unit = isWeight ? weightUnit() : "min";
     let best = null;
     rows.forEach(x => {
       const v = x[metricKey];
@@ -5166,7 +5439,7 @@ function computePRPhaseBreakdown(history) {
     if (!best) return;
     const phase = cyclePhaseForDate(best.date);
     if (!phase) return;
-    byPhase[phase.key].push({ name, unit, value: best.value });
+    byPhase[phase.key].push({ name, unit, value: isWeight ? kgToDisplayWeight(best.value) : best.value });
   });
 
   return byPhase;
@@ -5236,7 +5509,8 @@ function computeExercisePhaseBests(history, exerciseName) {
   const weightCount = rows.filter(x => x.weight_kg != null).length;
   const durationCount = rows.filter(x => x.duration_minutes != null).length;
   const metricKey = durationCount > weightCount ? "duration_minutes" : "weight_kg";
-  const unit = metricKey === "weight_kg" ? "kg" : "min";
+  const isWeight = metricKey === "weight_kg";
+  const unit = isWeight ? weightUnit() : "min";
   const byPhase = {};
   getCyclePhases().forEach(p => { byPhase[p.key] = []; });
   rows.forEach(x => {
@@ -5244,7 +5518,7 @@ function computeExercisePhaseBests(history, exerciseName) {
     if (v == null) return;
     const phase = cyclePhaseForDate(x.date);
     if (!phase) return;
-    byPhase[phase.key].push({ value: v, unit, date: x.date });
+    byPhase[phase.key].push({ value: isWeight ? kgToDisplayWeight(v) : v, unit, date: x.date });
   });
   return byPhase;
 }
@@ -5286,6 +5560,7 @@ function renderCyclePerfInsight(exerciseName, byPhaseForExercise, workoutLog) {
 }
 
 async function renderCyclePerfSection() {
+  setCyclePerfStale(false);
   const emptyEl = document.getElementById("cycle-perf-empty");
   const contentEl = document.getElementById("cycle-perf-content");
   // Only needs exercise history, not cycle tracking - the chart itself
@@ -5362,7 +5637,7 @@ function exerciseSetSummary(x) {
   // weight_kg === 0 is the bodyweight sentinel (see the BW toggle in
   // addSetRow) - a real, meaningful value, not "no weight recorded", so it
   // gets its own label instead of printing the confusing "0 kg".
-  if (x.weight_kg != null) parts.push(x.weight_kg === 0 ? "BW" : `${x.weight_kg} kg`);
+  if (x.weight_kg != null) parts.push(x.weight_kg === 0 ? "BW" : `${formatWeightNumber(x.weight_kg)} ${weightUnit()}`);
   if (x.duration_minutes != null) parts.push(`${x.duration_minutes} min`);
   const ls = levelSpeedDisplay(x);
   if (ls) parts.push(ls);
@@ -5502,7 +5777,7 @@ async function startGroupEdit(groupEl, group) {
       else row.querySelector(".set-level").value = s.intensity_level ?? "";
     } else {
       row.querySelector(".set-reps").value = s.reps ?? "";
-      row.querySelector(".set-weight").value = s.weight_kg ?? "";
+      row.querySelector(".set-weight").value = weightInputValue(s.weight_kg);
       const bwBtn = row.querySelector(".set-bodyweight-btn");
       if (bwBtn) bwBtn.classList.toggle("active", String(s.weight_kg) === "0");
     }

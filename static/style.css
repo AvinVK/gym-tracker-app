@@ -1053,6 +1053,26 @@ main {
   align-items: center;
   gap: 8px;
 }
+/* Shown only when a period edit changed at least one past workout's phase
+   (see setCyclePerfStale) - lets that be fixed with one tap right here
+   instead of leaving the tab and coming back to force a re-render. */
+.cycle-perf-reload-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--accent-purple);
+  color: var(--accent-purple);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.cycle-perf-reload-btn:hover { background: var(--surface-3); }
 .cycle-perf-section-label::before {
   content: "";
   width: 4px;
@@ -1658,6 +1678,15 @@ main {
   z-index: 1000;
 }
 .modal-overlay[hidden] { display: none; }
+/* confirm-modal, delete-account-modal and date-picker-modal can all be
+   opened from inside an already-open modal (Edit Profile's Delete Account
+   flow and its Last Period Date field) - every .modal-overlay shares the
+   same z-index, so with two both visible at once the later one in DOM
+   order wins the stack regardless of which was opened more recently. All
+   three sit earlier in index.html than profile-edit-modal, so without this
+   they'd silently render underneath it - looking like the tap that opened
+   them did nothing at all. */
+#confirm-modal, #delete-account-modal, #date-picker-modal { z-index: 1001; }
 .modal-card {
   background: var(--card);
   border-radius: var(--radius);
@@ -1811,6 +1840,21 @@ main {
   justify-self: center;
 }
 .auth-forgot-btn:hover { text-decoration: underline; }
+
+.profile-delete-account-btn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 6px;
+  margin-top: 4px;
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+.profile-delete-account-btn:hover { background: var(--danger-tint); border-radius: 8px; }
 
 /* ---------------- Profile ---------------- */
 .profile-avatar-row {
@@ -2358,11 +2402,16 @@ button:disabled {
    .date-picker-* (the modal date picker used for logging workouts), which
    is tuned for a 320px-wide modal, not a full-width card. */
 .card-title-row.cycle-title-row { justify-content: space-between; }
+.cycle-cal-legend-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
 .cycle-cal-legend {
   display: flex;
   align-items: center;
   gap: 5px;
-  margin-bottom: 14px;
   font-size: 10.5px;
   color: var(--muted-2);
   white-space: nowrap;
@@ -2371,9 +2420,15 @@ button:disabled {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #f4436c;
   display: inline-block;
+  box-sizing: border-box;
 }
+/* Matches .cycle-cal-day.period (solid) / .period-predicted (dashed) - the
+   legend needs the same two-way split now that the calendar does, or
+   "Estimated" (previously the only label, next to a solid dot) reads as
+   the meaning of the solid days it's now sitting beside a different one for. */
+.cycle-cal-legend-dot-logged { background: #f4436c; }
+.cycle-cal-legend-dot-estimated { background: none; border: 1.5px dashed #f4436c; }
 /* A definite width, not just max-width: a 1fr grid only expands to fill a
    definite container width - without it the whole calendar collapses down
    to its cells' min-content size. Width comes from the parent
@@ -2431,11 +2486,20 @@ button:disabled {
   padding: 0;
   font-family: inherit;
   cursor: default;
+  box-sizing: border-box;
 }
 /* Period reads as a soft wash across the whole stretch rather than an
    outlined ring per day. Today is an outlined ring (no fill) so it stays
    legible layered on top of the period wash instead of the two colliding. */
 .cycle-cal-day.period { color: #f4436c; background: rgba(244, 67, 108, .18); }
+/* Dashed, not solid - a day colored purely from the 28-day-cycle
+   projection (no matching currentUser.period_logs row - see
+   isLoggedPeriodDay) hasn't actually happened/been logged yet, unlike
+   every other day .period colors solid. Most visible for a future cycle's
+   guessed-at period, which otherwise looked identical to an already-logged
+   one. */
+.cycle-cal-day.period-predicted { background: none; border: 1.5px dashed #f4436c; }
+.cycle-cal-day.today.period-predicted { border: 1.5px dashed #f4436c; box-shadow: inset 0 0 0 2px var(--ink); }
 .cycle-cal-day.today { box-shadow: inset 0 0 0 2px var(--ink); }
 .cycle-cal-day.today.period { color: #f4436c; box-shadow: inset 0 0 0 2px var(--ink); }
 .cycle-cal-day.selectable { cursor: pointer; transition: background .15s ease; }
@@ -2475,13 +2539,6 @@ button:disabled {
   color: var(--muted-2);
   text-align: center;
 }
-.cycle-cal-log-count {
-  margin: 6px 0 0;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--ink);
-  text-align: center;
-}
 .cycle-cal-log-actions {
   display: flex;
   gap: 8px;
@@ -2515,6 +2572,24 @@ button:disabled {
 }
 .primary:hover { box-shadow: 0 14px 26px -8px rgba(247, 184, 200, .55); }
 .primary:active { transform: translateY(1px) scale(.99); }
+
+.danger-btn {
+  grid-column: 1 / -1;
+  display: block;
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  padding: 13px;
+  border-radius: var(--radius-sm);
+  font-size: 14.5px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  margin-top: 4px;
+  font-family: inherit;
+}
+.danger-btn:hover { background: #d93359; }
+.danger-btn:active { transform: translateY(1px) scale(.99); }
 
 .secondary {
   grid-column: 1 / -1;
