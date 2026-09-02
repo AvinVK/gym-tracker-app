@@ -49,6 +49,7 @@ DEFAULT_CYCLE_LENGTH_DAYS = 28
 # still covers longer irregular cycles without accepting obvious typos.
 MIN_CYCLE_LENGTH_DAYS = 21
 MAX_CYCLE_LENGTH_DAYS = 45
+VALID_WEIGHT_UNITS = {"kg", "lb"}
 
 
 def _valid_cycle_length(value):
@@ -408,12 +409,22 @@ def update_user(user_id):
         cycle_length_days = _valid_cycle_length(data["cycle_length_days"])
         if cycle_length_days is None:
             return jsonify({"error": f"cycle length must be between {MIN_CYCLE_LENGTH_DAYS} and {MAX_CYCLE_LENGTH_DAYS} days"}), 400
+    # Same "absent means unchanged" COALESCE treatment as cycle_length_days
+    # above - weight_unit is a display/entry preference only (see
+    # routes/exercise_log.py: weight_kg itself never changes), so it's safe
+    # to default-preserve rather than require every profile save to resend it.
+    weight_unit = None
+    if data.get("weight_unit") is not None:
+        weight_unit = data["weight_unit"]
+        if weight_unit not in VALID_WEIGHT_UNITS:
+            return jsonify({"error": "weight_unit must be 'kg' or 'lb'"}), 400
     last_period_date = data.get("last_period_date") or None
     db = get_db()
     db.execute(
         "UPDATE users SET name = ?, age = ?, last_period_date = ?, "
-        "cycle_length_days = COALESCE(?, cycle_length_days) WHERE id = ?",
-        (name, data.get("age"), last_period_date, cycle_length_days, user_id),
+        "cycle_length_days = COALESCE(?, cycle_length_days), "
+        "weight_unit = COALESCE(?, weight_unit) WHERE id = ?",
+        (name, data.get("age"), last_period_date, cycle_length_days, weight_unit, user_id),
     )
     if last_period_date:
         # This form has no length field (unlike Log Period's date-range
@@ -478,6 +489,38 @@ def log_period(user_id):
     return jsonify({"last_period_date": latest["start_date"], "period_length_days": latest["length_days"]})
 
 
+@bp.route("/api/user/<int:user_id>/period/<start_date>", methods=["DELETE"])
+def delete_period(user_id, start_date):
+    """Removes one wrongly-logged period entirely (see Log Period's
+    already-logged days, shown as an outline in the calendar) - not a
+    per-day edit, since a period_logs row is one start_date/length_days
+    unit; fixing a bad entry means deleting the whole row, not shrinking it
+    (that's what re-logging with a different day count already does)."""
+    current_id, err = require_login()
+    if err:
+        return err
+    if current_id != user_id:
+        return jsonify({"error": "forbidden"}), 403
+    db = get_db()
+    db.execute("DELETE FROM period_logs WHERE user_id = ? AND start_date = ?", (user_id, start_date))
+    # Same denormalized-recompute as log_period() above - whichever period
+    # is now the latest remaining one (or none at all, if that was the only
+    # one logged).
+    latest = db.execute(
+        "SELECT start_date, length_days FROM period_logs WHERE user_id = ? ORDER BY start_date DESC LIMIT 1",
+        (user_id,),
+    ).fetchone()
+    db.execute(
+        "UPDATE users SET last_period_date = ?, period_length_days = ? WHERE id = ?",
+        (latest["start_date"] if latest else None, latest["length_days"] if latest else 5, user_id),
+    )
+    db.commit()
+    return jsonify({
+        "last_period_date": latest["start_date"] if latest else None,
+        "period_length_days": latest["length_days"] if latest else None,
+    })
+
+
 @bp.route("/api/user/<int:user_id>/avatar", methods=["POST"])
 def upload_avatar(user_id):
     current_id, err = require_login()
@@ -517,3 +560,46 @@ def upload_avatar(user_id):
             pass  # already gone - not worth failing the request over
 
     return jsonify({"avatar": avatar_url})
+
+
+@bp.route("/api/user/<int:user_id>/delete-account", methods=["POST"])
+def delete_account(user_id):
+    """Permanently wipes this account and everything logged under it -
+    irreversible, so (unlike a normal profile save) this re-checks the PIN
+    itself rather than trusting an already-open session alone: a session
+    cookie can outlive the moment someone meant to be logged in (a shared/
+    left-unlocked phone), and that's a much cheaper mistake to make on a
+    "change your name" request than on "delete everything permanently"."""
+    current_id, err = require_login()
+    if err:
+        return err
+    if current_id != user_id:
+        return jsonify({"error": "forbidden"}), 403
+    data = request.get_json(force=True) or {}
+    pin = data.get("pin") or ""
+    db = get_db()
+    row = db.execute("SELECT password_hash, avatar FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not row or not row["password_hash"] or not check_password_hash(row["password_hash"], pin):
+        return jsonify({"error": "incorrect PIN"}), 401
+
+    # Deleted in dependency order - PRAGMA foreign_keys=ON (see db.py) means
+    # the users row can't go while any of these still reference it. Proposed
+    # exercises stay in the shared catalog (other users may already be
+    # logging them) - just anonymized rather than deleted.
+    db.execute("UPDATE exercise_plan SET proposed_by = NULL WHERE proposed_by = ?", (user_id,))
+    db.execute("DELETE FROM exercise_log WHERE user_id = ?", (user_id,))
+    db.execute("DELETE FROM workout_log WHERE user_id = ?", (user_id,))
+    db.execute("DELETE FROM period_logs WHERE user_id = ?", (user_id,))
+    db.execute("DELETE FROM streak_shield_uses WHERE user_id = ?", (user_id,))
+    db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    db.commit()
+
+    avatar = row["avatar"]
+    if avatar and avatar.startswith("/uploads/"):
+        try:
+            os.remove(os.path.join(UPLOAD_DIR, os.path.basename(avatar)))
+        except OSError:
+            pass  # already gone - not worth failing the request over
+
+    session.clear()
+    return jsonify({"ok": True})

@@ -263,6 +263,20 @@
   </div>
 </div>
 
+<div id="delete-account-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>Delete Account</h2>
+    <p class="modal-sub">This permanently deletes your account and everything logged under it - workouts, PRs, cycle history, streaks. This can't be undone.</p>
+    <form id="form-delete-account" class="grid-form">
+      <label class="full">Enter your PIN to confirm
+        <input type="password" name="pin" id="delete-account-pin" placeholder="4-digit PIN" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="current-password">
+      </label>
+      <button type="submit" class="danger-btn">Yes, Delete My Account</button>
+      <button type="button" class="secondary" id="delete-account-cancel">Cancel</button>
+    </form>
+  </div>
+</div>
+
 <div id="meal-compare-modal" class="modal-overlay" hidden>
   <div class="modal-card">
     <h2>Choose foods to compare</h2>
@@ -378,6 +392,13 @@
       <label>Age
         <input type="number" name="age" id="profile-age" min="1" max="120">
       </label>
+      <label class="full">Weight Unit
+        <div class="set-type-toggle" id="profile-weight-unit-toggle" role="group" aria-label="Weight unit">
+          <button type="button" class="set-type-btn" data-unit="kg">kg</button>
+          <button type="button" class="set-type-btn" data-unit="lb">lb</button>
+        </div>
+        <input type="hidden" name="weight_unit" id="profile-weight-unit-input">
+      </label>
       <label class="full checkbox-field">
         <input type="checkbox" id="profile-track-cycle">
         <span>Track my menstrual cycle</span>
@@ -398,6 +419,7 @@
       </div>
       <button type="submit" class="primary">Save Changes</button>
       <button type="button" class="secondary" id="profile-edit-cancel">Cancel</button>
+      <button type="button" class="profile-delete-account-btn" id="profile-delete-account-btn">Delete Account</button>
     </form>
   </div>
 </div>
@@ -656,7 +678,10 @@
             <button type="button" class="edit-link-btn cycle-length-edit-btn" id="cycle-length-edit-btn">Edit cycle length</button>
           </div>
         </div>
-        <span class="cycle-cal-legend"><span class="cycle-cal-legend-dot" aria-hidden="true"></span>Estimated period</span>
+        <div class="cycle-cal-legend-group">
+          <span class="cycle-cal-legend"><span class="cycle-cal-legend-dot cycle-cal-legend-dot-logged" aria-hidden="true"></span>Logged</span>
+          <span class="cycle-cal-legend"><span class="cycle-cal-legend-dot cycle-cal-legend-dot-estimated" aria-hidden="true"></span>Estimated</span>
+        </div>
       </div>
       <div class="cycle-calendar-banner" id="cycle-calendar-banner" hidden>
         <p>We don't know your last period date yet. Add it in your profile to opt in to cycle tracking - you're in control and can remove it anytime.</p>
@@ -679,8 +704,7 @@
               <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
             </div>
             <div class="cycle-cal-grid" id="cycle-cal-grid"></div>
-            <p class="cycle-cal-log-hint" id="cycle-cal-log-hint" hidden>Tap the day it started - today, or a past date if you missed logging it. We'll fill in the next few days for you; tap any day to add or remove it.</p>
-            <p class="cycle-cal-log-count" id="cycle-cal-log-count" hidden></p>
+            <p class="cycle-cal-log-hint" id="cycle-cal-log-hint" hidden>Tap the day it started - today, or a past date if you missed logging it. Then tap every day your period lasted. Tap a selected day again to remove it. Leave a gap to log more than one past period at once.</p>
             <div class="cycle-cal-log-actions" id="cycle-cal-log-actions" hidden>
               <button type="button" class="secondary" id="cycle-cal-log-cancel">Cancel</button>
               <button type="button" class="primary" id="cycle-cal-log-save">Save</button>
@@ -713,7 +737,9 @@
     <p class="cycle-perf-section-label" id="cycle-perf-empty" hidden>Log a few sets to see your strength-by-phase chart here.</p>
     <div id="cycle-perf-content" hidden>
       <div class="cycle-perf-chart-card">
-        <p class="cycle-perf-section-label">Time based analysis</p>
+        <p class="cycle-perf-section-label">Time based analysis
+          <button type="button" class="cycle-perf-reload-btn" id="cycle-perf-reload-btn" hidden>&#8635; Reload</button>
+        </p>
 
         <div class="cycle-perf-subtabs" role="tablist">
           <button type="button" class="cycle-perf-subtab active" id="cycle-perf-subtab-performance" data-perf-view="performance" role="tab" aria-selected="true">Performance by Time</button>
