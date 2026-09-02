@@ -1198,8 +1198,35 @@ main {
   color: var(--accent-dark);
 }
 .cycle-perf-insight-body { margin: 0; font-size: 15px; line-height: 1.45; font-weight: 600; color: var(--ink); }
-.cycle-perf-insight-footnote { margin: 14px 0 0; font-size: 12.5px; color: var(--muted); }
-.cycle-perf-insight-footnote strong { color: var(--ink); }
+/* Native scroll-snap, not a JS drag tracker - one swipe per slide, and the
+   dots below just reflect scroll position (see the insight track's own
+   "scroll" listener) rather than driving it. */
+.cycle-perf-insight-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.cycle-perf-insight-track::-webkit-scrollbar { display: none; }
+.cycle-perf-insight-slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  min-width: 0;
+}
+.cycle-perf-insight-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+}
+.cycle-perf-insight-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background .15s ease, transform .15s ease;
+}
+.cycle-perf-insight-dot.active { background: var(--accent-purple); transform: scale(1.25); }
 
 /* ---------------- Chart primitives (shared by the strength-by-phase chart) ---------------- */
 .perf-chart-wrap { position: relative; }
