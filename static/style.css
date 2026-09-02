@@ -726,14 +726,13 @@ main {
   gap: 4px;
 }
 .cycle-summary-block-end { align-items: flex-end; text-align: right; }
-.cycle-cal-top-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
 .cycle-log-period-btn { white-space: nowrap; }
 /* Higher specificity than .edit-link-btn's own margin-bottom (needed to
    line up with the title row it's normally used in elsewhere) - here it
-   sits in a flex row with the visit-logged legend and that bottom margin
+   sits in the month-nav row (see .cycle-cal-header) and that bottom margin
    was throwing off their vertical centering, making the two look
    misaligned onto separate lines even though they're one flex row. */
-.cycle-cal-top-row .cycle-log-period-btn { margin: 0; }
+.cycle-cal-header .cycle-log-period-btn { margin: 0; }
 .cycle-summary-label {
   font-size: 9.5px;
   font-weight: 700;
@@ -752,7 +751,7 @@ main {
   font-size: 10.5px;
   color: var(--muted);
 }
-.cycle-title-wrap { position: relative; display: flex; align-items: center; gap: 8px; }
+.cycle-title-wrap { position: relative; display: flex; align-items: center; gap: 8px; flex-shrink: 0; white-space: nowrap; }
 .cycle-title-info-btn {
   display: flex;
   align-items: center;
@@ -816,7 +815,7 @@ main {
   .cycle-summary-value { font-size: 17px; }
   .cycle-summary-sub { font-size: 12.5px; }
   .cycle-cal-header { margin-bottom: 8px; font-size: 12.5px; }
-  .cycle-cal-nav { width: 22px; height: 22px; font-size: 14px; }
+  .cycle-cal-nav { width: 28px; height: 28px; font-size: 19px; }
   .cycle-cal-weekdays, .cycle-cal-grid { gap: 2px; }
   .cycle-cal-weekdays { margin-bottom: 2px; font-size: 11px; }
   .cycle-cal-day { font-size: 13.5px; }
@@ -2401,16 +2400,26 @@ button:disabled {
 /* Compact, self-contained calendar - deliberately not sharing classes with
    .date-picker-* (the modal date picker used for logging workouts), which
    is tuned for a 320px-wide modal, not a full-width card. */
-.card-title-row.cycle-title-row { justify-content: space-between; }
+/* Its own row (not sharing the title row with "Your Cycle" - the two
+   together didn't reliably fit on one line, and the legend items can't
+   shrink below their nowrap text) - right-aligned via margin-left: auto
+   since .cycle-cal-legend-group is a shrink-to-fit flex box, not another
+   flex item needing a sibling to push against. flex-wrap: nowrap so the
+   three items stay one unbroken line rather than any one of them
+   splitting onto its own. */
 .cycle-cal-legend-group {
   display: flex;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 10px;
+  width: fit-content;
+  margin-left: auto;
   margin-bottom: 14px;
 }
 .cycle-cal-legend {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
   gap: 5px;
   font-size: 10.5px;
   color: var(--muted-2);
@@ -2439,25 +2448,32 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   margin-bottom: 6px;
   font-size: 10px;
   font-weight: 700;
   color: var(--ink);
 }
+/* The prev/label/next trio reads as one unit (month, with a nav arrow
+   right against each side of it) rather than being spread across the full
+   card width with the month label stranded in the middle - Log Period
+   (the header's other flex child) is what now sits at the row's far
+   right, via the header's own justify-content: space-between above. */
+.cycle-cal-nav-group { display: flex; align-items: center; gap: 10px; }
 .cycle-cal-nav {
-  background: none;
+  background: var(--surface-2);
   border: none;
-  color: var(--muted-2);
-  width: 16px;
-  height: 16px;
+  color: var(--ink);
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 900;
   cursor: pointer;
   line-height: 1;
   transition: background .15s ease, color .15s ease;
 }
-.cycle-cal-nav:hover { background: var(--surface-2); color: var(--ink); }
+.cycle-cal-nav:hover { background: var(--surface-3); }
 .cycle-cal-weekdays, .cycle-cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -2516,20 +2532,16 @@ button:disabled {
   border-radius: 50%;
   background: #34d399;
 }
-.cycle-cal-visit-legend {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10.5px;
-  color: var(--muted-2);
-  white-space: nowrap;
-}
+/* Same 7px size as .cycle-cal-legend-dot (just its own green, not shared -
+   this is the only legend item not red/red-dashed) now that it sits in the
+   same row as the other two, so the three dots read as one consistent set. */
 .cycle-cal-visit-legend-dot {
-  width: 5px;
-  height: 5px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #34d399;
   display: inline-block;
+  box-sizing: border-box;
 }
 
 .cycle-cal-log-hint {

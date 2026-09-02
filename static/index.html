@@ -678,10 +678,11 @@
             <button type="button" class="edit-link-btn cycle-length-edit-btn" id="cycle-length-edit-btn">Edit cycle length</button>
           </div>
         </div>
-        <div class="cycle-cal-legend-group">
-          <span class="cycle-cal-legend"><span class="cycle-cal-legend-dot cycle-cal-legend-dot-logged" aria-hidden="true"></span>Logged</span>
-          <span class="cycle-cal-legend"><span class="cycle-cal-legend-dot cycle-cal-legend-dot-estimated" aria-hidden="true"></span>Estimated</span>
-        </div>
+      </div>
+      <div class="cycle-cal-legend-group">
+        <span class="cycle-cal-legend"><span class="cycle-cal-legend-dot cycle-cal-legend-dot-logged" aria-hidden="true"></span>Logged</span>
+        <span class="cycle-cal-legend"><span class="cycle-cal-legend-dot cycle-cal-legend-dot-estimated" aria-hidden="true"></span>Estimated</span>
+        <span class="cycle-cal-legend"><span class="cycle-cal-visit-legend-dot" aria-hidden="true"></span>Workout logged</span>
       </div>
       <div class="cycle-calendar-banner" id="cycle-calendar-banner" hidden>
         <p>We don't know your last period date yet. Add it in your profile to opt in to cycle tracking - you're in control and can remove it anytime.</p>
@@ -691,14 +692,13 @@
       <div class="cycle-layout">
         <div class="cycle-cal-col">
           <div class="cycle-cal-wrap">
-            <div class="cycle-cal-top-row">
-              <div class="cycle-cal-visit-legend"><span class="cycle-cal-visit-legend-dot" aria-hidden="true"></span>Workout logged</div>
-              <button type="button" class="edit-link-btn cycle-log-period-btn" id="cycle-log-period-btn">Log Period</button>
-            </div>
             <div class="cycle-cal-header">
-              <button type="button" class="cycle-cal-nav" id="cycle-cal-prev" aria-label="Previous month">&#8249;</button>
-              <span id="cycle-cal-month-label"></span>
-              <button type="button" class="cycle-cal-nav" id="cycle-cal-next" aria-label="Next month">&#8250;</button>
+              <div class="cycle-cal-nav-group">
+                <button type="button" class="cycle-cal-nav" id="cycle-cal-prev" aria-label="Previous month">&#8249;</button>
+                <span id="cycle-cal-month-label"></span>
+                <button type="button" class="cycle-cal-nav" id="cycle-cal-next" aria-label="Next month">&#8250;</button>
+              </div>
+              <button type="button" class="edit-link-btn cycle-log-period-btn" id="cycle-log-period-btn">Log Period</button>
             </div>
             <div class="cycle-cal-weekdays">
               <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
