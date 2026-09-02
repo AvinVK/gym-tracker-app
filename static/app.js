@@ -4479,6 +4479,56 @@ function svgEl(tag, attrs) {
   return el;
 }
 
+// Shared by every chart's hover crosshair (hormone reference, Performance/
+// Energy-by-Time): a touch that starts on the chart must scroll the page
+// when it's a vertical drag, and only drive the hover tooltip when it's a
+// horizontal one. CSS touch-action: pan-y is the "correct" way to say that,
+// but isn't reliably honored on an SVG hit target across WebView versions,
+// so the axis is instead decided here in JS on the first move - a touch
+// pointerdown doesn't claim the gesture (no preventDefault, no pointer
+// capture) until movement shows which way it's going, so an undecided
+// touch never blocks the browser's own scroll handling. A mouse (real
+// hover, or an emulator's clean click that never fires pointermove) is
+// handled immediately, same as before this existed.
+function attachChartHoverGesture(hitRect, handlePointer, hideTooltip) {
+  let drag = null; // { startX, startY, pointerId, decided: null | "scroll" | "hover" }
+  hitRect.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse") {
+      e.preventDefault();
+      hitRect.setPointerCapture(e.pointerId);
+      handlePointer(e);
+      return;
+    }
+    drag = { startX: e.clientX, startY: e.clientY, pointerId: e.pointerId, decided: null };
+  });
+  hitRect.addEventListener("pointermove", (e) => {
+    if (e.pointerType === "mouse") { handlePointer(e); return; }
+    if (!drag || drag.pointerId !== e.pointerId || drag.decided === "scroll") return;
+    if (drag.decided === "hover") { handlePointer(e); return; }
+    const dx = e.clientX - drag.startX, dy = e.clientY - drag.startY;
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; // too little movement to tell yet
+    if (Math.abs(dy) > Math.abs(dx)) { drag.decided = "scroll"; hideTooltip(); return; }
+    // Horizontal drag: claim the gesture now, same as the old immediate
+    // pointerdown handling - beats Android's long-press-to-select from here on.
+    drag.decided = "hover";
+    e.preventDefault();
+    try { hitRect.setPointerCapture(e.pointerId); } catch { /* already released */ }
+    handlePointer(e);
+  });
+  const release = (e) => {
+    // A tap that never moved enough to be classified still shows its point,
+    // same as the old pointerdown-shows/pointerup-hides behavior.
+    if (e.pointerType !== "mouse" && drag && drag.pointerId === e.pointerId && drag.decided === null) {
+      handlePointer(e);
+    }
+    drag = null;
+    hideTooltip();
+  };
+  hitRect.addEventListener("pointerup", release);
+  hitRect.addEventListener("pointercancel", () => { drag = null; hideTooltip(); });
+  hitRect.addEventListener("pointerleave", () => { hideTooltip(); });
+}
+
 // Illustrative relative hormone levels (0-100, each hormone scaled to its
 // own cycle peak - NOT a shared concentration scale, since estradiol/
 // progesterone/testosterone are measured in totally different units and
@@ -4619,12 +4669,6 @@ function renderHormoneReferenceChart() {
     tooltip.hidden = true;
     crosshair.style.opacity = 0;
   }
-  // Both pointermove (mouse hover, or a touch that drags slightly) and
-  // pointerdown (a plain tap/click that never moves - which is all an
-  // emulator's mouse click sends, unlike a real touchscreen tap that
-  // usually wobbles a pixel or two) - a pointermove-only listener works on
-  // a real phone but silently never fires from a clean click in an
-  // emulator or on desktop.
   const handlePointer = (e) => {
     const svgRect = svg.getBoundingClientRect();
     const scaleX = PERF_CHART_W / svgRect.width;
@@ -4632,27 +4676,7 @@ function renderHormoneReferenceChart() {
     const day = Math.min(28, Math.max(1, Math.round(1 + ((localX - plotLeft) / plotW) * 27)));
     showTooltip(day, e.clientX, e.clientY);
   };
-  // Captures the pointer on press so a held touch keeps delivering events to
-  // this element for its whole duration, instead of a long-press timer
-  // (Android's hold-to-select/inspect gesture) stealing it partway through
-  // and silently cancelling - which read as "the tooltip appears then
-  // disappears" even though the finger never lifted. Explicit pointerup/
-  // pointercancel hide it exactly on release; pointerleave still covers
-  // plain mouse-hover-away with no button down (never captured, so it never
-  // reaches up/cancel).
-  hitRect.addEventListener("pointerdown", (e) => {
-    // Tells the WebView up front that this touch is spoken for - without
-    // it, Android's WebView (not a regular mobile browser) can still start
-    // its own long-press-to-select gesture partway through a hold and pull
-    // the pointer sequence out from under us.
-    e.preventDefault();
-    hitRect.setPointerCapture(e.pointerId);
-    handlePointer(e);
-  });
-  hitRect.addEventListener("pointermove", handlePointer);
-  hitRect.addEventListener("pointerup", hideTooltip);
-  hitRect.addEventListener("pointercancel", hideTooltip);
-  hitRect.addEventListener("pointerleave", hideTooltip);
+  attachChartHoverGesture(hitRect, handlePointer, hideTooltip);
 }
 renderHormoneReferenceChart();
 
@@ -5046,9 +5070,6 @@ function renderCyclePerfChart(series, exerciseName, workoutByDate = {}) {
     tooltip.hidden = true;
     crosshair.style.opacity = 0;
   }
-  // pointerdown too, not just pointermove - a plain tap/click that never
-  // moves (all an emulator's mouse click sends, or a real click on desktop)
-  // never fires pointermove on its own.
   const handlePointer = (e) => {
     const svgRect = svg.getBoundingClientRect();
     const scaleX = CYCLE_PERF_CHART_W / svgRect.width;
@@ -5060,27 +5081,7 @@ function renderCyclePerfChart(series, exerciseName, workoutByDate = {}) {
     });
     showTooltip(nearest, e.clientX, e.clientY);
   };
-  // Captures the pointer on press so a held touch keeps delivering events to
-  // this element for its whole duration, instead of a long-press timer
-  // (Android's hold-to-select/inspect gesture) stealing it partway through
-  // and silently cancelling - which read as "the tooltip appears then
-  // disappears" even though the finger never lifted. Explicit pointerup/
-  // pointercancel hide it exactly on release; pointerleave still covers
-  // plain mouse-hover-away with no button down (never captured, so it never
-  // reaches up/cancel).
-  hitRect.addEventListener("pointerdown", (e) => {
-    // Tells the WebView up front that this touch is spoken for - without
-    // it, Android's WebView (not a regular mobile browser) can still start
-    // its own long-press-to-select gesture partway through a hold and pull
-    // the pointer sequence out from under us.
-    e.preventDefault();
-    hitRect.setPointerCapture(e.pointerId);
-    handlePointer(e);
-  });
-  hitRect.addEventListener("pointermove", handlePointer);
-  hitRect.addEventListener("pointerup", hideTooltip);
-  hitRect.addEventListener("pointercancel", hideTooltip);
-  hitRect.addEventListener("pointerleave", hideTooltip);
+  attachChartHoverGesture(hitRect, handlePointer, hideTooltip);
 }
 
 // One point per calendar date that has a logged energy level - averaged in
@@ -5241,9 +5242,6 @@ function renderCycleEnergyChart(points) {
     tooltip.hidden = true;
     crosshair.style.opacity = 0;
   }
-  // pointerdown too, not just pointermove - a plain tap/click that never
-  // moves (all an emulator's mouse click sends, or a real click on desktop)
-  // never fires pointermove on its own.
   const handlePointer = (e) => {
     const svgRect = svg.getBoundingClientRect();
     const scaleX = CYCLE_PERF_CHART_W / svgRect.width;
@@ -5255,27 +5253,7 @@ function renderCycleEnergyChart(points) {
     });
     showTooltip(nearest, e.clientX, e.clientY);
   };
-  // Captures the pointer on press so a held touch keeps delivering events to
-  // this element for its whole duration, instead of a long-press timer
-  // (Android's hold-to-select/inspect gesture) stealing it partway through
-  // and silently cancelling - which read as "the tooltip appears then
-  // disappears" even though the finger never lifted. Explicit pointerup/
-  // pointercancel hide it exactly on release; pointerleave still covers
-  // plain mouse-hover-away with no button down (never captured, so it never
-  // reaches up/cancel).
-  hitRect.addEventListener("pointerdown", (e) => {
-    // Tells the WebView up front that this touch is spoken for - without
-    // it, Android's WebView (not a regular mobile browser) can still start
-    // its own long-press-to-select gesture partway through a hold and pull
-    // the pointer sequence out from under us.
-    e.preventDefault();
-    hitRect.setPointerCapture(e.pointerId);
-    handlePointer(e);
-  });
-  hitRect.addEventListener("pointermove", handlePointer);
-  hitRect.addEventListener("pointerup", hideTooltip);
-  hitRect.addEventListener("pointercancel", hideTooltip);
-  hitRect.addEventListener("pointerleave", hideTooltip);
+  attachChartHoverGesture(hitRect, handlePointer, hideTooltip);
 }
 initTogglePopover(document.getElementById("cycle-energy-info-btn"), document.getElementById("cycle-energy-info-popover"));
 
