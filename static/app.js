@@ -4592,7 +4592,13 @@ function renderHormoneReferenceChart() {
   const tooltip = document.getElementById("hormone-tooltip");
   const crosshair = svgEl("line", { class: "hormone-crosshair", x1: 0, x2: 0, y1: plotTop, y2: plotBottom });
   svg.appendChild(crosshair);
-  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent" });
+  // touch-action: pan-y - a vertical drag that starts on the chart is a page
+  // scroll, not a hover, so let the browser handle it natively rather than
+  // have our pointerdown preventDefault() (needed below to beat Android's
+  // long-press-to-select) swallow it. Browsers resolve the scroll-vs-custom-
+  // gesture question from this CSS before JS runs, so it wins over
+  // preventDefault() for the axis it allows.
+  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent", style: "touch-action: pan-y" });
   svg.appendChild(hitRect);
 
   function showTooltip(day, clientX, clientY) {
@@ -4973,7 +4979,8 @@ function renderCyclePerfChart(series, exerciseName, workoutByDate = {}) {
   const wrap = svg.closest(".cycle-perf-chart-card");
   const crosshair = svgEl("line", { class: "perf-crosshair", x1: 0, x2: 0, y1: plotTop, y2: plotBottom });
   svg.appendChild(crosshair);
-  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent" });
+  // touch-action: pan-y - see renderHormoneReferenceChart's hitRect for why.
+  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent", style: "touch-action: pan-y" });
   svg.appendChild(hitRect);
 
   function showTooltip(i, clientX, clientY) {
@@ -5190,7 +5197,8 @@ function renderCycleEnergyChart(points) {
   const wrap = svg.closest(".cycle-perf-chart-card");
   const crosshair = svgEl("line", { class: "perf-crosshair", x1: 0, x2: 0, y1: plotTop, y2: plotBottom });
   svg.appendChild(crosshair);
-  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent" });
+  // touch-action: pan-y - see renderHormoneReferenceChart's hitRect for why.
+  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent", style: "touch-action: pan-y" });
   svg.appendChild(hitRect);
 
   function showTooltip(i, clientX, clientY) {
@@ -5512,63 +5520,176 @@ document.getElementById("cycle-perf-prphase-content").addEventListener("click", 
   btn.classList.toggle("expanded", !details.hidden);
 });
 
-// Every set logged for one exercise, bucketed by the cycle phase its date
-// fell in (not just the single all-time-best per phase computePRPhaseBreakdown
-// tracks) - feeds the insight card's "peaked at ..." claim and its
-// "which phase has the most data for this exercise" heuristic.
-function computeExercisePhaseBests(history, exerciseName) {
-  const rows = history.filter(x => x.exercise === exerciseName);
-  const weightCount = rows.filter(x => x.weight_kg != null).length;
-  const durationCount = rows.filter(x => x.duration_minutes != null).length;
-  const metricKey = durationCount > weightCount ? "duration_minutes" : "weight_kg";
-  const isWeight = metricKey === "weight_kg";
-  const unit = isWeight ? weightUnit() : "min";
-  const byPhase = {};
-  getCyclePhases().forEach(p => { byPhase[p.key] = []; });
-  rows.forEach(x => {
-    const v = x[metricKey];
-    if (v == null) return;
-    const phase = cyclePhaseForDate(x.date);
-    if (!phase) return;
-    byPhase[phase.key].push({ value: isWeight ? kgToDisplayWeight(v) : v, unit, date: x.date });
-  });
-  return byPhase;
+// ---------------- Cycle tab: rotating insights ----------------
+// Four independent, timing/behavior-based takes on the same underlying
+// data (never magnitude/"peaked at" claims - those read as trivia, not
+// insight, since a single all-time best rarely says anything about *now*).
+// Each compute*Insight function returns a slide object or null if there
+// isn't enough data for THAT one to say something meaningful - "no
+// confident claim to make, don't show filler" now applies per slide
+// instead of to the card as a whole, so a data-light account still gets
+// whichever of the four it has enough history for, rather than none at all.
+
+// N of your last M PRs (any exercise) landed in the phase you're in right
+// now - computePRDaysByDate gives every PR *event* across history (unlike
+// computePRPhaseBreakdown's single all-time-best per exercise), which is
+// what a genuine "recent" claim needs.
+function computeRecentPrInsight(history) {
+  const RECENT_N = 5;
+  const prDaysByDate = computePRDaysByDate(history);
+  const events = [];
+  prDaysByDate.forEach((muscles, date) => muscles.forEach(m => events.push({ date, muscle: m })));
+  if (events.length < 3) return null;
+  events.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  const currentPhase = cyclePhaseForDate(todayStr);
+  if (!currentPhase) return null;
+  const recent = events.slice(0, RECENT_N);
+  const inCurrentPhase = recent.filter(e => {
+    const p = cyclePhaseForDate(e.date);
+    return p && p.key === currentPhase.key;
+  }).length;
+  return { body: `${inCurrentPhase} of your last ${recent.length} PRs happened in ${currentPhase.label.replace(" Phase", "")}.` };
 }
 
-function renderCyclePerfInsight(exerciseName, byPhaseForExercise, workoutLog) {
-  const cardEl = document.getElementById("cycle-perf-insight-card");
-  const cycleDay = cycleDayForDate(todayStr);
-  const phases = getCyclePhases();
-  const currentPhase = cycleDay != null ? (phases.find(p => cycleDay >= p.startDay && cycleDay <= p.endDay) || phases[phases.length - 1]) : null;
-
-  let bestPhaseEntry = null;
-  phases.forEach(p => {
-    const rows = byPhaseForExercise[p.key] || [];
-    if (rows.length && (!bestPhaseEntry || rows.length > bestPhaseEntry.rows.length)) bestPhaseEntry = { phase: p, rows };
-  });
-
-  // No confident claim to make - render nothing rather than filler (per the
-  // design handoff's explicit rule for this card).
-  if (!currentPhase || !bestPhaseEntry) { cardEl.hidden = true; return; }
-
-  const currentIndex = phases.indexOf(currentPhase);
-  const nextPhase = phases[(currentIndex + 1) % phases.length];
-  const daysUntilNext = nextPhase.startDay > cycleDay ? nextPhase.startDay - cycleDay : (cycleLengthDays() - cycleDay) + nextPhase.startDay;
-  const best = bestPhaseEntry.rows.reduce((m, r) => Math.max(m, r.value), 0);
-  const unit = bestPhaseEntry.rows[0].unit;
-  const nextLabel = nextPhase.label.replace(" Phase", "").toLowerCase();
-
-  cardEl.hidden = false;
-  document.getElementById("cycle-perf-insight-body").textContent =
-    `You're ${daysUntilNext} day${daysUntilNext === 1 ? "" : "s"} from ${nextLabel}, where ${exerciseName} has peaked at ${best} ${unit}.`;
-
-  const energyByPhase = computeEnergyByPhase(workoutLog);
-  const e = energyByPhase[bestPhaseEntry.phase.key];
-  const footnoteEl = document.getElementById("cycle-perf-insight-footnote");
-  footnoteEl.hidden = !e;
-  if (e) {
-    footnoteEl.innerHTML = `Energy on ${bestPhaseEntry.phase.label.replace(" Phase", "").toLowerCase()} days averages <strong>${e.value.toFixed(1)}</strong>`;
+// What fraction of this phase's days (across your whole logged history,
+// not just the current cycle) actually had a workout, versus your overall
+// rate - a consistency signal, not a performance one, so it stays
+// meaningful even for someone whose numbers aren't moving.
+function computeConsistencyInsight(history) {
+  if (!history.length) return null;
+  const workoutDates = new Set(history.map(x => x.date));
+  const earliest = [...workoutDates].sort()[0];
+  const dayCounts = {}, visitCounts = {};
+  getCyclePhases().forEach(p => { dayCounts[p.key] = 0; visitCounts[p.key] = 0; });
+  let d = earliest;
+  let guard = 0;
+  while (d <= todayStr && guard < 3650) {
+    const phase = cyclePhaseForDate(d);
+    if (phase) {
+      dayCounts[phase.key]++;
+      if (workoutDates.has(d)) visitCounts[phase.key]++;
+    }
+    d = addDaysIso(d, 1);
+    guard++;
   }
+  const currentPhase = cyclePhaseForDate(todayStr);
+  // Needs a real sample of this phase's days, not a 2-day fluke - 5 is
+  // roughly a first full pass through the shortest phase (ovulation aside).
+  if (!currentPhase || dayCounts[currentPhase.key] < 5) return null;
+  const pct = Math.round((visitCounts[currentPhase.key] / dayCounts[currentPhase.key]) * 100);
+  const overallDays = Object.values(dayCounts).reduce((a, b) => a + b, 0);
+  const overallVisits = Object.values(visitCounts).reduce((a, b) => a + b, 0);
+  const overallPct = overallDays ? Math.round((overallVisits / overallDays) * 100) : 0;
+  return { body: `You've worked out on ${pct}% of your ${currentPhase.label.replace(" Phase", "")} days, vs ${overallPct}% overall.` };
+}
+
+// Points forward instead of just reporting an average - which phase (by
+// average energy) is still ahead of you, and how soon. Needs at least two
+// phases with energy data logged, or "highest" is trivially the only one
+// with any data at all.
+function computeEnergyForecastInsight(workoutLog) {
+  const energyByPhase = computeEnergyByPhase(workoutLog);
+  const phases = getCyclePhases();
+  const withData = phases.filter(p => energyByPhase[p.key]);
+  if (withData.length < 2) return null;
+  const best = withData.reduce((m, p) => (energyByPhase[p.key].value > energyByPhase[m.key].value ? p : m));
+  const cycleDay = cycleDayForDate(todayStr);
+  if (cycleDay == null) return null;
+  const currentPhase = phases.find(p => cycleDay >= p.startDay && cycleDay <= p.endDay) || phases[phases.length - 1];
+  const avg = energyByPhase[best.key].value.toFixed(1);
+  if (best.key === currentPhase.key) {
+    return { body: `You're in your highest-energy phase right now - ${currentPhase.label.replace(" Phase", "")} averages ${avg}.` };
+  }
+  const currentIndex = phases.indexOf(currentPhase);
+  let daysUntil = null;
+  for (let i = 1; i <= phases.length; i++) {
+    const p = phases[(currentIndex + i) % phases.length];
+    if (p.key === best.key) {
+      daysUntil = p.startDay > cycleDay ? p.startDay - cycleDay : (cycleLengthDays() - cycleDay) + p.startDay;
+      break;
+    }
+  }
+  if (daysUntil == null) return null;
+  return { body: `Your highest-energy phase, ${best.label.replace(" Phase", "")} (avg ${avg}), starts in ${daysUntil} day${daysUntil === 1 ? "" : "s"}.` };
+}
+
+// Compares the selected exercise's last session against the most recent
+// one before it that fell in a *different* phase - a real, recent
+// comparison instead of an all-time-best that might be a year stale.
+// series is computeExerciseSeries's own output (already computed for the
+// chart above this card, not recomputed here).
+function computeRecentTrendInsight(series, exerciseName) {
+  if (!series || series.points.length < 2) return null;
+  const points = series.points;
+  const last = points[points.length - 1];
+  const lastPhase = cyclePhaseForDate(last.date);
+  if (!lastPhase) return null;
+  let prev = null, prevPhase = null;
+  for (let i = points.length - 2; i >= 0; i--) {
+    const p = cyclePhaseForDate(points[i].date);
+    if (p && p.key !== lastPhase.key) { prev = points[i]; prevPhase = p; break; }
+  }
+  if (!prev) return null;
+  const cmp = last.value > prev.value ? "beat" : last.value < prev.value ? "came in under" : "matched";
+  return {
+    body: `Your last ${escapeHtml(exerciseName)} session (${lastPhase.label.replace(" Phase", "")}, ${last.value} ${series.unit}) ${cmp} the one before it in ${prevPhase.label.replace(" Phase", "")} (${prev.value} ${series.unit}).`,
+  };
+}
+
+function renderCyclePerfInsight(history, exerciseName, workoutLog, series) {
+  const cardEl = document.getElementById("cycle-perf-insight-card");
+  const trackEl = document.getElementById("cycle-perf-insight-track");
+  const dotsEl = document.getElementById("cycle-perf-insight-dots");
+
+  const slides = [
+    computeRecentPrInsight(history),
+    computeConsistencyInsight(history),
+    computeEnergyForecastInsight(workoutLog),
+    computeRecentTrendInsight(series, exerciseName),
+  ].filter(Boolean);
+
+  if (!slides.length) { cardEl.hidden = true; return; }
+  cardEl.hidden = false;
+
+  const n = slides.length;
+  const slideHtml = s => `<div class="cycle-perf-insight-slide"><p class="cycle-perf-insight-body">${s.body}</p></div>`;
+  dotsEl.hidden = n < 2;
+  dotsEl.innerHTML = slides.map((_, i) => `<span class="cycle-perf-insight-dot${i === 0 ? " active" : ""}"></span>`).join("");
+  const setActiveDot = (i) => dotsEl.querySelectorAll(".cycle-perf-insight-dot").forEach((d, idx) => d.classList.toggle("active", idx === i));
+
+  if (n < 2) {
+    trackEl.innerHTML = slideHtml(slides[0]);
+    trackEl.onscroll = null;
+    return;
+  }
+
+  // Cyclic swipe: CSS scroll-snap has no native wraparound, so the track is
+  // padded with a clone of the last slide before the real first one and a
+  // clone of the first slide after the real last one. Swiping past either
+  // end lands on a visual duplicate of the opposite end; once scrolling
+  // settles there, an instant (no scroll-behavior:smooth, so unanimated)
+  // scrollLeft jump swaps it for the real slide before the eye can tell -
+  // the standard trick for a "loop" carousel over a plain scroll container.
+  trackEl.innerHTML = slideHtml(slides[n - 1]) + slides.map(slideHtml).join("") + slideHtml(slides[0]);
+  trackEl.scrollLeft = trackEl.clientWidth; // start on the real first slide, not the leading clone
+
+  let settleTimer = null;
+  trackEl.onscroll = () => {
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(() => {
+      const w = Math.max(trackEl.clientWidth, 1);
+      const rawIndex = Math.round(trackEl.scrollLeft / w);
+      if (rawIndex === 0) {
+        trackEl.scrollLeft = n * w;
+        setActiveDot(n - 1);
+      } else if (rawIndex === n + 1) {
+        trackEl.scrollLeft = w;
+        setActiveDot(0);
+      } else {
+        setActiveDot(rawIndex - 1);
+      }
+    }, 80);
+  };
 }
 
 async function renderCyclePerfSection() {
@@ -5602,11 +5723,12 @@ async function renderCyclePerfSection() {
   const workoutByDate = {};
   workoutLog.forEach(w => { if (!workoutByDate[w.date]) workoutByDate[w.date] = w; });
 
-  renderCyclePerfChart(computeExerciseSeries(history, cyclePerfExercise), cyclePerfExercise, workoutByDate);
+  const exerciseSeries = computeExerciseSeries(history, cyclePerfExercise);
+  renderCyclePerfChart(exerciseSeries, cyclePerfExercise, workoutByDate);
   renderCycleEnergyChart(computeEnergySeries(workoutLog));
   renderEnergyByMealList(computeEnergyByMeal(workoutLog));
   renderPRPhaseBreakdown(history, workoutLog);
-  renderCyclePerfInsight(cyclePerfExercise, computeExercisePhaseBests(history, cyclePerfExercise), workoutLog);
+  renderCyclePerfInsight(history, cyclePerfExercise, workoutLog, exerciseSeries);
 }
 
 // ---- Exercise detail table ----
