@@ -746,6 +746,7 @@ main {
   color: var(--ink);
   letter-spacing: -.01em;
   line-height: 1.2;
+  cursor: pointer;
 }
 .cycle-summary-sub {
   font-size: 10.5px;
