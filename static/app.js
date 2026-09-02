@@ -657,13 +657,21 @@ streakInfoModal.addEventListener("click", (e) => { if (e.target === streakInfoMo
 
 // ---------------- Phase info modal ----------------
 const phaseInfoModal = document.getElementById("phase-info-modal");
-document.getElementById("today-cycle-phase").addEventListener("click", (e) => {
-  e.stopPropagation();
+function openPhaseInfoModal() {
   renderPhaseList();
   phaseInfoModal.hidden = false;
+}
+document.getElementById("today-cycle-phase").addEventListener("click", (e) => {
+  e.stopPropagation();
+  openPhaseInfoModal();
 });
 document.getElementById("phase-info-close").addEventListener("click", () => { phaseInfoModal.hidden = true; });
 phaseInfoModal.addEventListener("click", (e) => { if (e.target === phaseInfoModal) phaseInfoModal.hidden = true; });
+// Same reference modal as Today's phase tap above - the Cycle tab's own
+// Current/Next Phase values are just as good a place to reach it from,
+// now that they're color-coded per phase and read as tappable.
+document.getElementById("cycle-current-phase").addEventListener("click", openPhaseInfoModal);
+document.getElementById("cycle-next-phase").addEventListener("click", openPhaseInfoModal);
 
 // Falls back to the default illustration (not a per-user placeholder) for
 // anyone who hasn't uploaded their own picture yet.
@@ -1085,9 +1093,13 @@ async function renderCycleTab() {
   nextPhaseDate.setDate(nextPhaseDate.getDate() + daysUntilNext);
   const nextPhaseDateLabel = nextPhaseDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-  document.getElementById("cycle-current-phase").textContent = currentPhase.label;
+  const currentPhaseEl = document.getElementById("cycle-current-phase");
+  currentPhaseEl.textContent = currentPhase.label;
+  currentPhaseEl.style.color = currentPhase.color;
   document.getElementById("cycle-current-detail").textContent = `Day ${cycleDay} of ~${cycleLengthDays()}`;
-  document.getElementById("cycle-next-phase").textContent = nextPhase.label;
+  const nextPhaseEl = document.getElementById("cycle-next-phase");
+  nextPhaseEl.textContent = nextPhase.label;
+  nextPhaseEl.style.color = nextPhase.color;
   document.getElementById("cycle-next-detail").textContent = `Starts in ${daysUntilNext} day${daysUntilNext === 1 ? "" : "s"} (${nextPhaseDateLabel})`;
 }
 
