@@ -1663,7 +1663,7 @@ main {
 .tour-spotlight {
   position: fixed;
   border-radius: 16px;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, .72);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, .88);
   transition: top .25s ease, left .25s ease, width .25s ease, height .25s ease;
   pointer-events: none;
 }
