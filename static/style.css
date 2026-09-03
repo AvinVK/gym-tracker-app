@@ -2609,19 +2609,17 @@ button:disabled {
 .cycle-cal-day.selectable { cursor: pointer; transition: background .15s ease; }
 .cycle-cal-day.selectable:hover { background: var(--surface-2); }
 .cycle-cal-day:disabled { opacity: .55; cursor: not-allowed; }
+/* A ring around the date, same idea as .today's box-shadow ring, but
+   inset further so it draws as a visibly smaller concentric circle -
+   on a day that's both today and visited, the two rings nest instead of
+   overlapping/colliding at the same radius. */
 .cycle-cal-day.visited::after {
   content: "";
   position: absolute;
-  bottom: 3px;
-  left: 50%;
-  transform: translateX(-50%);
-  /* Deliberately smaller than the today ring and the period wash/fill so
-     it reads as a small marker sitting on top of the day, not another
-     circle competing with them for attention. */
-  width: 3px;
-  height: 3px;
+  inset: 4px;
   border-radius: 50%;
-  background: #34d399;
+  border: 1.5px solid #34d399;
+  pointer-events: none;
 }
 /* Same 7px size as .cycle-cal-legend-dot (just its own green, not shared -
    this is the only legend item not red/red-dashed) now that it sits in the
