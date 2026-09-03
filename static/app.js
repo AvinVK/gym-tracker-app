@@ -4888,7 +4888,7 @@ let cyclePerfRangeMonths = 3;
 let cyclePerfZoomDomain = null;
 
 function updateZoomResetButton() {
-  document.getElementById("cycle-perf-zoom-reset-btn").hidden = !cyclePerfZoomDomain;
+  document.getElementById("cycle-perf-zoom-reset-btn").classList.toggle("is-visible", !!cyclePerfZoomDomain);
 }
 document.getElementById("cycle-perf-zoom-reset-btn").addEventListener("click", () => {
   cyclePerfZoomDomain = null;

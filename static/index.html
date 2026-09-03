@@ -760,7 +760,13 @@
           <button type="button" class="cycle-perf-range-btn" data-range="6" role="tab" aria-selected="false">6M</button>
           <button type="button" class="cycle-perf-range-btn" data-range="12" role="tab" aria-selected="false">1Y</button>
           <button type="button" class="cycle-perf-range-btn" data-range="all" role="tab" aria-selected="false">All</button>
-          <button type="button" class="cycle-perf-zoom-reset-btn" id="cycle-perf-zoom-reset-btn" aria-label="Reset zoom" title="Reset zoom" hidden>&#8634;</button>
+          <!-- Always in the layout (never [hidden]/display:none) and only
+               ever toggled via .is-visible below - keeps this row, and
+               everything below it, at a constant size whether or not a
+               zoom is active. Letting this button come and go from the
+               flex row was shifting the chart card beneath it by however
+               many pixels the row's height happened to change by. -->
+          <button type="button" class="cycle-perf-zoom-reset-btn" id="cycle-perf-zoom-reset-btn" aria-label="Reset zoom" title="Reset zoom">&#8634;</button>
         </div>
 
         <div id="cycle-perf-view-performance">
