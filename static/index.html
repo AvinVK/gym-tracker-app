@@ -746,17 +746,23 @@
           <button type="button" class="cycle-perf-subtab" id="cycle-perf-subtab-energy" data-perf-view="energy" role="tab" aria-selected="false">Energy by Time</button>
         </div>
 
-        <!-- Shared by both views above - "zoom" is just narrowing the x-axis
-             window, not a pinch gesture (see attachChartClickToggle in
-             app.js for why: a tap-to-toggle point instead of a drag-hover
-             sidesteps the whole swipe-vs-hover conflict, and a range picker
-             is the mobile-friendly way to declutter a crowded chart). -->
+        <!-- Shared by both views above - these buttons pick the coarse
+             window; a two-finger pinch/drag on the chart itself (see
+             attachChartPinchZoomPan in app.js) narrows further within
+             whichever of these is picked. Deliberately two-finger, not
+             one-finger drag-to-pan: a single touch here still has to fall
+             through to page scroll (see attachChartClickToggle's comment
+             for the swipe-vs-hover conflict a one-finger gesture reopens),
+             and two fingers can never be mistaken for a scroll. -->
         <div class="cycle-perf-range-row" id="cycle-perf-range-row" role="tablist" aria-label="Time range">
           <button type="button" class="cycle-perf-range-btn" data-range="1" role="tab" aria-selected="false">1M</button>
           <button type="button" class="cycle-perf-range-btn active" data-range="3" role="tab" aria-selected="true">3M</button>
           <button type="button" class="cycle-perf-range-btn" data-range="6" role="tab" aria-selected="false">6M</button>
           <button type="button" class="cycle-perf-range-btn" data-range="12" role="tab" aria-selected="false">1Y</button>
           <button type="button" class="cycle-perf-range-btn" data-range="all" role="tab" aria-selected="false">All</button>
+        </div>
+        <div class="cycle-perf-zoom-reset-row">
+          <button type="button" class="cycle-perf-reload-btn" id="cycle-perf-zoom-reset-btn" hidden>&#8634; Reset zoom</button>
         </div>
 
         <div id="cycle-perf-view-performance">

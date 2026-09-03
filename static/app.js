@@ -4876,10 +4876,32 @@ let cyclePerfExercise = null;
 // sync on the same picked range since they're two views of the same
 // "how has this changed over time" question.
 let cyclePerfRangeMonths = 3;
+
+// A finer window *within* whichever coarse range is picked above, set by a
+// two-finger pinch/drag on either chart (see attachChartPinchZoomPan) - null
+// means "no pinch zoom active, show the full picked range". {start, end} are
+// millisecond timestamps. Shared between both charts, same as
+// cyclePerfRangeMonths, so pinching one keeps the other in sync; reset
+// whenever the coarse range changes since the old fine window may no longer
+// make sense against a different coarse range (e.g. it picked a window
+// inside "1Y" that "1M" doesn't even contain).
+let cyclePerfZoomDomain = null;
+
+function updateZoomResetButton() {
+  document.getElementById("cycle-perf-zoom-reset-btn").hidden = !cyclePerfZoomDomain;
+}
+document.getElementById("cycle-perf-zoom-reset-btn").addEventListener("click", () => {
+  cyclePerfZoomDomain = null;
+  updateZoomResetButton();
+  renderCyclePerfSection();
+});
+
 document.querySelectorAll(".cycle-perf-range-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     const val = btn.dataset.range;
     cyclePerfRangeMonths = val === "all" ? "all" : Number(val);
+    cyclePerfZoomDomain = null;
+    updateZoomResetButton();
     document.querySelectorAll(".cycle-perf-range-btn").forEach(b => {
       const active = b === btn;
       b.classList.toggle("active", active);
@@ -4898,7 +4920,11 @@ function cyclePerfRangeCutoff() {
   d.setMonth(d.getMonth() - cyclePerfRangeMonths);
   return d.toISOString().slice(0, 10);
 }
-function filterPointsByRange(points) {
+// Applies only the coarse range-button window - the pinch-zoom domain is
+// applied separately, inside each chart's own draw(), since it needs to stay
+// live-adjustable during a gesture without re-running the whole section
+// (see renderCyclePerfChart/renderCycleEnergyChart).
+function filterPointsByMonths(points) {
   const cutoff = cyclePerfRangeCutoff();
   return cutoff ? points.filter(p => p.date >= cutoff) : points;
 }
@@ -4950,207 +4976,369 @@ function colorForDate(dateStr) {
   return phase ? phase.color : "#6d5ef8";
 }
 
+// ---- Pinch-to-zoom / two-finger pan for the Performance/Energy-by-Time
+// charts (see cyclePerfZoomDomain above) ----
+// {start, end} millisecond bounds spanning every point - the outer clamp a
+// pinch can never zoom out past, since that's still governed by whichever
+// range button (1M/3M/.../All) is picked.
+function chartDateBounds(points) {
+  const first = new Date(points[0].date + "T00:00:00").getTime();
+  const last = new Date(points[points.length - 1].date + "T00:00:00").getTime();
+  return { start: first, end: Math.max(last, first + 1) };
+}
+function pointsInDomain(points, domain) {
+  return points.filter(p => {
+    const t = new Date(p.date + "T00:00:00").getTime();
+    return t >= domain.start && t <= domain.end;
+  });
+}
+// A saved zoom domain only makes sense against the fullBounds it was picked
+// from - e.g. switching the range buttons from "All" to "1M" can leave a
+// stale domain that no longer overlaps at all. Falls back to the full range
+// whenever that happens, same as having no zoom active.
+function clampZoomDomain(domain, fullBounds) {
+  if (!domain || domain.end <= fullBounds.start || domain.start >= fullBounds.end) return fullBounds;
+  return { start: Math.max(domain.start, fullBounds.start), end: Math.min(domain.end, fullBounds.end) };
+}
+
+const CYCLE_PERF_MIN_ZOOM_SPAN_MS = 3 * 24 * 60 * 60 * 1000; // 3 days - keeps an extreme pinch from collapsing to nothing
+
+// Two-finger pinch (zoom) + two-finger drag (pan), layered on top of the
+// range buttons. Deliberately gated on exactly two active touches, never
+// one: a single touch on this element must always fall through to page
+// scroll untouched (see attachChartClickToggle's comment above - a
+// one-finger drag here is exactly the swipe-vs-hover conflict this chart
+// already needed two rounds of fixes for), and two simultaneous touches can
+// never be mistaken for a scroll gesture, so there's no arbitration needed.
+// `host` is the stable per-chart view container (survives the svg.innerHTML
+// rebuild every draw() does) - its `_chartZoom` property is refreshed by
+// every render call, but the listeners themselves are attached only once.
+function attachChartPinchZoomPan(host) {
+  if (host.dataset.pinchZoomAttached) return;
+  host.dataset.pinchZoomAttached = "1";
+
+  const pointers = new Map(); // pointerId -> {x, y}
+  let gesture = null; // { startDist, startMidX, domainAtStart, lastDomain }
+
+  function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+  function midX(a, b) { return (a.x + b.x) / 2; }
+  function toLocalX(clientX) {
+    const svg = host.querySelector("svg");
+    const rect = svg.getBoundingClientRect();
+    const scaleX = CYCLE_PERF_CHART_W / rect.width;
+    return (clientX - rect.left) * scaleX;
+  }
+  function timeAtLocalX(localX, domain) {
+    const plotLeft = CYCLE_PERF_PAD.left, plotRight = CYCLE_PERF_CHART_W - CYCLE_PERF_PAD.right;
+    const frac = (localX - plotLeft) / (plotRight - plotLeft);
+    return domain.start + frac * (domain.end - domain.start);
+  }
+
+  host.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse") return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { host.setPointerCapture(e.pointerId); } catch { /* already released */ }
+    if (pointers.size === 2 && host._chartZoom) {
+      const [p1, p2] = [...pointers.values()];
+      const domainAtStart = host._chartZoom.getDomain();
+      gesture = {
+        startDist: Math.max(dist(p1, p2), 1),
+        startMidX: midX(p1, p2),
+        domainAtStart,
+        lastDomain: domainAtStart,
+      };
+    }
+  });
+
+  host.addEventListener("pointermove", (e) => {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size !== 2 || !gesture || !host._chartZoom) return;
+    e.preventDefault();
+
+    const [p1, p2] = [...pointers.values()];
+    const curDist = Math.max(dist(p1, p2), 1);
+    const curMidX = midX(p1, p2);
+    const { domainAtStart } = gesture;
+    const fullBounds = host._chartZoom.getFullBounds();
+    const fullSpan = fullBounds.end - fullBounds.start;
+    const startSpan = domainAtStart.end - domainAtStart.start;
+
+    // Zoom: scale the span by how much the two fingers' distance has
+    // changed, keeping the point under the pinch's starting midpoint fixed.
+    const scale = curDist / gesture.startDist;
+    const newSpan = Math.min(Math.max(startSpan / scale, CYCLE_PERF_MIN_ZOOM_SPAN_MS), fullSpan);
+    const pivotTime = timeAtLocalX(toLocalX(gesture.startMidX), domainAtStart);
+    const pivotFraction = startSpan > 0 ? (pivotTime - domainAtStart.start) / startSpan : 0.5;
+    let newStart = pivotTime - pivotFraction * newSpan;
+
+    // Pan: shift by how far the midpoint itself has moved since gesture
+    // start, converted from screen px to ms at the new (post-pinch) scale.
+    const plotLeft = CYCLE_PERF_PAD.left, plotRight = CYCLE_PERF_CHART_W - CYCLE_PERF_PAD.right;
+    const panPx = toLocalX(curMidX) - toLocalX(gesture.startMidX);
+    newStart -= (panPx / (plotRight - plotLeft)) * newSpan;
+
+    newStart = Math.min(Math.max(newStart, fullBounds.start), fullBounds.end - newSpan);
+    const domain = { start: newStart, end: newStart + newSpan };
+    gesture.lastDomain = domain;
+    host._chartZoom.draw(domain);
+  });
+
+  function endPointer(e) {
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2 && gesture) {
+      const finalDomain = gesture.lastDomain;
+      gesture = null;
+      host._chartZoom?.commit(finalDomain);
+    }
+  }
+  host.addEventListener("pointerup", endPointer);
+  host.addEventListener("pointercancel", endPointer);
+}
+
 function renderCyclePerfChart(series, exerciseName, workoutByDate = {}) {
   const svg = document.getElementById("cycle-perf-chart");
   const tooltip = document.getElementById("cycle-perf-tooltip");
   const legendEl = document.getElementById("cycle-perf-phase-legend");
   const rangeEmptyEl = document.getElementById("cycle-perf-range-empty");
-  svg.innerHTML = "";
-  tooltip.hidden = true;
+  const host = document.getElementById("cycle-perf-view-performance");
   document.getElementById("cycle-perf-exercise-name").textContent = exerciseName;
 
-  const { unit, points } = series;
+  const { unit, points: fullPoints } = series;
   // Distinct from #cycle-perf-empty (no logged sets for this exercise at
   // all, handled by the caller) - this is "the exercise has history, just
   // none inside the currently picked time range."
-  if (!points.length) {
+  if (!fullPoints.length) {
+    svg.innerHTML = "";
+    tooltip.hidden = true;
     legendEl.hidden = true;
     svg.hidden = true;
     rangeEmptyEl.hidden = false;
+    host._chartZoom = null;
     return;
   }
-  svg.hidden = false;
-  rangeEmptyEl.hidden = true;
 
-  const plotLeft = CYCLE_PERF_PAD.left, plotRight = CYCLE_PERF_CHART_W - CYCLE_PERF_PAD.right;
-  const plotTop = CYCLE_PERF_PAD.top, plotBottom = CYCLE_PERF_CHART_H - CYCLE_PERF_PAD.bottom;
-  const plotW = plotRight - plotLeft, plotH = plotBottom - plotTop;
+  const fullBounds = chartDateBounds(fullPoints);
+  let currentDomain = clampZoomDomain(cyclePerfZoomDomain, fullBounds);
 
-  const { yMin, yMax, step } = computeYAxis(points.map(p => p.value));
-  const dates = points.map(p => new Date(p.date + "T00:00:00").getTime());
-  const minDate = dates[0], maxDate = dates[dates.length - 1];
-  const dateSpan = Math.max(maxDate - minDate, 1);
-
-  const xFor = i => points.length === 1 ? plotLeft + plotW / 2 : plotLeft + ((dates[i] - minDate) / dateSpan) * plotW;
-  const yFor = v => plotTop + plotH - ((v - yMin) / (yMax - yMin || 1)) * plotH;
-
-  const segColors = points.map(p => colorForDate(p.date));
-  const tracksCycle = points.some(p => cyclePhaseForDate(p.date));
-
-  // Area fill first (bottom of the stack) so the gridlines drawn next still
-  // show through the translucent fill instead of hiding under it. One quad
-  // per consecutive pair of points (not one shape per phase run) - grouping
-  // same-phase points into a single run left a gap wherever a single
-  // differently-phased point sat between two runs. Per-segment coloring is
-  // always contiguous: every pair of adjacent points gets its own colored
-  // quad, and adjacent quads share an edge so there's never a break.
-  for (let i = 0; i < points.length - 1; i++) {
-    const x1 = xFor(i), x2 = xFor(i + 1);
-    const y1 = yFor(points[i].value), y2 = yFor(points[i + 1].value);
-    const d = `M${x1},${plotBottom} L${x1},${y1} L${x2},${y2} L${x2},${plotBottom} Z`;
-    svg.appendChild(svgEl("path", { d, fill: segColors[i], "fill-opacity": "0.28", stroke: "none" }));
-  }
-
-  // Y gridlines + labels - clean rounded numbers.
-  for (let v = yMin; v <= yMax + 0.001; v += step) {
-    const y = yFor(v);
-    svg.appendChild(svgEl("line", { class: "perf-gridline", x1: plotLeft, x2: plotRight, y1: y, y2: y }));
-    const label = svgEl("text", { class: "perf-axis-label", x: plotLeft - 8, y: y + 4, "text-anchor": "end" });
-    label.textContent = String(Math.round(v * 10) / 10);
-    svg.appendChild(label);
-  }
-
-  // X labels: at most 5, evenly spaced by index - never one per point.
-  const xTickCount = Math.min(points.length, 5);
-  const xTickIndices = new Set();
-  for (let i = 0; i < xTickCount; i++) {
-    xTickIndices.add(Math.round((i / (xTickCount - 1 || 1)) * (points.length - 1)));
-  }
-  xTickIndices.forEach(i => {
-    const label = svgEl("text", { class: "perf-axis-label", x: xFor(i), y: CYCLE_PERF_CHART_H - 8, "text-anchor": "middle" });
-    label.textContent = formatPerfDate(points[i].date);
-    svg.appendChild(label);
-  });
-
-  // Line: same per-segment coloring as the area fill, for the same
-  // never-a-gap reason.
-  for (let i = 0; i < points.length - 1; i++) {
-    const d = `M${xFor(i)},${yFor(points[i].value)} L${xFor(i + 1)},${yFor(points[i + 1].value)}`;
-    svg.appendChild(svgEl("path", { class: "perf-line", d, stroke: segColors[i] }));
-  }
-  points.forEach((p, i) => {
-    svg.appendChild(svgEl("circle", { cx: xFor(i), cy: yFor(p.value), r: 3, fill: segColors[i] }));
-  });
-
-  // Dashed ring on every point with an edit behind it (any of that date's
-  // sets), distinct from drawMarker's solid current-value/PR rings below.
-  points.forEach((p, i) => {
-    if (!p.editedAt) return;
-    svg.appendChild(svgEl("circle", { class: "perf-edited-ring", cx: xFor(i), cy: yFor(p.value), r: 6 }));
-  });
-
-  // Direct-label only the two moments that matter - current value and the
-  // all-time PR (same point when currently at peak) - never a number on
-  // every dot.
-  let maxIndex = 0;
-  points.forEach((p, i) => { if (p.value > points[maxIndex].value) maxIndex = i; });
-  const lastIndex = points.length - 1;
-
-  function drawMarker(i, labelText, labelClass) {
-    const cx = xFor(i), cy = yFor(points[i].value);
-    svg.appendChild(svgEl("circle", { class: "perf-dot-ring", cx, cy, r: 6 }));
-    svg.appendChild(svgEl("circle", { cx, cy, r: 4, fill: segColors[i] }));
-    const label = svgEl("text", { class: labelClass, x: cx, y: cy - 14, "text-anchor": "middle" });
-    label.textContent = labelText;
-    svg.appendChild(label);
-  }
-  drawMarker(lastIndex, `${points[lastIndex].value} ${unit}`, "perf-value-label");
-  if (maxIndex !== lastIndex) drawMarker(maxIndex, `PR: ${points[maxIndex].value} ${unit}`, "perf-pr-label");
-
-  if (tracksCycle) {
-    legendEl.hidden = false;
-    // Abbreviated (no " Phase" suffix) so all 4 fit on the one line the
-    // card's width allows - see #cycle-perf-phase-legend's forced nowrap.
-    legendEl.innerHTML = getCyclePhases().map(p =>
-      `<span class="phase-legend-item"><span class="phase-dot" style="background:${p.color}"></span>${p.label.replace(" Phase", "")}</span>`
-    ).join("");
-  } else {
-    legendEl.hidden = true;
-  }
-
-  // Tap a point to see its date + value; the hit target is the whole plot
-  // area, not just the 3px dots, so a tap only has to be roughly on target.
-  const wrap = svg.closest(".cycle-perf-chart-card");
-  const crosshair = svgEl("line", { class: "perf-crosshair", x1: 0, x2: 0, y1: plotTop, y2: plotBottom });
-  svg.appendChild(crosshair);
-  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent" });
-  svg.appendChild(hitRect);
-
-  function showTooltip(i, clientX, clientY) {
-    const p = points[i];
-    tooltip.innerHTML = "";
-    const valueEl = document.createElement("div");
-    valueEl.className = "perf-tooltip-value";
-    valueEl.textContent = `${p.value} ${unit}`;
-    const dateEl = document.createElement("div");
-    dateEl.className = "perf-tooltip-date";
-    const phase = cyclePhaseForDate(p.date);
-    dateEl.textContent = phase ? `${formatPerfDate(p.date)} — ${phase.label}` : formatPerfDate(p.date);
-    tooltip.appendChild(valueEl);
-    tooltip.appendChild(dateEl);
-
-    // Same "what was going on that day" context the Energy-by-Time tooltip
-    // shows - energy alone doesn't explain a good or bad lift day, but
-    // energy + what/when she ate together might.
-    const dayLog = workoutByDate[p.date];
-    if (dayLog) {
-      if (dayLog.energy_level != null) {
-        const energyEl = document.createElement("div");
-        energyEl.className = "perf-tooltip-context";
-        energyEl.textContent = `Energy ${dayLog.energy_level}/10`;
-        tooltip.appendChild(energyEl);
-      }
-      const mealEl = document.createElement("div");
-      mealEl.className = "perf-tooltip-context";
-      mealEl.textContent = dayLog.pre_workout_meal ? `Ate: ${dayLog.pre_workout_meal}` : "No meal logged";
-      tooltip.appendChild(mealEl);
-      if (dayLog.hours_since_meal != null && dayLog.hours_since_meal !== "") {
-        const timingEl = document.createElement("div");
-        timingEl.className = "perf-tooltip-context";
-        timingEl.textContent = `Ate ${formatMealTimingLabel(dayLog.hours_since_meal)}`;
-        tooltip.appendChild(timingEl);
-      }
-    }
-
-    if (p.editedAt) {
-      const editedEl = document.createElement("div");
-      editedEl.className = "perf-tooltip-edited";
-      editedEl.textContent = `Edited ${formatEditedAt(p.editedAt)}`;
-      tooltip.appendChild(editedEl);
-      if (p.editedPrev != null) {
-        const prevEl = document.createElement("div");
-        prevEl.className = "perf-tooltip-edited-prev";
-        prevEl.textContent = `was ${p.editedPrev} ${unit}`;
-        tooltip.appendChild(prevEl);
-      }
-    }
-    const wrapRect = wrap.getBoundingClientRect();
-    tooltip.style.left = `${clientX - wrapRect.left}px`;
-    // Well clear of a fingertip on touch, not just a mouse cursor - 12px
-    // (fine for a mouse pointer) left the tooltip hidden under the finger
-    // that triggered it on phones (same fix as the hormone chart's tooltip).
-    tooltip.style.top = `${clientY - wrapRect.top - 44}px`;
-    tooltip.hidden = false;
-    crosshair.setAttribute("x1", xFor(i));
-    crosshair.setAttribute("x2", xFor(i));
-    crosshair.style.opacity = 1;
-  }
-  function hideTooltip() {
+  // Everything below redraws from scratch on every call - not just once per
+  // renderCyclePerfSection(), but on every pointermove of an active
+  // pinch/pan gesture too (see attachChartPinchZoomPan), so it has to stay
+  // cheap. `points` here is the domain-sliced subset of fullPoints, never
+  // fullPoints itself, so the range-button-picked window is still the outer
+  // clamp on how far a pinch can zoom out.
+  function draw(domain) {
+    currentDomain = domain;
+    const points = pointsInDomain(fullPoints, domain);
+    svg.innerHTML = "";
     tooltip.hidden = true;
-    crosshair.style.opacity = 0;
-  }
-  function indexForClientX(clientX) {
-    const svgRect = svg.getBoundingClientRect();
-    const scaleX = CYCLE_PERF_CHART_W / svgRect.width;
-    const localX = (clientX - svgRect.left) * scaleX;
-    let nearest = 0, nearestDist = Infinity;
-    points.forEach((p, i) => {
-      const d = Math.abs(xFor(i) - localX);
-      if (d < nearestDist) { nearestDist = d; nearest = i; }
+
+    if (!points.length) {
+      legendEl.hidden = true;
+      svg.hidden = true;
+      rangeEmptyEl.hidden = false;
+      return;
+    }
+    svg.hidden = false;
+    rangeEmptyEl.hidden = true;
+
+    const plotLeft = CYCLE_PERF_PAD.left, plotRight = CYCLE_PERF_CHART_W - CYCLE_PERF_PAD.right;
+    const plotTop = CYCLE_PERF_PAD.top, plotBottom = CYCLE_PERF_CHART_H - CYCLE_PERF_PAD.bottom;
+    const plotW = plotRight - plotLeft, plotH = plotBottom - plotTop;
+
+    const { yMin, yMax, step } = computeYAxis(points.map(p => p.value));
+    const dates = points.map(p => new Date(p.date + "T00:00:00").getTime());
+    const minDate = dates[0], maxDate = dates[dates.length - 1];
+    const dateSpan = Math.max(maxDate - minDate, 1);
+
+    const xFor = i => points.length === 1 ? plotLeft + plotW / 2 : plotLeft + ((dates[i] - minDate) / dateSpan) * plotW;
+    const yFor = v => plotTop + plotH - ((v - yMin) / (yMax - yMin || 1)) * plotH;
+
+    const segColors = points.map(p => colorForDate(p.date));
+    const tracksCycle = points.some(p => cyclePhaseForDate(p.date));
+
+    // Area fill first (bottom of the stack) so the gridlines drawn next still
+    // show through the translucent fill instead of hiding under it. One quad
+    // per consecutive pair of points (not one shape per phase run) - grouping
+    // same-phase points into a single run left a gap wherever a single
+    // differently-phased point sat between two runs. Per-segment coloring is
+    // always contiguous: every pair of adjacent points gets its own colored
+    // quad, and adjacent quads share an edge so there's never a break.
+    for (let i = 0; i < points.length - 1; i++) {
+      const x1 = xFor(i), x2 = xFor(i + 1);
+      const y1 = yFor(points[i].value), y2 = yFor(points[i + 1].value);
+      const d = `M${x1},${plotBottom} L${x1},${y1} L${x2},${y2} L${x2},${plotBottom} Z`;
+      svg.appendChild(svgEl("path", { d, fill: segColors[i], "fill-opacity": "0.28", stroke: "none" }));
+    }
+
+    // Y gridlines + labels - clean rounded numbers.
+    for (let v = yMin; v <= yMax + 0.001; v += step) {
+      const y = yFor(v);
+      svg.appendChild(svgEl("line", { class: "perf-gridline", x1: plotLeft, x2: plotRight, y1: y, y2: y }));
+      const label = svgEl("text", { class: "perf-axis-label", x: plotLeft - 8, y: y + 4, "text-anchor": "end" });
+      label.textContent = String(Math.round(v * 10) / 10);
+      svg.appendChild(label);
+    }
+
+    // X labels: at most 5, evenly spaced by index - never one per point.
+    const xTickCount = Math.min(points.length, 5);
+    const xTickIndices = new Set();
+    for (let i = 0; i < xTickCount; i++) {
+      xTickIndices.add(Math.round((i / (xTickCount - 1 || 1)) * (points.length - 1)));
+    }
+    xTickIndices.forEach(i => {
+      const label = svgEl("text", { class: "perf-axis-label", x: xFor(i), y: CYCLE_PERF_CHART_H - 8, "text-anchor": "middle" });
+      label.textContent = formatPerfDate(points[i].date);
+      svg.appendChild(label);
     });
-    return nearest;
+
+    // Line: same per-segment coloring as the area fill, for the same
+    // never-a-gap reason.
+    for (let i = 0; i < points.length - 1; i++) {
+      const d = `M${xFor(i)},${yFor(points[i].value)} L${xFor(i + 1)},${yFor(points[i + 1].value)}`;
+      svg.appendChild(svgEl("path", { class: "perf-line", d, stroke: segColors[i] }));
+    }
+    points.forEach((p, i) => {
+      svg.appendChild(svgEl("circle", { cx: xFor(i), cy: yFor(p.value), r: 3, fill: segColors[i] }));
+    });
+
+    // Dashed ring on every point with an edit behind it (any of that date's
+    // sets), distinct from drawMarker's solid current-value/PR rings below.
+    points.forEach((p, i) => {
+      if (!p.editedAt) return;
+      svg.appendChild(svgEl("circle", { class: "perf-edited-ring", cx: xFor(i), cy: yFor(p.value), r: 6 }));
+    });
+
+    // Direct-label only the two moments that matter - current value and the
+    // all-time PR (same point when currently at peak) - never a number on
+    // every dot.
+    let maxIndex = 0;
+    points.forEach((p, i) => { if (p.value > points[maxIndex].value) maxIndex = i; });
+    const lastIndex = points.length - 1;
+
+    function drawMarker(i, labelText, labelClass) {
+      const cx = xFor(i), cy = yFor(points[i].value);
+      svg.appendChild(svgEl("circle", { class: "perf-dot-ring", cx, cy, r: 6 }));
+      svg.appendChild(svgEl("circle", { cx, cy, r: 4, fill: segColors[i] }));
+      const label = svgEl("text", { class: labelClass, x: cx, y: cy - 14, "text-anchor": "middle" });
+      label.textContent = labelText;
+      svg.appendChild(label);
+    }
+    drawMarker(lastIndex, `${points[lastIndex].value} ${unit}`, "perf-value-label");
+    if (maxIndex !== lastIndex) drawMarker(maxIndex, `PR: ${points[maxIndex].value} ${unit}`, "perf-pr-label");
+
+    if (tracksCycle) {
+      legendEl.hidden = false;
+      // Abbreviated (no " Phase" suffix) so all 4 fit on the one line the
+      // card's width allows - see #cycle-perf-phase-legend's forced nowrap.
+      legendEl.innerHTML = getCyclePhases().map(p =>
+        `<span class="phase-legend-item"><span class="phase-dot" style="background:${p.color}"></span>${p.label.replace(" Phase", "")}</span>`
+      ).join("");
+    } else {
+      legendEl.hidden = true;
+    }
+
+    // Tap a point to see its date + value; the hit target is the whole plot
+    // area, not just the 3px dots, so a tap only has to be roughly on target.
+    const wrap = svg.closest(".cycle-perf-chart-card");
+    const crosshair = svgEl("line", { class: "perf-crosshair", x1: 0, x2: 0, y1: plotTop, y2: plotBottom });
+    svg.appendChild(crosshair);
+    const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent" });
+    svg.appendChild(hitRect);
+
+    function showTooltip(i, clientX, clientY) {
+      const p = points[i];
+      tooltip.innerHTML = "";
+      const valueEl = document.createElement("div");
+      valueEl.className = "perf-tooltip-value";
+      valueEl.textContent = `${p.value} ${unit}`;
+      const dateEl = document.createElement("div");
+      dateEl.className = "perf-tooltip-date";
+      const phase = cyclePhaseForDate(p.date);
+      dateEl.textContent = phase ? `${formatPerfDate(p.date)} — ${phase.label}` : formatPerfDate(p.date);
+      tooltip.appendChild(valueEl);
+      tooltip.appendChild(dateEl);
+
+      // Same "what was going on that day" context the Energy-by-Time tooltip
+      // shows - energy alone doesn't explain a good or bad lift day, but
+      // energy + what/when she ate together might.
+      const dayLog = workoutByDate[p.date];
+      if (dayLog) {
+        if (dayLog.energy_level != null) {
+          const energyEl = document.createElement("div");
+          energyEl.className = "perf-tooltip-context";
+          energyEl.textContent = `Energy ${dayLog.energy_level}/10`;
+          tooltip.appendChild(energyEl);
+        }
+        const mealEl = document.createElement("div");
+        mealEl.className = "perf-tooltip-context";
+        mealEl.textContent = dayLog.pre_workout_meal ? `Ate: ${dayLog.pre_workout_meal}` : "No meal logged";
+        tooltip.appendChild(mealEl);
+        if (dayLog.hours_since_meal != null && dayLog.hours_since_meal !== "") {
+          const timingEl = document.createElement("div");
+          timingEl.className = "perf-tooltip-context";
+          timingEl.textContent = `Ate ${formatMealTimingLabel(dayLog.hours_since_meal)}`;
+          tooltip.appendChild(timingEl);
+        }
+      }
+
+      if (p.editedAt) {
+        const editedEl = document.createElement("div");
+        editedEl.className = "perf-tooltip-edited";
+        editedEl.textContent = `Edited ${formatEditedAt(p.editedAt)}`;
+        tooltip.appendChild(editedEl);
+        if (p.editedPrev != null) {
+          const prevEl = document.createElement("div");
+          prevEl.className = "perf-tooltip-edited-prev";
+          prevEl.textContent = `was ${p.editedPrev} ${unit}`;
+          tooltip.appendChild(prevEl);
+        }
+      }
+      const wrapRect = wrap.getBoundingClientRect();
+      tooltip.style.left = `${clientX - wrapRect.left}px`;
+      // Well clear of a fingertip on touch, not just a mouse cursor - 12px
+      // (fine for a mouse pointer) left the tooltip hidden under the finger
+      // that triggered it on phones (same fix as the hormone chart's tooltip).
+      tooltip.style.top = `${clientY - wrapRect.top - 44}px`;
+      tooltip.hidden = false;
+      crosshair.setAttribute("x1", xFor(i));
+      crosshair.setAttribute("x2", xFor(i));
+      crosshair.style.opacity = 1;
+    }
+    function hideTooltip() {
+      tooltip.hidden = true;
+      crosshair.style.opacity = 0;
+    }
+    function indexForClientX(clientX) {
+      const svgRect = svg.getBoundingClientRect();
+      const scaleX = CYCLE_PERF_CHART_W / svgRect.width;
+      const localX = (clientX - svgRect.left) * scaleX;
+      let nearest = 0, nearestDist = Infinity;
+      points.forEach((p, i) => {
+        const d = Math.abs(xFor(i) - localX);
+        if (d < nearestDist) { nearestDist = d; nearest = i; }
+      });
+      return nearest;
+    }
+    attachChartClickToggle(hitRect, indexForClientX, showTooltip, hideTooltip);
   }
-  attachChartClickToggle(hitRect, indexForClientX, showTooltip, hideTooltip);
+
+  draw(currentDomain);
+  host._chartZoom = {
+    getDomain: () => currentDomain,
+    getFullBounds: () => fullBounds,
+    draw,
+    commit: (domain) => {
+      currentDomain = domain;
+      cyclePerfZoomDomain = domain;
+      updateZoomResetButton();
+      // Keep Energy-by-Time in sync, same as the range buttons already do -
+      // it's the sibling view of "how has this changed over time", not a
+      // separately-zoomed chart, even though only one is visible at once.
+      document.getElementById("cycle-perf-view-energy")._chartZoom?.draw(domain);
+    },
+  };
+  attachChartPinchZoomPan(host);
 }
 
 // One point per calendar date that has a logged energy level - averaged in
@@ -5181,15 +5369,16 @@ function computeEnergySeries(workoutLog) {
 // mean anything for a subjective energy rating. The tooltip trades the
 // weight/duration + edited-set details for what she ate that day and how
 // long before the workout, which is the whole point of tapping a point here.
-function renderCycleEnergyChart(points, hasAnyData = points.length > 0) {
+function renderCycleEnergyChart(fullPoints, hasAnyData = fullPoints.length > 0) {
   const svg = document.getElementById("cycle-energy-chart");
   const tooltip = document.getElementById("cycle-energy-tooltip");
   const legendEl = document.getElementById("cycle-energy-phase-legend");
   const emptyEl = document.getElementById("cycle-energy-empty");
-  svg.innerHTML = "";
-  tooltip.hidden = true;
+  const host = document.getElementById("cycle-perf-view-energy");
 
-  if (!points.length) {
+  if (!fullPoints.length) {
+    svg.innerHTML = "";
+    tooltip.hidden = true;
     // Distinguishes "never logged energy at all" from "just none in the
     // currently picked time range" (hasAnyData is against the unfiltered
     // series, so the caller can tell the two apart).
@@ -5199,135 +5388,170 @@ function renderCycleEnergyChart(points, hasAnyData = points.length > 0) {
     emptyEl.hidden = false;
     svg.hidden = true;
     legendEl.hidden = true;
+    host._chartZoom = null;
     return;
   }
-  emptyEl.hidden = true;
-  svg.hidden = false;
 
-  const plotLeft = CYCLE_PERF_PAD.left, plotRight = CYCLE_PERF_CHART_W - CYCLE_PERF_PAD.right;
-  const plotTop = CYCLE_PERF_PAD.top, plotBottom = CYCLE_PERF_CHART_H - CYCLE_PERF_PAD.bottom;
-  const plotW = plotRight - plotLeft, plotH = plotBottom - plotTop;
+  const fullBounds = chartDateBounds(fullPoints);
+  let currentDomain = clampZoomDomain(cyclePerfZoomDomain, fullBounds);
 
-  const yMin = 1, yMax = 10, step = 3;
-  const dates = points.map(p => new Date(p.date + "T00:00:00").getTime());
-  const minDate = dates[0], maxDate = dates[dates.length - 1];
-  const dateSpan = Math.max(maxDate - minDate, 1);
+  // See renderCyclePerfChart's draw() for why this redraws from scratch on
+  // every call, including every pointermove of an active pinch/pan gesture.
+  function draw(domain) {
+    currentDomain = domain;
+    const points = pointsInDomain(fullPoints, domain);
+    svg.innerHTML = "";
+    tooltip.hidden = true;
 
-  const xFor = i => points.length === 1 ? plotLeft + plotW / 2 : plotLeft + ((dates[i] - minDate) / dateSpan) * plotW;
-  const yFor = v => plotTop + plotH - ((v - yMin) / (yMax - yMin || 1)) * plotH;
+    if (!points.length) {
+      emptyEl.textContent = "No energy logged in this time range.";
+      emptyEl.hidden = false;
+      svg.hidden = true;
+      legendEl.hidden = true;
+      return;
+    }
+    emptyEl.hidden = true;
+    svg.hidden = false;
 
-  const segColors = points.map(p => colorForDate(p.date));
-  const tracksCycle = points.some(p => cyclePhaseForDate(p.date));
+    const plotLeft = CYCLE_PERF_PAD.left, plotRight = CYCLE_PERF_CHART_W - CYCLE_PERF_PAD.right;
+    const plotTop = CYCLE_PERF_PAD.top, plotBottom = CYCLE_PERF_CHART_H - CYCLE_PERF_PAD.bottom;
+    const plotW = plotRight - plotLeft, plotH = plotBottom - plotTop;
 
-  for (let i = 0; i < points.length - 1; i++) {
-    const x1 = xFor(i), x2 = xFor(i + 1);
-    const y1 = yFor(points[i].value), y2 = yFor(points[i + 1].value);
-    const d = `M${x1},${plotBottom} L${x1},${y1} L${x2},${y2} L${x2},${plotBottom} Z`;
-    svg.appendChild(svgEl("path", { d, fill: segColors[i], "fill-opacity": "0.28", stroke: "none" }));
-  }
+    const yMin = 1, yMax = 10, step = 3;
+    const dates = points.map(p => new Date(p.date + "T00:00:00").getTime());
+    const minDate = dates[0], maxDate = dates[dates.length - 1];
+    const dateSpan = Math.max(maxDate - minDate, 1);
 
-  for (let v = yMin; v <= yMax + 0.001; v += step) {
-    const y = yFor(v);
-    svg.appendChild(svgEl("line", { class: "perf-gridline", x1: plotLeft, x2: plotRight, y1: y, y2: y }));
-    const label = svgEl("text", { class: "perf-axis-label", x: plotLeft - 8, y: y + 4, "text-anchor": "end" });
-    label.textContent = String(Math.round(v));
-    svg.appendChild(label);
-  }
+    const xFor = i => points.length === 1 ? plotLeft + plotW / 2 : plotLeft + ((dates[i] - minDate) / dateSpan) * plotW;
+    const yFor = v => plotTop + plotH - ((v - yMin) / (yMax - yMin || 1)) * plotH;
 
-  const xTickCount = Math.min(points.length, 5);
-  const xTickIndices = new Set();
-  for (let i = 0; i < xTickCount; i++) {
-    xTickIndices.add(Math.round((i / (xTickCount - 1 || 1)) * (points.length - 1)));
-  }
-  xTickIndices.forEach(i => {
-    const label = svgEl("text", { class: "perf-axis-label", x: xFor(i), y: CYCLE_PERF_CHART_H - 8, "text-anchor": "middle" });
-    label.textContent = formatPerfDate(points[i].date);
-    svg.appendChild(label);
-  });
+    const segColors = points.map(p => colorForDate(p.date));
+    const tracksCycle = points.some(p => cyclePhaseForDate(p.date));
 
-  for (let i = 0; i < points.length - 1; i++) {
-    const d = `M${xFor(i)},${yFor(points[i].value)} L${xFor(i + 1)},${yFor(points[i + 1].value)}`;
-    svg.appendChild(svgEl("path", { class: "perf-line", d, stroke: segColors[i] }));
-  }
-  points.forEach((p, i) => {
-    svg.appendChild(svgEl("circle", { cx: xFor(i), cy: yFor(p.value), r: 3, fill: segColors[i] }));
-  });
-
-  const lastIndex = points.length - 1;
-  const lastCx = xFor(lastIndex), lastCy = yFor(points[lastIndex].value);
-  svg.appendChild(svgEl("circle", { class: "perf-dot-ring", cx: lastCx, cy: lastCy, r: 6 }));
-  svg.appendChild(svgEl("circle", { cx: lastCx, cy: lastCy, r: 4, fill: segColors[lastIndex] }));
-  const lastLabel = svgEl("text", { class: "perf-value-label", x: lastCx, y: lastCy - 14, "text-anchor": "middle" });
-  lastLabel.textContent = `${points[lastIndex].value}/10`;
-  svg.appendChild(lastLabel);
-
-  if (tracksCycle) {
-    legendEl.hidden = false;
-    legendEl.innerHTML = getCyclePhases().map(p =>
-      `<span class="phase-legend-item"><span class="phase-dot" style="background:${p.color}"></span>${p.label.replace(" Phase", "")}</span>`
-    ).join("");
-  } else {
-    legendEl.hidden = true;
-  }
-
-  const wrap = svg.closest(".cycle-perf-chart-card");
-  const crosshair = svgEl("line", { class: "perf-crosshair", x1: 0, x2: 0, y1: plotTop, y2: plotBottom });
-  svg.appendChild(crosshair);
-  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent" });
-  svg.appendChild(hitRect);
-
-  function showTooltip(i, clientX, clientY) {
-    const p = points[i];
-    tooltip.innerHTML = "";
-    const valueEl = document.createElement("div");
-    valueEl.className = "perf-tooltip-value";
-    valueEl.textContent = `Energy ${p.value}/10`;
-    const dateEl = document.createElement("div");
-    dateEl.className = "perf-tooltip-date";
-    const phase = cyclePhaseForDate(p.date);
-    dateEl.textContent = phase ? `${formatPerfDate(p.date)} — ${phase.label}` : formatPerfDate(p.date);
-    tooltip.appendChild(valueEl);
-    tooltip.appendChild(dateEl);
-
-    const mealEl = document.createElement("div");
-    mealEl.className = "perf-tooltip-context";
-    mealEl.textContent = p.meal ? `Ate: ${p.meal}` : "No meal logged";
-    tooltip.appendChild(mealEl);
-
-    if (p.hoursSinceMeal != null && p.hoursSinceMeal !== "") {
-      const timingEl = document.createElement("div");
-      timingEl.className = "perf-tooltip-context";
-      timingEl.textContent = `Ate ${formatMealTimingLabel(p.hoursSinceMeal)}`;
-      tooltip.appendChild(timingEl);
+    for (let i = 0; i < points.length - 1; i++) {
+      const x1 = xFor(i), x2 = xFor(i + 1);
+      const y1 = yFor(points[i].value), y2 = yFor(points[i + 1].value);
+      const d = `M${x1},${plotBottom} L${x1},${y1} L${x2},${y2} L${x2},${plotBottom} Z`;
+      svg.appendChild(svgEl("path", { d, fill: segColors[i], "fill-opacity": "0.28", stroke: "none" }));
     }
 
-    const wrapRect = wrap.getBoundingClientRect();
-    tooltip.style.left = `${clientX - wrapRect.left}px`;
-    // Well clear of a fingertip on touch, not just a mouse cursor - 12px
-    // (fine for a mouse pointer) left the tooltip hidden under the finger
-    // that triggered it on phones (same fix as the hormone chart's tooltip).
-    tooltip.style.top = `${clientY - wrapRect.top - 44}px`;
-    tooltip.hidden = false;
-    crosshair.setAttribute("x1", xFor(i));
-    crosshair.setAttribute("x2", xFor(i));
-    crosshair.style.opacity = 1;
-  }
-  function hideTooltip() {
-    tooltip.hidden = true;
-    crosshair.style.opacity = 0;
-  }
-  function indexForClientX(clientX) {
-    const svgRect = svg.getBoundingClientRect();
-    const scaleX = CYCLE_PERF_CHART_W / svgRect.width;
-    const localX = (clientX - svgRect.left) * scaleX;
-    let nearest = 0, nearestDist = Infinity;
-    points.forEach((p, i) => {
-      const d = Math.abs(xFor(i) - localX);
-      if (d < nearestDist) { nearestDist = d; nearest = i; }
+    for (let v = yMin; v <= yMax + 0.001; v += step) {
+      const y = yFor(v);
+      svg.appendChild(svgEl("line", { class: "perf-gridline", x1: plotLeft, x2: plotRight, y1: y, y2: y }));
+      const label = svgEl("text", { class: "perf-axis-label", x: plotLeft - 8, y: y + 4, "text-anchor": "end" });
+      label.textContent = String(Math.round(v));
+      svg.appendChild(label);
+    }
+
+    const xTickCount = Math.min(points.length, 5);
+    const xTickIndices = new Set();
+    for (let i = 0; i < xTickCount; i++) {
+      xTickIndices.add(Math.round((i / (xTickCount - 1 || 1)) * (points.length - 1)));
+    }
+    xTickIndices.forEach(i => {
+      const label = svgEl("text", { class: "perf-axis-label", x: xFor(i), y: CYCLE_PERF_CHART_H - 8, "text-anchor": "middle" });
+      label.textContent = formatPerfDate(points[i].date);
+      svg.appendChild(label);
     });
-    return nearest;
+
+    for (let i = 0; i < points.length - 1; i++) {
+      const d = `M${xFor(i)},${yFor(points[i].value)} L${xFor(i + 1)},${yFor(points[i + 1].value)}`;
+      svg.appendChild(svgEl("path", { class: "perf-line", d, stroke: segColors[i] }));
+    }
+    points.forEach((p, i) => {
+      svg.appendChild(svgEl("circle", { cx: xFor(i), cy: yFor(p.value), r: 3, fill: segColors[i] }));
+    });
+
+    const lastIndex = points.length - 1;
+    const lastCx = xFor(lastIndex), lastCy = yFor(points[lastIndex].value);
+    svg.appendChild(svgEl("circle", { class: "perf-dot-ring", cx: lastCx, cy: lastCy, r: 6 }));
+    svg.appendChild(svgEl("circle", { cx: lastCx, cy: lastCy, r: 4, fill: segColors[lastIndex] }));
+    const lastLabel = svgEl("text", { class: "perf-value-label", x: lastCx, y: lastCy - 14, "text-anchor": "middle" });
+    lastLabel.textContent = `${points[lastIndex].value}/10`;
+    svg.appendChild(lastLabel);
+
+    if (tracksCycle) {
+      legendEl.hidden = false;
+      legendEl.innerHTML = getCyclePhases().map(p =>
+        `<span class="phase-legend-item"><span class="phase-dot" style="background:${p.color}"></span>${p.label.replace(" Phase", "")}</span>`
+      ).join("");
+    } else {
+      legendEl.hidden = true;
+    }
+
+    const wrap = svg.closest(".cycle-perf-chart-card");
+    const crosshair = svgEl("line", { class: "perf-crosshair", x1: 0, x2: 0, y1: plotTop, y2: plotBottom });
+    svg.appendChild(crosshair);
+    const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent" });
+    svg.appendChild(hitRect);
+
+    function showTooltip(i, clientX, clientY) {
+      const p = points[i];
+      tooltip.innerHTML = "";
+      const valueEl = document.createElement("div");
+      valueEl.className = "perf-tooltip-value";
+      valueEl.textContent = `Energy ${p.value}/10`;
+      const dateEl = document.createElement("div");
+      dateEl.className = "perf-tooltip-date";
+      const phase = cyclePhaseForDate(p.date);
+      dateEl.textContent = phase ? `${formatPerfDate(p.date)} — ${phase.label}` : formatPerfDate(p.date);
+      tooltip.appendChild(valueEl);
+      tooltip.appendChild(dateEl);
+
+      const mealEl = document.createElement("div");
+      mealEl.className = "perf-tooltip-context";
+      mealEl.textContent = p.meal ? `Ate: ${p.meal}` : "No meal logged";
+      tooltip.appendChild(mealEl);
+
+      if (p.hoursSinceMeal != null && p.hoursSinceMeal !== "") {
+        const timingEl = document.createElement("div");
+        timingEl.className = "perf-tooltip-context";
+        timingEl.textContent = `Ate ${formatMealTimingLabel(p.hoursSinceMeal)}`;
+        tooltip.appendChild(timingEl);
+      }
+
+      const wrapRect = wrap.getBoundingClientRect();
+      tooltip.style.left = `${clientX - wrapRect.left}px`;
+      // Well clear of a fingertip on touch, not just a mouse cursor - 12px
+      // (fine for a mouse pointer) left the tooltip hidden under the finger
+      // that triggered it on phones (same fix as the hormone chart's tooltip).
+      tooltip.style.top = `${clientY - wrapRect.top - 44}px`;
+      tooltip.hidden = false;
+      crosshair.setAttribute("x1", xFor(i));
+      crosshair.setAttribute("x2", xFor(i));
+      crosshair.style.opacity = 1;
+    }
+    function hideTooltip() {
+      tooltip.hidden = true;
+      crosshair.style.opacity = 0;
+    }
+    function indexForClientX(clientX) {
+      const svgRect = svg.getBoundingClientRect();
+      const scaleX = CYCLE_PERF_CHART_W / svgRect.width;
+      const localX = (clientX - svgRect.left) * scaleX;
+      let nearest = 0, nearestDist = Infinity;
+      points.forEach((p, i) => {
+        const d = Math.abs(xFor(i) - localX);
+        if (d < nearestDist) { nearestDist = d; nearest = i; }
+      });
+      return nearest;
+    }
+    attachChartClickToggle(hitRect, indexForClientX, showTooltip, hideTooltip);
   }
-  attachChartClickToggle(hitRect, indexForClientX, showTooltip, hideTooltip);
+
+  draw(currentDomain);
+  host._chartZoom = {
+    getDomain: () => currentDomain,
+    getFullBounds: () => fullBounds,
+    draw,
+    commit: (domain) => {
+      currentDomain = domain;
+      cyclePerfZoomDomain = domain;
+      updateZoomResetButton();
+      document.getElementById("cycle-perf-view-performance")._chartZoom?.draw(domain);
+    },
+  };
+  attachChartPinchZoomPan(host);
 }
 initTogglePopover(document.getElementById("cycle-energy-info-btn"), document.getElementById("cycle-energy-info-popover"));
 
@@ -5780,8 +6004,9 @@ async function renderCyclePerfSection() {
   // change just because the chart above is zoomed into the last month.
   const exerciseSeries = computeExerciseSeries(history, cyclePerfExercise);
   const energySeries = computeEnergySeries(workoutLog);
-  renderCyclePerfChart({ unit: exerciseSeries.unit, points: filterPointsByRange(exerciseSeries.points) }, cyclePerfExercise, workoutByDate);
-  renderCycleEnergyChart(filterPointsByRange(energySeries), energySeries.length > 0);
+  updateZoomResetButton();
+  renderCyclePerfChart({ unit: exerciseSeries.unit, points: filterPointsByMonths(exerciseSeries.points) }, cyclePerfExercise, workoutByDate);
+  renderCycleEnergyChart(filterPointsByMonths(energySeries), energySeries.length > 0);
   renderEnergyByMealList(computeEnergyByMeal(workoutLog));
   renderPRPhaseBreakdown(history, workoutLog);
   renderCyclePerfInsight(history, cyclePerfExercise, workoutLog, exerciseSeries);

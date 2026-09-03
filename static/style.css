@@ -1138,6 +1138,17 @@ main {
   gap: 6px;
   margin-bottom: 14px;
 }
+/* Shown only while a pinch/drag on the chart (see attachChartPinchZoomPan
+   in app.js) has narrowed the view past whatever the range buttons above
+   picked - own row so it doesn't squeeze the five equal-width range
+   buttons when it appears. */
+.cycle-perf-zoom-reset-row {
+  display: flex;
+  justify-content: flex-end;
+}
+#cycle-perf-zoom-reset-btn:not([hidden]) {
+  margin-bottom: 10px;
+}
 .cycle-perf-range-btn {
   flex: 1;
   padding: 5px 4px;
