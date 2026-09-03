@@ -6577,8 +6577,9 @@ async function autoFinalizeStaleDraft() {
 // Capacitor's default is to exit the whole app on back - including with a
 // modal, picker, or the onboarding tour open, which reads as "the app just
 // closed" rather than "that dialog closed". A hardware/gesture back should
-// behave like tapping that screen's own Cancel/backdrop first, and only
-// exit once there's genuinely nothing left open to dismiss.
+// behave like tapping that screen's own Cancel/backdrop first; failing
+// that, like navigating up to Today (the app's home); and only exit once
+// both of those have nothing left to do.
 if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins.App) {
   const CapacitorApp = window.Capacitor.Plugins.App;
   CapacitorApp.addListener("backButton", () => {
@@ -6612,8 +6613,13 @@ if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.is
       return;
     }
 
-    // Nothing on screen to dismiss - this is a real "leave the app" back,
-    // same as the OS default would have done without this listener at all.
+    // Nothing open to dismiss - back goes up to Today (the app's home) from
+    // any other tab first, same as a native app's back stack collapsing to
+    // its home screen, and only actually exits once already there.
+    if (activeTab !== "today") {
+      switchTab("today");
+      return;
+    }
     CapacitorApp.exitApp();
   });
 }
