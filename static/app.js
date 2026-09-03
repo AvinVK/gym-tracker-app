@@ -4529,6 +4529,26 @@ function attachChartHoverGesture(hitRect, handlePointer, hideTooltip) {
   hitRect.addEventListener("pointerleave", () => { hideTooltip(); });
 }
 
+// Used by the Performance/Energy-by-Time charts instead of the drag-crosshair
+// above: tap a point to show its tooltip, tap it again to close it, tap a
+// different point to move the tooltip there. A plain "click" sidesteps the
+// swipe-vs-hover conflict for free - the browser only fires it when the
+// touch never turned into a scroll, so there's no gesture arbitration to
+// get wrong here, and no touch-action/preventDefault dance needed either.
+function attachChartClickToggle(hitRect, indexForClientX, showTooltip, hideTooltip) {
+  let selectedIndex = null;
+  hitRect.addEventListener("click", (e) => {
+    const i = indexForClientX(e.clientX);
+    if (selectedIndex === i) {
+      hideTooltip();
+      selectedIndex = null;
+    } else {
+      showTooltip(i, e.clientX, e.clientY);
+      selectedIndex = i;
+    }
+  });
+}
+
 // Illustrative relative hormone levels (0-100, each hormone scaled to its
 // own cycle peak - NOT a shared concentration scale, since estradiol/
 // progesterone/testosterone are measured in totally different units and
@@ -4843,6 +4863,39 @@ const CYCLE_PERF_PAD = { left: 34, right: 20, top: 28, bottom: 28 };
 
 let cyclePerfExercise = null;
 
+// The x-axis window for both Performance-by-Time and Energy-by-Time - the
+// "zoom" the two charts share (see the range row's HTML comment). A number
+// of months back from today, or "all" for no cutoff. Both charts stay in
+// sync on the same picked range since they're two views of the same
+// "how has this changed over time" question.
+let cyclePerfRangeMonths = 3;
+document.querySelectorAll(".cycle-perf-range-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const val = btn.dataset.range;
+    cyclePerfRangeMonths = val === "all" ? "all" : Number(val);
+    document.querySelectorAll(".cycle-perf-range-btn").forEach(b => {
+      const active = b === btn;
+      b.classList.toggle("active", active);
+      b.setAttribute("aria-selected", String(active));
+    });
+    renderCyclePerfSection();
+  });
+});
+
+// null (not "all") reads oddly as a cutoff, so this returns null for "no
+// cutoff" and an ISO date string otherwise - callers just compare
+// point.date >= cutoff, skipping the comparison entirely when null.
+function cyclePerfRangeCutoff() {
+  if (cyclePerfRangeMonths === "all") return null;
+  const d = new Date(todayStr + "T00:00:00");
+  d.setMonth(d.getMonth() - cyclePerfRangeMonths);
+  return d.toISOString().slice(0, 10);
+}
+function filterPointsByRange(points) {
+  const cutoff = cyclePerfRangeCutoff();
+  return cutoff ? points.filter(p => p.date >= cutoff) : points;
+}
+
 // Set true when a period edit changes at least one past workout's phase
 // (see withPhaseChangeSuffix in the Log Period section above) while this
 // section's charts are already showing the old, now-stale phase coloring -
@@ -4894,12 +4947,23 @@ function renderCyclePerfChart(series, exerciseName, workoutByDate = {}) {
   const svg = document.getElementById("cycle-perf-chart");
   const tooltip = document.getElementById("cycle-perf-tooltip");
   const legendEl = document.getElementById("cycle-perf-phase-legend");
+  const rangeEmptyEl = document.getElementById("cycle-perf-range-empty");
   svg.innerHTML = "";
   tooltip.hidden = true;
   document.getElementById("cycle-perf-exercise-name").textContent = exerciseName;
 
   const { unit, points } = series;
-  if (!points.length) { legendEl.hidden = true; return; }
+  // Distinct from #cycle-perf-empty (no logged sets for this exercise at
+  // all, handled by the caller) - this is "the exercise has history, just
+  // none inside the currently picked time range."
+  if (!points.length) {
+    legendEl.hidden = true;
+    svg.hidden = true;
+    rangeEmptyEl.hidden = false;
+    return;
+  }
+  svg.hidden = false;
+  rangeEmptyEl.hidden = true;
 
   const plotLeft = CYCLE_PERF_PAD.left, plotRight = CYCLE_PERF_CHART_W - CYCLE_PERF_PAD.right;
   const plotTop = CYCLE_PERF_PAD.top, plotBottom = CYCLE_PERF_CHART_H - CYCLE_PERF_PAD.bottom;
@@ -4997,14 +5061,12 @@ function renderCyclePerfChart(series, exerciseName, workoutByDate = {}) {
     legendEl.hidden = true;
   }
 
-  // Hover: crosshair snaps to the nearest point on X; one tooltip shows
-  // that point's date + value. The hit target is the whole plot area, not
-  // just the 3px dots, so the pointer only has to be roughly on target.
+  // Tap a point to see its date + value; the hit target is the whole plot
+  // area, not just the 3px dots, so a tap only has to be roughly on target.
   const wrap = svg.closest(".cycle-perf-chart-card");
   const crosshair = svgEl("line", { class: "perf-crosshair", x1: 0, x2: 0, y1: plotTop, y2: plotBottom });
   svg.appendChild(crosshair);
-  // touch-action: pan-y - see renderHormoneReferenceChart's hitRect for why.
-  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent", style: "touch-action: pan-y" });
+  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent" });
   svg.appendChild(hitRect);
 
   function showTooltip(i, clientX, clientY) {
@@ -5070,18 +5132,18 @@ function renderCyclePerfChart(series, exerciseName, workoutByDate = {}) {
     tooltip.hidden = true;
     crosshair.style.opacity = 0;
   }
-  const handlePointer = (e) => {
+  function indexForClientX(clientX) {
     const svgRect = svg.getBoundingClientRect();
     const scaleX = CYCLE_PERF_CHART_W / svgRect.width;
-    const localX = (e.clientX - svgRect.left) * scaleX;
+    const localX = (clientX - svgRect.left) * scaleX;
     let nearest = 0, nearestDist = Infinity;
     points.forEach((p, i) => {
       const d = Math.abs(xFor(i) - localX);
       if (d < nearestDist) { nearestDist = d; nearest = i; }
     });
-    showTooltip(nearest, e.clientX, e.clientY);
-  };
-  attachChartHoverGesture(hitRect, handlePointer, hideTooltip);
+    return nearest;
+  }
+  attachChartClickToggle(hitRect, indexForClientX, showTooltip, hideTooltip);
 }
 
 // One point per calendar date that has a logged energy level - averaged in
@@ -5112,7 +5174,7 @@ function computeEnergySeries(workoutLog) {
 // mean anything for a subjective energy rating. The tooltip trades the
 // weight/duration + edited-set details for what she ate that day and how
 // long before the workout, which is the whole point of tapping a point here.
-function renderCycleEnergyChart(points) {
+function renderCycleEnergyChart(points, hasAnyData = points.length > 0) {
   const svg = document.getElementById("cycle-energy-chart");
   const tooltip = document.getElementById("cycle-energy-tooltip");
   const legendEl = document.getElementById("cycle-energy-phase-legend");
@@ -5121,6 +5183,12 @@ function renderCycleEnergyChart(points) {
   tooltip.hidden = true;
 
   if (!points.length) {
+    // Distinguishes "never logged energy at all" from "just none in the
+    // currently picked time range" (hasAnyData is against the unfiltered
+    // series, so the caller can tell the two apart).
+    emptyEl.textContent = hasAnyData
+      ? "No energy logged in this time range."
+      : "Log your energy level during a workout to see this chart.";
     emptyEl.hidden = false;
     svg.hidden = true;
     legendEl.hidden = true;
@@ -5198,8 +5266,7 @@ function renderCycleEnergyChart(points) {
   const wrap = svg.closest(".cycle-perf-chart-card");
   const crosshair = svgEl("line", { class: "perf-crosshair", x1: 0, x2: 0, y1: plotTop, y2: plotBottom });
   svg.appendChild(crosshair);
-  // touch-action: pan-y - see renderHormoneReferenceChart's hitRect for why.
-  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent", style: "touch-action: pan-y" });
+  const hitRect = svgEl("rect", { x: plotLeft, y: plotTop, width: plotW, height: plotH, fill: "transparent" });
   svg.appendChild(hitRect);
 
   function showTooltip(i, clientX, clientY) {
@@ -5242,18 +5309,18 @@ function renderCycleEnergyChart(points) {
     tooltip.hidden = true;
     crosshair.style.opacity = 0;
   }
-  const handlePointer = (e) => {
+  function indexForClientX(clientX) {
     const svgRect = svg.getBoundingClientRect();
     const scaleX = CYCLE_PERF_CHART_W / svgRect.width;
-    const localX = (e.clientX - svgRect.left) * scaleX;
+    const localX = (clientX - svgRect.left) * scaleX;
     let nearest = 0, nearestDist = Infinity;
     points.forEach((p, i) => {
       const d = Math.abs(xFor(i) - localX);
       if (d < nearestDist) { nearestDist = d; nearest = i; }
     });
-    showTooltip(nearest, e.clientX, e.clientY);
-  };
-  attachChartHoverGesture(hitRect, handlePointer, hideTooltip);
+    return nearest;
+  }
+  attachChartClickToggle(hitRect, indexForClientX, showTooltip, hideTooltip);
 }
 initTogglePopover(document.getElementById("cycle-energy-info-btn"), document.getElementById("cycle-energy-info-popover"));
 
@@ -5701,9 +5768,13 @@ async function renderCyclePerfSection() {
   const workoutByDate = {};
   workoutLog.forEach(w => { if (!workoutByDate[w.date]) workoutByDate[w.date] = w; });
 
+  // Insights (renderCyclePerfInsight) deliberately look at the full,
+  // unfiltered series/history - "N of your last 5 PRs" etc. shouldn't
+  // change just because the chart above is zoomed into the last month.
   const exerciseSeries = computeExerciseSeries(history, cyclePerfExercise);
-  renderCyclePerfChart(exerciseSeries, cyclePerfExercise, workoutByDate);
-  renderCycleEnergyChart(computeEnergySeries(workoutLog));
+  const energySeries = computeEnergySeries(workoutLog);
+  renderCyclePerfChart({ unit: exerciseSeries.unit, points: filterPointsByRange(exerciseSeries.points) }, cyclePerfExercise, workoutByDate);
+  renderCycleEnergyChart(filterPointsByRange(energySeries), energySeries.length > 0);
   renderEnergyByMealList(computeEnergyByMeal(workoutLog));
   renderPRPhaseBreakdown(history, workoutLog);
   renderCyclePerfInsight(history, cyclePerfExercise, workoutLog, exerciseSeries);

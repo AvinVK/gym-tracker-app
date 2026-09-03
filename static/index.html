@@ -746,24 +746,38 @@
           <button type="button" class="cycle-perf-subtab" id="cycle-perf-subtab-energy" data-perf-view="energy" role="tab" aria-selected="false">Energy by Time</button>
         </div>
 
+        <!-- Shared by both views above - "zoom" is just narrowing the x-axis
+             window, not a pinch gesture (see attachChartClickToggle in
+             app.js for why: a tap-to-toggle point instead of a drag-hover
+             sidesteps the whole swipe-vs-hover conflict, and a range picker
+             is the mobile-friendly way to declutter a crowded chart). -->
+        <div class="cycle-perf-range-row" id="cycle-perf-range-row" role="tablist" aria-label="Time range">
+          <button type="button" class="cycle-perf-range-btn" data-range="1" role="tab" aria-selected="false">1M</button>
+          <button type="button" class="cycle-perf-range-btn active" data-range="3" role="tab" aria-selected="true">3M</button>
+          <button type="button" class="cycle-perf-range-btn" data-range="6" role="tab" aria-selected="false">6M</button>
+          <button type="button" class="cycle-perf-range-btn" data-range="12" role="tab" aria-selected="false">1Y</button>
+          <button type="button" class="cycle-perf-range-btn" data-range="all" role="tab" aria-selected="false">All</button>
+        </div>
+
         <div id="cycle-perf-view-performance">
           <div class="cycle-perf-chart-header">
             <span class="cycle-perf-chart-title">
               <button type="button" class="cycle-perf-info-btn" id="cycle-perf-info-btn" aria-expanded="false" aria-label="About this chart"><span aria-hidden="true">i</span></button>
-              <div class="cycle-perf-info-popover" id="cycle-perf-info-popover" hidden>Every logged best set for this exercise, plotted over time - colored by cycle phase. Line and shading show a phase change; dashed rings mark an edited entry.</div>
+              <div class="cycle-perf-info-popover" id="cycle-perf-info-popover" hidden>Every logged best set for this exercise, plotted over time - colored by cycle phase. Line and shading show a phase change; dashed rings mark an edited entry. Tap a point for details, tap it again to close.</div>
             </span>
             <button type="button" class="cycle-perf-change-btn" id="cycle-perf-change-btn"><span id="cycle-perf-exercise-name"></span> &#9662;</button>
           </div>
           <svg id="cycle-perf-chart" class="perf-chart" viewBox="0 0 340 200" preserveAspectRatio="none"></svg>
           <div class="perf-tooltip" id="cycle-perf-tooltip" hidden></div>
           <div class="phase-legend" id="cycle-perf-phase-legend" hidden></div>
+          <p class="cycle-energy-empty" id="cycle-perf-range-empty" hidden>No sets logged in this time range.</p>
         </div>
 
         <div id="cycle-perf-view-energy" hidden>
           <div class="cycle-perf-chart-header">
             <span class="cycle-perf-chart-title">
               <button type="button" class="cycle-perf-info-btn" id="cycle-energy-info-btn" aria-expanded="false" aria-label="About this chart"><span aria-hidden="true">i</span></button>
-              <div class="cycle-perf-info-popover" id="cycle-energy-info-popover" hidden>Your average logged energy level per day, colored by cycle phase. Tap a point to see what you ate that day and how long before your workout.</div>
+              <div class="cycle-perf-info-popover" id="cycle-energy-info-popover" hidden>Your average logged energy level per day, colored by cycle phase. Tap a point to see what you ate that day and how long before your workout - tap it again to close.</div>
             </span>
           </div>
           <svg id="cycle-energy-chart" class="perf-chart" viewBox="0 0 340 200" preserveAspectRatio="none"></svg>

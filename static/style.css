@@ -904,9 +904,11 @@ main {
   height: auto;
   display: block;
   overflow: visible;
-  /* See .perf-chart's matching rule - same WebView-only long-press/select
-     gesture can interrupt a held touch here too. */
-  touch-action: none;
+  /* pan-y, not none: this chart still uses a drag crosshair
+     (attachChartHoverGesture in app.js), so a vertical touch needs to fall
+     through to the page's own scroll rather than being fully blocked here -
+     see .perf-chart's matching rule for why touch-action: none was wrong. */
+  touch-action: pan-y;
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
@@ -1129,6 +1131,32 @@ main {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: var(--accent-ink);
 }
+/* Smaller and secondary next to the subtabs above - this picks the x-axis
+   window (the chart's "zoom"), not which chart is showing. */
+.cycle-perf-range-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.cycle-perf-range-btn {
+  flex: 1;
+  padding: 5px 4px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.cycle-perf-range-btn:not(.active):hover { background: var(--surface-3); }
+.cycle-perf-range-btn.active {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+  color: var(--accent-ink);
+}
 .cycle-perf-chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .cycle-perf-chart-title {
   position: relative;
@@ -1235,14 +1263,14 @@ main {
   height: auto;
   display: block;
   overflow: visible;
-  touch-action: none;
-  /* Android WebView (unlike Chrome for Android) can still kick off its
-     native long-press-to-select/callout gesture on a held touch even with
-     touch-action: none, which silently cancels our own pointer sequence
-     mid-hold - exactly the "tooltip appears then disappears while still
-     holding" bug, and only in the packaged app's WebView, not a regular
-     mobile browser. Disabling selection/callout here stops WebView from
-     ever treating the hold as a selection gesture in the first place. */
+  /* No touch-action restriction (unlike .hormone-chart's drag-crosshair,
+     which still needs one) - these two charts are tap-to-toggle only now
+     (see attachChartClickToggle in app.js), so there's no drag gesture of
+     ours to protect from the page's own vertical scroll. touch-action: none
+     here used to be the actual reason a vertical swipe starting on the
+     chart never scrolled the page, no matter what the JS did - an ancestor's
+     touch-action can't be loosened by a descendant's, so it silently beat
+     every fix attempted at the hit-rect level. */
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
@@ -1285,6 +1313,13 @@ main {
   stroke-dasharray: 3 3;
   opacity: 0;
   pointer-events: none;
+}
+.cycle-energy-empty {
+  margin: 0;
+  padding: 40px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
 }
 .perf-tooltip {
   position: absolute;
