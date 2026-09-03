@@ -374,31 +374,17 @@ function openLandingMain() {
   landingTrack.classList.add("is-open");
 }
 
-landingSplash.addEventListener("click", openLandingMain);
-
-// Auto-advance past the splash after a few seconds even with no tap/
-// swipe - it's a brief brand moment, not something a first-time visitor
-// should have to know to dismiss. Guarded on landing-page still being the
-// visible screen (not hidden by a fast checkAuth() login, and not already
-// past the splash) so this can't fire the transition after the user's
-// moved on some other way.
+// Auto-advance only, no tap/swipe - it's a brief brand moment that plays
+// out on its own, not a screen the user needs to know how to dismiss.
+// Guarded on landing-page still being the visible screen (not hidden by a
+// fast checkAuth() login, and not already past the splash) so this can't
+// fire the transition after the user's moved on some other way.
 setTimeout(() => {
   const landingPage = document.getElementById("landing-page");
   if (!landingPage.hidden && !landingTrack.classList.contains("is-open")) {
     openLandingMain();
   }
 }, 5000);
-
-let landingTouchStartX = null;
-landingSplash.addEventListener("touchstart", (e) => {
-  landingTouchStartX = e.touches[0].clientX;
-}, { passive: true });
-landingSplash.addEventListener("touchend", (e) => {
-  if (landingTouchStartX === null) return;
-  const dx = e.changedTouches[0].clientX - landingTouchStartX;
-  landingTouchStartX = null;
-  if (Math.abs(dx) > 20) openLandingMain();
-});
 
 document.getElementById("landing-start-btn").addEventListener("click", () => {
   showAuthModal("auth-email-modal");
@@ -2101,7 +2087,12 @@ async function finalizeNewExercise(container, query) {
 // ensureVisitSaved), the first time anything actually needs it to exist.
 let savedWorkoutId = null;
 let logSessionDate = todayStr;
-let sessionFields = { energy_level: "", pre_workout_meal: "", hours_since_meal: "", notes: "" };
+// ateNothing is client-side only (see currentSessionBody - never sent to
+// the server, hours_since_meal genuinely has no value when nothing was
+// eaten) - it exists purely so checkInStepsRemaining/renderSessionStrip can
+// tell "answered: nothing eaten" apart from "not answered yet" without a
+// real hours_since_meal value to key off.
+let sessionFields = { energy_level: "", pre_workout_meal: "", hours_since_meal: "", notes: "", ateNothing: false };
 let currentExerciseIndex = -1;
 // exercise -> [{reps,weight}|{duration,level}] from the most recent *other*
 // session, cached per exercise for the Sets card's "Last time: ..." line
@@ -3274,7 +3265,7 @@ function resetWorkoutFlowUI() {
   currentExerciseIndex = -1;
   savedWorkoutId = null;
   logSessionDate = todayStr;
-  sessionFields = { energy_level: "", pre_workout_meal: "", hours_since_meal: "", notes: "" };
+  sessionFields = { energy_level: "", pre_workout_meal: "", hours_since_meal: "", notes: "", ateNothing: false };
   stopRestTimer();
   renderLogExerciseChips();
   setActiveExerciseIndex(-1);
@@ -3342,16 +3333,29 @@ document.getElementById("session-meal-next").addEventListener("click", () => {
   const mealInput = document.getElementById("session-meal-input");
   const meal = mealInput.value.trim();
   if (!meal) {
-    toast("Enter what you ate (or \"nothing\" if you haven't)");
+    toast("Enter what you ate (or tap \"I ate nothing\")");
     mealInput.focus();
     return;
   }
   sessionFields.pre_workout_meal = meal;
+  sessionFields.ateNothing = false;
   document.getElementById("session-meal-modal").hidden = true;
   // Chains straight into the existing hours-since-eating wheel - one chip,
   // two fields, per the design handoff (they're both "when/what did you
   // eat", so they belong behind the same affordance).
   openMealTimingPicker(document.getElementById("log-meal-field"));
+});
+document.getElementById("session-meal-nothing-btn").addEventListener("click", () => {
+  sessionFields.pre_workout_meal = "Nothing";
+  sessionFields.ateNothing = true;
+  // Clears any stale value from a previous real answer and, via the change
+  // event it dispatches (see log-meal-timing-input's listener), takes care
+  // of syncing hours_since_meal, re-rendering the chip, and saving the
+  // visit - so reopening the (now-skipped) timing wheel later, e.g. after
+  // switching back to a real meal, doesn't start pre-filled with an answer
+  // to a question that was never actually asked this time.
+  setMealTimingFieldValue(document.getElementById("log-meal-field"), "");
+  document.getElementById("session-meal-modal").hidden = true;
 });
 document.getElementById("log-meal-timing-input").addEventListener("change", (e) => {
   sessionFields.hours_since_meal = e.target.value;
@@ -3751,11 +3755,13 @@ function waitUntilHidden(el) {
 // the meal-name field commits the instant "Next" is tapped, mid-chain,
 // before the hours-since wheel even opens, so a cancel on *that* second
 // half would otherwise look "answered" if this checked the name field
-// instead.
+// instead. ateNothing is the one exception: "I ate nothing" answers the
+// food question completely on its own - see its click handler - with no
+// hours-since wheel to chain into at all.
 function checkInStepsRemaining() {
   return {
     energy: !sessionFields.energy_level,
-    food: sessionFields.hours_since_meal == null || sessionFields.hours_since_meal === "",
+    food: !sessionFields.ateNothing && (sessionFields.hours_since_meal == null || sessionFields.hours_since_meal === ""),
   };
 }
 
