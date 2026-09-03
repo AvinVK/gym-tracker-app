@@ -25,14 +25,27 @@ WORKOUTS_PER_WEEK = (4, 5)  # inclusive range, chosen randomly per week
 CYCLE_LENGTH_DAYS = 28
 PERIOD_LENGTH_DAYS = 5
 
-MEALS = ["Oatmeal + banana", "Chicken + rice", "Protein shake", "Greek yogurt + berries",
-         "Eggs + toast", "Peanut butter sandwich", "Nothing - fasted"]
+# Meal choice/timing follows session time of day, not a flat random pick
+# across both - a 6am lifter is far more likely fasted or just off a shake
+# than mid-digestion on chicken and rice, and hours_since_meal should follow
+# from *which* of those it was (an overnight fast vs. a pre-workout shake
+# are very different gaps), not be independently random.
+MORNING_MEALS = ["Nothing - fasted", "Protein shake", "Oatmeal + banana"]
+EVENING_MEALS = ["Chicken + rice", "Greek yogurt + berries", "Peanut butter sandwich", "Eggs + toast"]
 
-NOTES_POOL = [
-    "", "", "", "Felt strong today", "Tired but pushed through", "New PR!",
-    "Short on time, kept it quick", "Great pump", "Left knee felt off, went lighter",
-    "Best session in weeks", "Low energy, still showed up",
-]
+# Split by whether the session actually set a new all-time best that day
+# (see running_max in seed_workouts) - otherwise "New PR!" would show up on
+# sessions whose own numbers don't back it up, which is exactly the kind of
+# inconsistency a real demo shouldn't have. Low/high split roughly follows
+# the same energy-by-phase logic as PHASE_ENERGY_RANGE below.
+PR_NOTES = ["New PR!", "New PR!", "Best session in weeks"]
+PHASE_NOTES = {
+    "menstrual": ["", "", "Tired but pushed through", "Low energy, still showed up",
+                  "Short on time, kept it quick", "Left knee felt off, went lighter"],
+    "follicular": ["", "", "Felt strong today", "Great pump", "Decent session"],
+    "ovulation": ["", "Felt strong today", "Great pump", "Strong session"],
+    "luteal": ["", "", "Tired but pushed through", "Great pump", "Short on time, kept it quick"],
+}
 
 # (target_muscle, exercise, rep_range, starting_weight_kg) - names match the
 # curated rows in data/exercise_seed.json so they resolve to real catalog
@@ -93,11 +106,15 @@ PHASE_WEIGHT_MULT = {
     "ovulation": (1.03, 1.08),
     "luteal": (0.95, 1.01),
 }
+# energy_level is a 1-10 scale in this app (see ENERGY_LEVELS in app.js,
+# "Running on empty" at 1 up to "Absolutely unstoppable" at 10) - these
+# ranges dip during menstruation and peak around ovulation but stay well
+# within the scale's normal-use band, not compressed into its bottom third.
 PHASE_ENERGY_RANGE = {
-    "menstrual": (1, 3),
-    "follicular": (3, 5),
-    "ovulation": (4, 5),
-    "luteal": (2, 4),
+    "menstrual": (3, 6),
+    "follicular": (6, 9),
+    "ovulation": (7, 9),
+    "luteal": (5, 8),
 }
 
 
@@ -133,6 +150,19 @@ def _progressive_weight(base, week_index, total_weeks, phase):
     phase_mult = random.uniform(*PHASE_WEIGHT_MULT[phase])
     raw = base * growth * phase_mult
     return round(raw / 2.5) * 2.5
+
+
+def _rep_sequence(rep_range, num_sets):
+    """Reps trend down across a straight-set session (fatigue), not
+    independently random per set - a set 4 with more reps than set 1 reads
+    as a data-entry error, not a workout. Starts near the top of the
+    exercise's usual rep range and loses 0-2 reps per subsequent set."""
+    lo, hi = rep_range
+    first = random.randint(max(lo, hi - 1), hi)
+    reps = [first]
+    for _ in range(1, num_sets):
+        reps.append(max(lo - 2, reps[-1] - random.choice([0, 0, 1, 1, 2])))
+    return reps
 
 
 def get_or_create_user(conn, name, email, pin, age):
@@ -191,6 +221,7 @@ def seed_workouts(conn, user_id, start, end, period_starts):
     day = start
     week_index = 0
     session_count = 0
+    running_max = {}  # exercise name -> heaviest weight_kg logged so far, in chronological order
     while day <= end:
         week_workouts = random.randint(*WORKOUTS_PER_WEEK)
         # Pick which weekdays this week get trained (skip Sunday most weeks).
@@ -201,29 +232,25 @@ def seed_workouts(conn, user_id, start, end, period_starts):
                 continue
             split = SPLIT[session_count % len(SPLIT)]
             phase = cycle_phase(log_date, period_starts)
-            _log_session(conn, user_id, log_date, split, week_index, total_weeks, session_count, phase)
+            _log_session(conn, user_id, log_date, split, week_index, total_weeks, session_count, phase, running_max)
             session_count += 1
         day += timedelta(days=7)
         week_index += 1
     print(f"Logged {session_count} workout sessions across {total_weeks} weeks.")
 
 
-def _log_session(conn, user_id, log_date, split, week_index, total_weeks, session_count, phase):
+def _log_session(conn, user_id, log_date, split, week_index, total_weeks, session_count, phase, running_max):
     start_hour = random.choice([6, 7, 17, 18, 19])
     start_dt = datetime.combine(log_date, datetime.min.time()) + timedelta(hours=start_hour, minutes=random.randint(0, 59))
     duration_hours = round(random.uniform(0.75, 1.5), 2)
     end_dt = start_dt + timedelta(hours=duration_hours)
 
-    cur = conn.execute(
-        "INSERT INTO workout_log (user_id, date, start_time, end_time, duration_hours, "
-        "energy_level, pre_workout_meal, hours_since_meal, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (
-            user_id, log_date.isoformat(), start_dt.strftime("%H:%M"), end_dt.strftime("%H:%M"),
-            duration_hours, random.randint(*PHASE_ENERGY_RANGE[phase]), random.choice(MEALS),
-            round(random.uniform(1, 4), 1), random.choice(NOTES_POOL),
-        ),
-    )
-    workout_id = cur.lastrowid
+    if start_hour < 12:
+        meal = random.choice(MORNING_MEALS)
+        hours_since_meal = round(random.uniform(9, 12), 1) if meal == "Nothing - fasted" else round(random.uniform(0.3, 1.2), 1)
+    else:
+        meal = random.choice(EVENING_MEALS)
+        hours_since_meal = round(random.uniform(2, 4.5), 1)
 
     exercises = list(split)
     # Every ~4th session, finish with an abs or cardio accessory - mirrors a
@@ -233,25 +260,50 @@ def _log_session(conn, user_id, log_date, split, week_index, total_weeks, sessio
     elif session_count % 5 == 4:
         exercises = exercises + [random.choice(CARDIO)]
 
+    # Build every set's numbers before touching the DB, so the session's
+    # note (below) can honestly reflect whether it actually set a new
+    # all-time best - "New PR!" text shouldn't show up on a session whose
+    # own logged numbers don't back it up.
+    to_insert = []
+    session_has_new_pr = False
     for muscle, exercise, rep_range, base_weight in exercises:
         is_cardio = rep_range is None
         if is_cardio:
             duration_minutes = round(random.uniform(15, 30))
-            conn.execute(
-                "INSERT INTO exercise_log (user_id, date, muscle_group, exercise, set_number, "
-                "duration_minutes, intensity_level, added_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (user_id, log_date.isoformat(), muscle, exercise, 1, duration_minutes,
-                 random.randint(2, 4), start_dt.isoformat()),
-            )
+            to_insert.append((muscle, exercise, 1, None, None, duration_minutes, random.randint(2, 4)))
             continue
         num_sets = random.randint(3, 4)
         weight = _progressive_weight(base_weight, week_index, total_weeks, phase)
-        for set_number in range(1, num_sets + 1):
-            reps = random.randint(*rep_range)
+        if weight is not None and weight > running_max.get(exercise, 0):
+            session_has_new_pr = True
+            running_max[exercise] = weight
+        reps_seq = _rep_sequence(rep_range, num_sets)
+        for set_number, reps in enumerate(reps_seq, start=1):
             set_weight = None
             if weight is not None:
                 # Slight per-set fatigue: later sets a touch lighter or same.
                 set_weight = max(weight - (set_number - 1) * random.choice([0, 0, 2.5]), 2.5)
+            to_insert.append((muscle, exercise, set_number, reps, set_weight, None, None))
+
+    notes = random.choice(PR_NOTES if session_has_new_pr and random.random() < 0.65 else PHASE_NOTES[phase])
+
+    conn.execute(
+        "INSERT INTO workout_log (user_id, date, start_time, end_time, duration_hours, "
+        "energy_level, pre_workout_meal, hours_since_meal, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            user_id, log_date.isoformat(), start_dt.strftime("%H:%M"), end_dt.strftime("%H:%M"),
+            duration_hours, random.randint(*PHASE_ENERGY_RANGE[phase]), meal, hours_since_meal, notes,
+        ),
+    )
+    for muscle, exercise, set_number, reps, set_weight, duration_minutes, intensity_level in to_insert:
+        if duration_minutes is not None:
+            conn.execute(
+                "INSERT INTO exercise_log (user_id, date, muscle_group, exercise, set_number, "
+                "duration_minutes, intensity_level, added_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (user_id, log_date.isoformat(), muscle, exercise, set_number, duration_minutes,
+                 intensity_level, start_dt.isoformat()),
+            )
+        else:
             conn.execute(
                 "INSERT INTO exercise_log (user_id, date, muscle_group, exercise, set_number, "
                 "reps, weight_kg, added_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -259,7 +311,6 @@ def _log_session(conn, user_id, log_date, split, week_index, total_weeks, sessio
                  start_dt.isoformat()),
             )
     conn.commit()
-    _ = workout_id
 
 
 def main():
