@@ -4961,7 +4961,7 @@ function initSubtabSwitcher(prefix, keys) {
   });
 }
 initSubtabSwitcher("cycle-perf", ["performance", "energy"]);
-initSubtabSwitcher("cycle-phase", ["prs", "meal"]);
+initSubtabSwitcher("cycle-phase", ["prs", "meal", "cravings"]);
 
 function formatPerfDate(dateStr) {
   return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -5796,6 +5796,83 @@ document.getElementById("cycle-perf-prphase-content").addEventListener("click", 
   btn.classList.toggle("expanded", !details.hidden);
 });
 
+// Every pre_workout_meal logged, grouped by which cycle phase its date fell
+// in and then by the food itself (case/whitespace-insensitive, same
+// grouping rule as computeEnergyByMeal) - a food that only ever shows up in
+// one phase, or shows up far more there than elsewhere, is the actual
+// "craving" signal this is for; a food eaten evenly across every phase
+// isn't cycle-related at all, just a regular go-to meal.
+function computeFoodByPhase(workoutLog) {
+  const groupsByPhase = {};
+  workoutLog.forEach(w => {
+    const meal = (w.pre_workout_meal || "").trim();
+    if (!meal) return;
+    const phase = cyclePhaseForDate(w.date);
+    if (!phase) return;
+    const key = meal.toLowerCase();
+    if (!groupsByPhase[phase.key]) groupsByPhase[phase.key] = {};
+    if (!groupsByPhase[phase.key][key]) groupsByPhase[phase.key][key] = { label: meal, count: 0 };
+    groupsByPhase[phase.key][key].count += 1;
+  });
+  const byPhase = {};
+  getCyclePhases().forEach(p => {
+    byPhase[p.key] = Object.values(groupsByPhase[p.key] || {}).sort((a, b) => b.count - a.count);
+  });
+  return byPhase;
+}
+
+// Same row/bar/expand shape as renderPRPhaseBreakdown above (reuses its
+// .prphase-* styling) - sorted by total meals logged that phase, not the
+// fixed menstrual->luteal order, so the phase with the most eating data
+// (and so the most trustworthy pattern) reads first.
+function renderFoodByPhase(workoutLog) {
+  const byPhase = computeFoodByPhase(workoutLog);
+  const contentEl = document.getElementById("cycle-food-phase-content");
+  const emptyEl = document.getElementById("cycle-food-phase-empty");
+  const totalFor = key => byPhase[key].reduce((sum, it) => sum + it.count, 0);
+
+  if (!Object.keys(byPhase).some(key => byPhase[key].length)) {
+    contentEl.innerHTML = "";
+    emptyEl.hidden = false;
+    return;
+  }
+  emptyEl.hidden = true;
+
+  const phases = [...getCyclePhases()].sort((a, b) => totalFor(b.key) - totalFor(a.key));
+  const maxTotal = Math.max(...phases.map(p => totalFor(p.key)), 1);
+  contentEl.innerHTML = phases.map(p => {
+    const items = byPhase[p.key];
+    const total = totalFor(p.key);
+    const pct = total ? Math.max((total / maxTotal) * 100, 6) : 2;
+    const detailsHtml = items.length
+      ? `<div class="prphase-details" hidden><ul class="prphase-exercise-list">${
+          items.map(it => `<li class="prphase-exercise-item"><span>${escapeHtml(it.label)}</span><span class="prphase-exercise-value">${it.count}x</span></li>`).join("")
+        }</ul></div>`
+      : `<p class="prphase-exercises-empty">No meals logged yet</p>`;
+    return `
+      <div class="prphase-row">
+        <button type="button" class="prphase-row-top${items.length ? " prphase-expandable" : ""}">
+          <span class="prphase-name"><span class="phase-dot" style="background:${p.color}"></span>${p.label}</span>
+          <span class="prphase-count">${items.length} food${items.length === 1 ? "" : "s"}${items.length ? '<span class="prphase-chevron">&#9662;</span>' : ""}</span>
+        </button>
+        <div class="prphase-bar-track">
+          <div class="prphase-bar-fill" style="width:${pct}%; background:${p.color};"></div>
+        </div>
+        <p class="prphase-energy${total ? "" : " placeholder"}">${total ? `${total} meal${total === 1 ? "" : "s"} logged` : "No meals logged yet"}</p>
+        ${detailsHtml}
+      </div>`;
+  }).join("");
+}
+
+document.getElementById("cycle-food-phase-content").addEventListener("click", (e) => {
+  const btn = e.target.closest(".prphase-expandable");
+  if (!btn) return;
+  const details = btn.closest(".prphase-row").querySelector(".prphase-details");
+  details.hidden = !details.hidden;
+  btn.classList.toggle("expanded", !details.hidden);
+});
+initTogglePopover(document.getElementById("cycle-cravings-info-btn"), document.getElementById("cycle-cravings-info-popover"));
+
 // ---------------- Cycle tab: rotating insights ----------------
 // Four independent, timing/behavior-based takes on the same underlying
 // data (never magnitude/"peaked at" claims - those read as trivia, not
@@ -6009,6 +6086,7 @@ async function renderCyclePerfSection() {
   renderCycleEnergyChart(filterPointsByMonths(energySeries), energySeries.length > 0);
   renderEnergyByMealList(computeEnergyByMeal(workoutLog));
   renderPRPhaseBreakdown(history, workoutLog);
+  renderFoodByPhase(workoutLog);
   renderCyclePerfInsight(history, cyclePerfExercise, workoutLog, exerciseSeries);
 }
 

@@ -803,6 +803,7 @@
         <div class="cycle-perf-subtabs" role="tablist">
           <button type="button" class="cycle-perf-subtab active" id="cycle-phase-subtab-prs" data-phase-view="prs" role="tab" aria-selected="true">Where your PRs happen</button>
           <button type="button" class="cycle-perf-subtab" id="cycle-phase-subtab-meal" data-phase-view="meal" role="tab" aria-selected="false">Energy by Meal</button>
+          <button type="button" class="cycle-perf-subtab" id="cycle-phase-subtab-cravings" data-phase-view="cravings" role="tab" aria-selected="false">Cravings</button>
         </div>
 
         <div id="cycle-phase-view-prs">
@@ -819,6 +820,17 @@
           <div id="cycle-energy-meal-content"></div>
           <p class="cycle-energy-empty" id="cycle-energy-meal-empty" hidden>Log what you ate along with your energy level to see this here.</p>
           <button type="button" class="edit-link-btn cycle-meal-compare-btn" id="cycle-meal-compare-btn" hidden>Choose foods to compare</button>
+        </div>
+
+        <div id="cycle-phase-view-cravings" hidden>
+          <div class="cycle-perf-chart-header">
+            <span class="cycle-perf-chart-title">
+              <button type="button" class="cycle-perf-info-btn" id="cycle-cravings-info-btn" aria-expanded="false" aria-label="About this chart"><span aria-hidden="true">i</span></button>
+              <div class="cycle-perf-info-popover" id="cycle-cravings-info-popover" hidden>Every food you've logged before a workout, grouped by which cycle phase it fell in - tap a phase to see each food and how many times. A food showing up a lot in one phase but not others can be a real craving pattern, not just what you happened to eat that day.</div>
+            </span>
+          </div>
+          <div id="cycle-food-phase-content"></div>
+          <p class="cycle-energy-empty" id="cycle-food-phase-empty" hidden>Log what you ate before a workout to see cravings by phase.</p>
         </div>
       </div>
 
