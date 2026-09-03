@@ -72,16 +72,66 @@ CARDIO = [
 
 SPLIT = [PUSH, PULL, LEGS, PUSH, PULL]  # rotated across the week's workout days
 
+# Ovulation day is pinned 14 days before the cycle's end, same as the
+# client's CYCLE_PHASES (see cyclePhaseForDate in app.js) - phase boundaries
+# here must match that exactly, or the seeded PR-by-phase breakdown would
+# just be describing a different cycle than the one the app draws.
+OVULATION_DAY = CYCLE_LENGTH_DAYS - 14
 
-def _progressive_weight(base, week_index, total_weeks):
-    """Linear progressive overload: ~15-25% heavier by the end of the
-    history, plus small session-to-session noise, rounded to the nearest
-    2.5kg plate increment."""
+# Session-to-session strength isn't just a smooth overload curve - real
+# output actually varies with cycle phase (see the HORMONE_CURVES comment
+# in app.js: estrogen/testosterone peak late-follicular/ovulation, both are
+# low during menstruation), and the app's own "X of your Y PRs landed in
+# this phase" insight only means something if that's reflected here. Without
+# this, a purely monotonic-increasing weight trend would scatter PRs
+# uniformly across whichever session happened to be an exercise's most
+# recent - not the biologically-informed distribution a "train with your
+# cycle" app is supposed to demonstrate.
+PHASE_WEIGHT_MULT = {
+    "menstrual": (0.88, 0.94),
+    "follicular": (0.98, 1.03),
+    "ovulation": (1.03, 1.08),
+    "luteal": (0.95, 1.01),
+}
+PHASE_ENERGY_RANGE = {
+    "menstrual": (1, 3),
+    "follicular": (3, 5),
+    "ovulation": (4, 5),
+    "luteal": (2, 4),
+}
+
+
+def cycle_phase(d, period_starts):
+    """Mirrors cyclePhaseForDate()/CYCLE_PHASES in app.js: menstrual is days
+    1..PERIOD_LENGTH_DAYS of the cycle, ovulation is the single day
+    OVULATION_DAY, follicular fills the gap between them, luteal is
+    everything after. `period_starts` must be sorted ascending."""
+    governing = None
+    for s in period_starts:
+        if s > d:
+            break
+        governing = s
+    if governing is None:
+        governing = period_starts[0]
+    day_in_cycle = ((d - governing).days % CYCLE_LENGTH_DAYS) + 1
+    if day_in_cycle <= PERIOD_LENGTH_DAYS:
+        return "menstrual"
+    if day_in_cycle < OVULATION_DAY:
+        return "follicular"
+    if day_in_cycle == OVULATION_DAY:
+        return "ovulation"
+    return "luteal"
+
+
+def _progressive_weight(base, week_index, total_weeks, phase):
+    """Progressive overload (~15-25% heavier by the end of the history)
+    modulated by cycle phase, not a smooth curve independent of it - see
+    PHASE_WEIGHT_MULT above. Rounded to the nearest 2.5kg plate increment."""
     if base is None:
         return None
     growth = 1 + (0.20 * week_index / total_weeks)
-    noise = random.uniform(-0.03, 0.03)
-    raw = base * (growth + noise)
+    phase_mult = random.uniform(*PHASE_WEIGHT_MULT[phase])
+    raw = base * growth * phase_mult
     return round(raw / 2.5) * 2.5
 
 
@@ -132,9 +182,10 @@ def seed_periods(conn, user_id, start, end):
             (starts[-1].isoformat(), PERIOD_LENGTH_DAYS, user_id),
         )
     print(f"Logged {len(starts)} periods, most recent starting {starts[-1] if starts else 'none'}.")
+    return starts
 
 
-def seed_workouts(conn, user_id, start, end):
+def seed_workouts(conn, user_id, start, end, period_starts):
     total_days = (end - start).days
     total_weeks = max(total_days // 7, 1)
     day = start
@@ -149,14 +200,15 @@ def seed_workouts(conn, user_id, start, end):
             if log_date > end or log_date < start:
                 continue
             split = SPLIT[session_count % len(SPLIT)]
-            _log_session(conn, user_id, log_date, split, week_index, total_weeks, session_count)
+            phase = cycle_phase(log_date, period_starts)
+            _log_session(conn, user_id, log_date, split, week_index, total_weeks, session_count, phase)
             session_count += 1
         day += timedelta(days=7)
         week_index += 1
     print(f"Logged {session_count} workout sessions across {total_weeks} weeks.")
 
 
-def _log_session(conn, user_id, log_date, split, week_index, total_weeks, session_count):
+def _log_session(conn, user_id, log_date, split, week_index, total_weeks, session_count, phase):
     start_hour = random.choice([6, 7, 17, 18, 19])
     start_dt = datetime.combine(log_date, datetime.min.time()) + timedelta(hours=start_hour, minutes=random.randint(0, 59))
     duration_hours = round(random.uniform(0.75, 1.5), 2)
@@ -167,7 +219,7 @@ def _log_session(conn, user_id, log_date, split, week_index, total_weeks, sessio
         "energy_level, pre_workout_meal, hours_since_meal, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             user_id, log_date.isoformat(), start_dt.strftime("%H:%M"), end_dt.strftime("%H:%M"),
-            duration_hours, random.randint(2, 5), random.choice(MEALS),
+            duration_hours, random.randint(*PHASE_ENERGY_RANGE[phase]), random.choice(MEALS),
             round(random.uniform(1, 4), 1), random.choice(NOTES_POOL),
         ),
     )
@@ -193,7 +245,7 @@ def _log_session(conn, user_id, log_date, split, week_index, total_weeks, sessio
             )
             continue
         num_sets = random.randint(3, 4)
-        weight = _progressive_weight(base_weight, week_index, total_weeks)
+        weight = _progressive_weight(base_weight, week_index, total_weeks, phase)
         for set_number in range(1, num_sets + 1):
             reps = random.randint(*rep_range)
             set_weight = None
@@ -234,9 +286,9 @@ def main():
 
     user_id = get_or_create_user(conn, args.name, args.email, args.pin, args.age)
     conn.commit()
-    seed_periods(conn, user_id, start, end)
+    period_starts = seed_periods(conn, user_id, start, end)
     conn.commit()
-    seed_workouts(conn, user_id, start, end)
+    seed_workouts(conn, user_id, start, end, period_starts)
     conn.close()
 
     print(f"\nDone. Log in with email={args.email} pin={args.pin}.")
