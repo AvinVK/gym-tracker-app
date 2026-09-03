@@ -1135,23 +1135,13 @@ main {
    window (the chart's "zoom"), not which chart is showing. */
 .cycle-perf-range-row {
   display: flex;
-  gap: 6px;
+  align-items: center;
+  gap: 4px;
   margin-bottom: 14px;
-}
-/* Shown only while a pinch/drag on the chart (see attachChartPinchZoomPan
-   in app.js) has narrowed the view past whatever the range buttons above
-   picked - own row so it doesn't squeeze the five equal-width range
-   buttons when it appears. */
-.cycle-perf-zoom-reset-row {
-  display: flex;
-  justify-content: flex-end;
-}
-#cycle-perf-zoom-reset-btn:not([hidden]) {
-  margin-bottom: 10px;
 }
 .cycle-perf-range-btn {
   flex: 1;
-  padding: 5px 4px;
+  padding: 5px 2px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--surface-2);
@@ -1162,6 +1152,27 @@ main {
   font-family: inherit;
   transition: background .15s ease, color .15s ease, border-color .15s ease;
 }
+/* Icon-only (see aria-label/title for the accessible name) so it fits on
+   the same line as the five range pills instead of needing its own row -
+   shown only while a pinch/drag on the chart (see attachChartPinchZoomPan
+   in app.js) has narrowed the view past whatever range button is picked. */
+.cycle-perf-zoom-reset-btn {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--accent-purple);
+  background: var(--surface-2);
+  color: var(--accent-purple);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.cycle-perf-zoom-reset-btn:hover { background: var(--surface-3); }
 .cycle-perf-range-btn:not(.active):hover { background: var(--surface-3); }
 .cycle-perf-range-btn.active {
   background: var(--accent-dark);
