@@ -6570,3 +6570,51 @@ async function autoFinalizeStaleDraft() {
 // (see "Onboarding / profile picker"); restoreDraft() runs per-profile
 // from inside selectProfile() once we know who's using the app.
 
+// ---------------- Android back button / gesture ----------------
+// This app has no browser-history navigation at all (every screen is a
+// show/hide of the same page, not a pushState'd route - see the top of the
+// file), so the WebView has nothing to "go back" to. Without a listener,
+// Capacitor's default is to exit the whole app on back - including with a
+// modal, picker, or the onboarding tour open, which reads as "the app just
+// closed" rather than "that dialog closed". A hardware/gesture back should
+// behave like tapping that screen's own Cancel/backdrop first, and only
+// exit once there's genuinely nothing left open to dismiss.
+if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins.App) {
+  const CapacitorApp = window.Capacitor.Plugins.App;
+  CapacitorApp.addListener("backButton", () => {
+    const tourOverlay = document.getElementById("tour-overlay");
+    if (tourOverlay && !tourOverlay.hidden) {
+      document.getElementById("tour-skip-btn").click();
+      return;
+    }
+
+    // Last, not first: on the rare screen where one modal opens another
+    // (e.g. the option picker from inside a form modal), the one opened
+    // most recently is the one still on top and the one back should close.
+    const openModals = document.querySelectorAll(".modal-overlay:not([hidden])");
+    const modal = openModals[openModals.length - 1];
+    if (modal) {
+      // Same path as tapping the dimmed backdrop - reuses whatever side
+      // effects that modal's own handler already has on cancel (e.g.
+      // marking an in-progress check-in as cancelled - see
+      // promptSessionFeelAndFood) instead of just hiding it and leaving
+      // that state stale.
+      modal.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+      // Not every modal listens for a backdrop tap - the multi-step auth
+      // flow and a couple of confirm dialogs use an explicit Back/Cancel
+      // button instead. Fall back to whichever of those it has, then to a
+      // plain hide, before giving up on closing it at all.
+      if (!modal.hidden) {
+        const fallbackBtn = modal.querySelector('[id$="-cancel"], [id$="-back"]');
+        if (fallbackBtn) fallbackBtn.click();
+        else modal.hidden = true;
+      }
+      return;
+    }
+
+    // Nothing on screen to dismiss - this is a real "leave the app" back,
+    // same as the OS default would have done without this listener at all.
+    CapacitorApp.exitApp();
+  });
+}
+
