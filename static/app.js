@@ -335,6 +335,12 @@ async function onLoggedIn(user, { isNewSignup = false } = {}) {
 
   currentUser = user;
   currentUserId = user.id;
+  // Stale otherwise on a shared device: this in-memory cache survives a
+  // login/logout pair (no full page reload happens between them), so
+  // without this the incoming user could see the previous account's
+  // exercise history - or, if the previous account had none, an empty
+  // Performance chart despite this user having real logged sets.
+  exerciseHistoryCache = null;
 
   if (isNewSignup) {
     // Drafts are keyed by numeric user id (see draftKey() below), and ids
@@ -628,6 +634,7 @@ async function handleLogout() {
   await api.post("/api/logout", {});
   currentUser = null;
   currentUserId = null;
+  exerciseHistoryCache = null;
   authDraft = { email: "", signup: {} };
   restoringDraft = true;
   resetWorkoutFlowUI();
