@@ -2615,8 +2615,11 @@ button:disabled {
   bottom: 3px;
   left: 50%;
   transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
+  /* Deliberately smaller than the today ring and the period wash/fill so
+     it reads as a small marker sitting on top of the day, not another
+     circle competing with them for attention. */
+  width: 3px;
+  height: 3px;
   border-radius: 50%;
   background: #34d399;
 }
