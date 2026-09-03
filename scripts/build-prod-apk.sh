@@ -25,7 +25,7 @@ rm -rf android/app/src/main/assets/public/exercise-images
 # clean, not just assembleDebug: gradle's incremental asset-merge doesn't
 # reliably notice the rm above and can silently repackage a stale, much
 # larger APK from its intermediates cache otherwise.
-(cd android && JAVA_HOME="C:\Program Files\Android\Android Studio\jbr" ./gradlew.bat clean assembleDebug)
+(cd android && JAVA_HOME="C:\Program Files\Microsoft\jdk-21.0.12.101-hotspot" ./gradlew.bat clean assembleDebug)
 
 APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
 echo "Built: $APK_PATH ($(du -h "$APK_PATH" | cut -f1))"
