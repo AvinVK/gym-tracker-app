@@ -2704,12 +2704,68 @@ function addSetRow(block, { copyLast = false } = {}) {
   return row;
 }
 
+// Speech recognizers routinely spell small numbers out as words instead of
+// digits ("eight reps", "ten kilos") even while rendering larger ones as
+// digits, so a phrase can mix "8 reps with ten kilos" and "eight reps with
+// 10 kilos" depending on the engine. Rewriting number words to digits first
+// lets every regex below assume digits only. Handles 0-99 and simple
+// hundreds ("one hundred and twenty"); good enough for rep/weight ranges.
+const NUMBER_WORD_ONES = { zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19 };
+const NUMBER_WORD_TENS = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
+function normalizeSpokenNumbers(text) {
+  const words = text.split(/\s+/);
+  const out = [];
+  let i = 0;
+  const bareWord = idx => (idx < words.length ? words[idx].replace(/[^a-z]/g, "") : "");
+  while (i < words.length) {
+    const w = bareWord(i);
+    if (!(w in NUMBER_WORD_ONES) && !(w in NUMBER_WORD_TENS)) {
+      out.push(words[i]);
+      i++;
+      continue;
+    }
+    let value = 0;
+    if (w in NUMBER_WORD_TENS) {
+      value = NUMBER_WORD_TENS[w];
+      i++;
+      const next = bareWord(i);
+      if (next in NUMBER_WORD_ONES && NUMBER_WORD_ONES[next] < 10) {
+        value += NUMBER_WORD_ONES[next];
+        i++;
+      }
+    } else {
+      value = NUMBER_WORD_ONES[w];
+      i++;
+    }
+    if (bareWord(i) === "hundred") {
+      value = (value || 1) * 100;
+      i++;
+      let rest = bareWord(i);
+      if (rest === "and") { i++; rest = bareWord(i); }
+      if (rest in NUMBER_WORD_TENS) {
+        value += NUMBER_WORD_TENS[rest];
+        i++;
+        const next = bareWord(i);
+        if (next in NUMBER_WORD_ONES && NUMBER_WORD_ONES[next] < 10) {
+          value += NUMBER_WORD_ONES[next];
+          i++;
+        }
+      } else if (rest in NUMBER_WORD_ONES) {
+        value += NUMBER_WORD_ONES[rest];
+        i++;
+      }
+    }
+    out.push(String(value));
+  }
+  return out.join(" ");
+}
+
 // Pulls reps/weight out of a spoken phrase like "20 reps with 30 kgs".
 // Deliberately tolerant of word order and missing units ("20 reps 30",
 // "30 kg 20 reps", "bodyweight 15 reps", or just "20 reps" alone) since
 // speech transcripts are inconsistent about how people phrase this.
 function parseSpokenSet(text) {
-  const t = (text || "").toLowerCase();
+  const t = normalizeSpokenNumbers((text || "").toLowerCase());
   let weight = null;
   if (/\bbody\s?weight\b|\bno weight\b|\bbodyweight\b/.test(t)) {
     weight = 0;
@@ -2772,7 +2828,7 @@ function bestSpeechParse(results, parseFn) {
 // Same idea as parseSpokenSet, but for cardio: "15 minutes at level 6",
 // "level 6 for 15 mins", or just "15 minutes" alone.
 function parseSpokenCardioSet(text) {
-  const t = (text || "").toLowerCase();
+  const t = normalizeSpokenNumbers((text || "").toLowerCase());
   const durationMatch = t.match(/(\d+(?:\.\d+)?)\s*(?:mins?|minutes?)/);
   let duration = durationMatch ? parseFloat(durationMatch[1]) : null;
   const levelMatch = t.match(/level\D{0,10}?(\d+(?:\.\d+)?)/) || t.match(/(\d+(?:\.\d+)?)\s*(?:level)/);
