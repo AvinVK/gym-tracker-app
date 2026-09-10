@@ -7,11 +7,12 @@ Most people don't hit the gym daily - 4-5x/week is a realistic routine - so
 the streak unit is a week, not the day. A week "succeeds" once it has at
 least MIN_VISITS_PER_WEEK distinct logged exercise_log dates in it.
 
-The week isn't a fixed Monday-Sunday calendar week - it's anchored to
-whatever weekday the user logged their very first workout on, so "this
-week" always means "the 7 days since your streak week last rolled over",
-not an arbitrary calendar boundary they may be mid-way through when they
-first pick up the app.
+The week is a fixed Monday-Sunday calendar week. (This used to float,
+anchored to whatever weekday the user's very first-ever logged workout
+fell on - but that anchor was invisible in the UI, so a week boundary
+could silently roll over mid-streak and zero out visits the user could
+see sitting right there on the calendar. Pinning to calendar Monday makes
+"this week" match what the user actually sees.)
 
 Shields aren't handed out on a timer - they're earned by streak length.
 Everyone starts with zero. Reaching a MILESTONE_START-week streak earns the
@@ -33,9 +34,9 @@ between.
 Nothing about the streak is stored as a running counter - a user's
 exercise_log dates can be added, edited, or backfilled for a past date at
 any time, so the only source of truth is the actual set of logged dates.
-current_streak/longest_streak/shield state (and the week anchor itself)
-are recomputed from that set (plus the persisted record of which weeks
-were already healed by a shield) every time compute_streak_status() runs.
+current_streak/longest_streak/shield state are recomputed from that set
+(plus the persisted record of which weeks were already healed by a
+shield) every time compute_streak_status() runs.
 """
 from datetime import date, timedelta
 
@@ -45,13 +46,11 @@ MAX_SHIELDS = 3
 MIN_VISITS_PER_WEEK = 4
 MILESTONE_START = 3
 MILESTONE_STEP = 4
-WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 
-def _week_start(d, anchor_weekday):
-    """Start of the 7-day streak week containing d, given the user's
-    anchor weekday (0=Monday..6=Sunday, from their first-ever logged date)."""
-    return d - timedelta(days=(d.weekday() - anchor_weekday) % 7)
+def _week_start(d):
+    """Start (Monday) of the calendar week containing d."""
+    return d - timedelta(days=d.weekday())
 
 
 def _next_milestone(progress):
@@ -99,14 +98,9 @@ def compute_streak_status(db, user_id, today=None):
         "SELECT DISTINCT date FROM exercise_log WHERE user_id = ?", (user_id,)
     ).fetchall()]
 
-    # Anchored to the weekday of the user's first-ever logged workout, not a
-    # fixed Monday - recomputed from the log every time so a backfilled date
-    # earlier than any seen so far correctly shifts the anchor.
-    anchor_weekday = min(log_dates).weekday() if log_dates else today.weekday()
-
     visits_by_week = {}
     for d in log_dates:
-        wk = _week_start(d, anchor_weekday).isoformat()
+        wk = _week_start(d).isoformat()
         visits_by_week[wk] = visits_by_week.get(wk, 0) + 1
 
     shielded_weeks = {
@@ -130,12 +124,12 @@ def compute_streak_status(db, user_id, today=None):
     # manufacture streak weeks stretching back before the user's actual
     # first-ever logged week.
     earliest_week = min(visits_by_week) if visits_by_week else None
-    current_week = _week_start(today, anchor_weekday).isoformat()
+    current_week = _week_start(today).isoformat()
     visits_this_week = visits_by_week.get(current_week, 0)
 
     streak = 0
     newly_shielded = []
-    wk_date = _week_start(today, anchor_weekday)
+    wk_date = _week_start(today)
     if visits_this_week < MIN_VISITS_PER_WEEK:
         # This week isn't over/decided yet - don't count or fail it, just
         # start the backward walk from last week.
@@ -204,7 +198,6 @@ def compute_streak_status(db, user_id, today=None):
         "max_shields": MAX_SHIELDS,
         "visits_this_week": visits_this_week,
         "visits_needed": MIN_VISITS_PER_WEEK,
-        "week_start_day": WEEKDAY_NAMES[anchor_weekday],
         "next_shield_at": _next_milestone(streak) if shield_count < MAX_SHIELDS else None,
         "milestone_start": MILESTONE_START,
         "milestone_step": MILESTONE_STEP,
