@@ -5994,9 +5994,13 @@ function computeEnergyByPhase(workoutLog) {
 // best value and the date it was set, then buckets that exercise into
 // whichever cycle phase that date falls in. An exercise with no PR date
 // falling in a tracked cycle (or logged before cycle tracking was turned
-// on) simply doesn't appear in any bucket. An exercise logged only once
-// is skipped entirely - same "nothing to beat yet" rule as checkForPR's
-// live PR toast, since a lone data point trivially "wins" its own value.
+// on) simply doesn't appear in any bucket.
+//
+// Same "beats every strictly earlier day's best" rule as computePRDaysByDate:
+// bucket sets by day first, then walk the days chronologically. Multiple
+// sets logged in one session are one occasion, not separate chances to set
+// a PR, so a brand-new exercise with several sets on its first (and only)
+// day never counts - there's nothing earlier to have beaten.
 function computePRPhaseBreakdown(history) {
   const byExercise = {};
   history.forEach(x => {
@@ -6013,19 +6017,26 @@ function computePRPhaseBreakdown(history) {
     const durationCount = rows.filter(x => x.duration_minutes != null).length;
     const metricKey = durationCount > weightCount ? "duration_minutes" : "weight_kg";
     const isWeight = metricKey === "weight_kg";
-    const metricCount = isWeight ? weightCount : durationCount;
-    if (metricCount < 2) return;
     const unit = isWeight ? weightUnit() : "min";
-    let best = null;
+
+    const byDate = {};
     rows.forEach(x => {
       const v = x[metricKey];
       if (v == null) return;
-      if (!best || v > best.value) best = { value: v, date: x.date };
+      if (!byDate[x.date] || v > byDate[x.date]) byDate[x.date] = v;
     });
-    if (!best) return;
-    const phase = cyclePhaseForDate(best.date);
+
+    let runningMax = null;
+    let bestPR = null;
+    Object.keys(byDate).sort().forEach(date => {
+      const v = byDate[date];
+      if (runningMax != null && v > runningMax) bestPR = { value: v, date };
+      if (runningMax == null || v > runningMax) runningMax = v;
+    });
+    if (!bestPR) return;
+    const phase = cyclePhaseForDate(bestPR.date);
     if (!phase) return;
-    byPhase[phase.key].push({ name, unit, value: isWeight ? kgToDisplayWeight(best.value) : best.value });
+    byPhase[phase.key].push({ name, unit, value: isWeight ? kgToDisplayWeight(bestPR.value) : bestPR.value });
   });
 
   return byPhase;
