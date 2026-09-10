@@ -339,6 +339,12 @@
 <div id="option-picker-modal" class="modal-overlay" hidden>
   <div class="modal-card option-picker-card">
     <h2 id="op-title">Select</h2>
+    <!-- Only shown for the Exercise picker, when a muscle group is already
+         chosen (see openOptionPicker in app.js) - lets her change it
+         without backing all the way out, for the (usually rare) case a
+         freshly-added exercise belongs to a different muscle than the one
+         before it. -->
+    <button type="button" class="op-muscle-chip" id="op-muscle-chip" hidden></button>
     <input type="text" class="option-picker-search" id="op-search" placeholder="Search..." autocomplete="off">
     <div class="option-picker-list" id="op-list"></div>
     <button type="button" class="secondary" id="op-cancel">Cancel</button>
@@ -349,6 +355,16 @@
   <div class="modal-card">
     <h2>Session note</h2>
     <p class="modal-sub" id="session-note-modal-sub">How did today's session feel?</p>
+    <!-- Optional quick-pick phrases - tapping one fills the note field
+         below with it (still freely editable/appendable, mic included) -
+         see renderNoteTagChips/session-note-tag-list's click handler. -->
+    <div class="note-tag-list" id="session-note-tag-list">
+      <button type="button" class="note-tag-btn" data-tag="Started tired but ended great">Started tired but ended great</button>
+      <button type="button" class="note-tag-btn" data-tag="Had constant energy throughout">Had constant energy throughout</button>
+      <button type="button" class="note-tag-btn" data-tag="Dragged myself through it, but did it">Dragged myself through it, but did it</button>
+      <button type="button" class="note-tag-btn" data-tag="Took it a little light today">Took it a little light today</button>
+      <button type="button" class="note-tag-btn" data-tag="Had a past injury flare up, so paused in between">Had a past injury flare up, so paused in between</button>
+    </div>
     <div class="note-field">
       <input type="text" id="session-note-input" placeholder="optional">
       <button type="button" class="secondary note-mic-btn" id="session-note-mic-btn" aria-label="Dictate note" title="Speak your note"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M9 21h6"/></svg></button>
@@ -368,6 +384,10 @@
       <input type="text" id="session-meal-input" placeholder="e.g. banana, protein shake">
       <button type="button" class="secondary note-mic-btn" id="session-meal-mic-btn" aria-label="Dictate meal" title="Speak what you ate"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M9 21h6"/></svg></button>
     </div>
+    <!-- Only shown when yesterday's session logged a real meal (see
+         refreshMealRepeatChip in app.js) - one tap to reuse it instead of
+         retyping the same pre-workout snack. -->
+    <button type="button" class="edit-link-btn" id="session-meal-repeat-btn" hidden>Same as yesterday: <span id="session-meal-repeat-text"></span></button>
     <!-- Skips straight past the hours-since-eating wheel below (see its
          click handler in app.js) - "how long ago" has no answer when the
          answer to "what did you eat" is nothing. -->

@@ -65,11 +65,11 @@ const todayStr = new Date().toLocaleDateString("en-CA");
 // outgoing profile's UI reset doesn't overwrite their still-saved draft.
 let restoringDraft = true;
 
-function toast(msg) {
+function toast(msg, durationMs = 1800) {
   const el = document.getElementById("toast");
   el.textContent = msg;
   el.classList.add("show");
-  setTimeout(() => el.classList.remove("show"), 1800);
+  setTimeout(() => el.classList.remove("show"), durationMs);
 }
 
 // ---------------- Confirm modal ----------------
@@ -1867,6 +1867,7 @@ function escapeHtml(str) {
 
 const opModal = document.getElementById("option-picker-modal");
 const opTitle = document.getElementById("op-title");
+const opMuscleChip = document.getElementById("op-muscle-chip");
 const opSearch = document.getElementById("op-search");
 const opList = document.getElementById("op-list");
 let opActiveContainer = null;
@@ -1943,11 +1944,22 @@ function renderOptionPickerList(container, { showAll, query } = {}) {
     }
     return;
   }
-  let html = visible
+  // "Your usual" tiles (see computeUsualExercises/onBlockMuscleChange) sort
+  // to the front of whichever list is showing - same tile grid as
+  // everything else, just first and badged, rather than a separate section
+  // to scroll past.
+  const usuals = (container.__usualExercises || []).filter(name => visible.includes(name));
+  const usualSet = new Set(usuals);
+  const orderedVisible = usualSet.size ? [...usuals, ...visible.filter(o => !usualSet.has(o))] : visible;
+  const isMedia = opList.classList.contains("tile-grid-media");
+  let html = orderedVisible
     .map(o => {
       const imgUrl = images[o] && images[o][0];
-      const thumb = imgUrl ? `<img class="option-picker-thumb" src="${imgUrl}" alt="" loading="lazy">` : "";
-      return `<button type="button" class="option-picker-item${o === current ? " selected" : ""}" data-value="${escapeHtml(o)}">${thumb}<span>${escapeHtml(o)}</span></button>`;
+      const usualBadge = usualSet.has(o) ? `<span class="usual-badge">Your usual</span>` : "";
+      const thumb = isMedia
+        ? `<span class="option-picker-media${imgUrl ? "" : " no-img"}">${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy">` : ""}</span>`
+        : (imgUrl ? `<img class="option-picker-thumb" src="${imgUrl}" alt="" loading="lazy">` : "");
+      return `<button type="button" class="option-picker-item${o === current ? " selected" : ""}" data-value="${escapeHtml(o)}">${usualBadge}${thumb}<span>${escapeHtml(o)}</span></button>`;
     })
     .join("");
   if (!q && visible === defaultOptions && options.length > defaultOptions.length) {
@@ -1962,6 +1974,24 @@ function openOptionPicker(container) {
   opActiveContainer = container;
   opTitle.textContent = container.dataset.title || "Select";
   opSearch.value = "";
+  // Both Muscle Group and Exercise render as tile grids now - Muscle Group
+  // is plain text tiles (8 fixed options), Exercise adds photos and "Your
+  // usual" badges (see renderOptionPickerList/computeUsualExercises) since
+  // recognizing a picture beats reading a name in a long catalog.
+  const isExerciseField = container.dataset.title === "Exercise";
+  opList.classList.toggle("tile-grid", isExerciseField || container.dataset.title === "Muscle Group");
+  opList.classList.toggle("tile-grid-media", isExerciseField);
+  // The Exercise picker shows which muscle group it's currently scoped to
+  // (container.__muscle, set by onBlockMuscleChange) as a tappable chip -
+  // promptAddExercise skips straight to this picker once a muscle's
+  // already prefilled from the previous exercise, so without this she'd
+  // have no way to tell (or change) which muscle she's browsing.
+  if (container.dataset.title === "Exercise" && container.__muscle) {
+    opMuscleChip.textContent = container.__muscle;
+    opMuscleChip.hidden = false;
+  } else {
+    opMuscleChip.hidden = true;
+  }
   renderOptionPickerList(container);
   opModal.hidden = false;
   // Deliberately not auto-focusing the search box here - on mobile that
@@ -2018,6 +2048,21 @@ opList.addEventListener("click", (e) => {
 });
 document.getElementById("op-cancel").addEventListener("click", closeOptionPicker);
 opModal.addEventListener("click", (e) => { if (e.target === opModal) closeOptionPicker(); });
+
+// Reopens the muscle picker for whichever block the Exercise picker is
+// currently scoped to, then drops straight back into the Exercise picker
+// (for the new muscle, or the same one if she backs out) - see the
+// op-muscle-chip in openOptionPicker above.
+opMuscleChip.addEventListener("click", async () => {
+  const exerciseField = opActiveContainer;
+  const block = exerciseField && exerciseField.closest(".exercise-block");
+  if (!block) return;
+  const muscleField = block.querySelector(".ex-muscle-field");
+  openOptionPicker(muscleField);
+  const muscle = await waitForChangeOrCancel(block.querySelector(".ex-muscle"));
+  if (muscle) await onBlockMuscleChange(block);
+  openOptionPicker(exerciseField);
+});
 
 function initOptionField(container) {
   container.querySelector(".option-field-btn").addEventListener("click", () => openOptionPicker(container));
@@ -2259,10 +2304,20 @@ async function getExerciseHistory() {
   return exerciseHistoryCache;
 }
 
-// Dedupes so nudging a stepper back and forth across the same record value
-// doesn't toast every time - keyed by exercise+value, cleared only on a
-// full page load (a fresh session for PR-spotting purposes).
-const notifiedPRs = new Set();
+// The exercises she actually logs most often under a given muscle - up to
+// 3, ranked by how many sets she's logged of each (ties don't matter, the
+// cutoff is what counts). Powers the Exercise picker's "Your usual" tiles
+// (see onBlockMuscleChange/renderOptionPickerList) - a fresh muscle with no
+// history yet just gets no usuals, same as a brand new exercise gets no PR.
+async function computeUsualExercises(muscle) {
+  const history = await getExerciseHistory();
+  const counts = new Map();
+  history.forEach(row => {
+    if (row.muscle_group !== muscle) return;
+    counts.set(row.exercise, (counts.get(row.exercise) || 0) + 1);
+  });
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name]) => name);
+}
 
 // Small "PR" badge on the row itself (see the 2b set-row spec) mirroring
 // row.dataset.prValue - kept in sync from every place that sets/clears it
@@ -2320,17 +2375,30 @@ async function checkForPR(block, row, exerciseName, isCardio) {
   if (value > priorBest) {
     // Marks this row as currently holding a recorded PR - guardPrEdit()
     // uses this to require confirmation before letting the value change
-    // again, so an accidental later edit can't silently corrupt it.
+    // again, so an accidental later edit can't silently corrupt it. No
+    // toast here - PRs are only announced once, in a single summary, when
+    // the user hits Done (see collectHitPRs/submitExerciseLog) rather than
+    // interrupting mid-entry for every set typed.
     row.dataset.prValue = value;
-    const dedupeKey = `${exerciseName}:${value}`;
-    if (!notifiedPRs.has(dedupeKey)) {
-      notifiedPRs.add(dedupeKey);
-      toast(`You just hit a new PR for ${exerciseName} exercise!`);
-    }
   } else {
     delete row.dataset.prValue;
   }
   syncPrBadge(row);
+}
+
+// Gathers every set row still holding a recorded PR (row.dataset.prValue,
+// set by checkForPR above) right before the Log screen gets torn down by
+// resetWorkoutFlowUI - one exercise name per PR, deduped, in the order its
+// block appears on screen.
+function collectHitPRs() {
+  const names = [];
+  exercisesContainer.querySelectorAll(".exercise-block").forEach(block => {
+    const exerciseName = block.querySelector(".ex-exercise").value;
+    if (!exerciseName) return;
+    const hasPr = [...block.querySelectorAll(".set-row")].some(row => row.dataset.prValue != null);
+    if (hasPr && !names.includes(exerciseName)) names.push(exerciseName);
+  });
+  return names;
 }
 
 // If this row's current field value was already recorded as a PR, changing
@@ -2958,16 +3026,27 @@ async function onBlockMuscleChange(block) {
   const exField = block.querySelector(".ex-exercise-field");
   if (!muscle) {
     block.__exerciseTypes = {};
+    exField.__usualExercises = [];
     setOptionFieldOptions(exField, [], { emptyText: "Pick a muscle group first" });
     applyExerciseType(block, "strength");
     applyExtraField(block);
     applyLevelMode(block, "level");
     return;
   }
-  const exercises = await api.get(`/api/exercises-by-muscle/${encodeURIComponent(muscle)}`);
+  const [exercises, usuals] = await Promise.all([
+    api.get(`/api/exercises-by-muscle/${encodeURIComponent(muscle)}`),
+    computeUsualExercises(muscle),
+  ]);
   exField.__muscle = muscle;
+  exField.__usualExercises = usuals;
   block.__exerciseTypes = Object.fromEntries(exercises.map(ex => [ex.exercise, ex.type]));
   const exerciseImages = Object.fromEntries(exercises.map(ex => [ex.exercise, ex.images]));
+  // No curated/"Show all" split any more - a second tap just to see the
+  // rest of the catalog ate too much screen space. The full list is
+  // already curated-first (see /api/exercises-by-muscle's own ORDER BY),
+  // "Your usual" sorts to the very front on top of that (see
+  // renderOptionPickerList), and the tile grid simply scrolls from there.
+  //
   // setOptionFieldOptions resets the exercise value (silently, no "change"
   // event) if it's not one of the new muscle's exercises - so the extra
   // field needs updating here too, not just from the exercise dropdown's
@@ -2976,7 +3055,6 @@ async function onBlockMuscleChange(block) {
   setOptionFieldOptions(exField, exercises.map(ex => ex.exercise), {
     emptyText: "No exercises for this muscle yet",
     images: exerciseImages,
-    defaultOptions: exercises.filter(ex => ex.curated).map(ex => ex.exercise),
   });
   // Best guess before a specific exercise is picked (almost everything
   // under "Cardio" is duration+level) — the exercise dropdown's own change
@@ -3238,13 +3316,25 @@ async function submitExerciseLog({ auto = false } = {}) {
     return;
   }
   try {
+    // Read off the Log screen before resetWorkoutFlowUI() below wipes
+    // exercisesContainer - this is the one and only place PRs get
+    // announced, so the user sees everything they hit for the day at once
+    // rather than a toast interrupting every set as they type it in.
+    const hitPRs = auto ? [] : collectHitPRs();
     await ensureVisitSaved();
     const res = await api.post("/api/exercise-log", { date, exercises });
     exerciseHistoryCache = null; // stale after this submit - refetch next time a PR check needs it
     if (auto) {
       toast(res.duplicate ? "Your last workout was already saved — check History" : "Your last workout was saved automatically — check History");
+    } else if (res.duplicate) {
+      toast("This exact session already exists for this day");
+    } else if (hitPRs.length) {
+      const list = hitPRs.length === 1 ? hitPRs[0]
+        : hitPRs.length === 2 ? `${hitPRs[0]} and ${hitPRs[1]}`
+        : `${hitPRs.slice(0, -1).join(", ")}, and ${hitPRs[hitPRs.length - 1]}`;
+      toast(`Workout logged — new PR for ${list}!`, 3600);
     } else {
-      toast(res.duplicate ? "This exact session already exists for this day" : "Workout logged");
+      toast("Workout logged");
     }
     clearDraft();
     resetWorkoutFlowUI();
@@ -3314,11 +3404,54 @@ document.getElementById("log-energy-input").addEventListener("change", (e) => {
   ensureVisitSaved();
 });
 
+// Yesterday relative to whatever date is actually being logged
+// (logSessionDate - see pastTenseCheckIn) - not necessarily calendar
+// "yesterday" when logging an old workout.
+function isoDatePlusDays(dateStr, delta) {
+  const d = new Date(dateStr + "T00:00:00");
+  d.setDate(d.getDate() + delta);
+  return d.toLocaleDateString("en-CA");
+}
+
+// The meal logged the day before logSessionDate, if any - "Nothing" (the
+// ateNothing sentinel, see sessionFields) doesn't count as a real meal to
+// offer repeating. Best-effort: any fetch failure just means the chip
+// stays hidden, same as no prior meal existing at all.
+async function getPriorDayMeal() {
+  const priorDate = isoDatePlusDays(logSessionDate, -1);
+  let rows = [];
+  try { rows = await api.get("/api/workout-log"); } catch { return null; }
+  const row = rows.find(r => r.date === priorDate);
+  if (!row || !row.pre_workout_meal || row.pre_workout_meal === "Nothing") return null;
+  return row.pre_workout_meal;
+}
+
+async function refreshMealRepeatChip() {
+  const btn = document.getElementById("session-meal-repeat-btn");
+  const meal = await getPriorDayMeal();
+  btn.hidden = !meal;
+  btn.dataset.meal = meal || "";
+  document.getElementById("session-meal-repeat-text").textContent = meal || "";
+}
+
 document.getElementById("log-meal-btn").addEventListener("click", () => {
   const modal = document.getElementById("session-meal-modal");
   document.getElementById("session-meal-input").value = sessionFields.pre_workout_meal || "";
   applyCheckInCopy();
+  refreshMealRepeatChip();
   modal.hidden = false;
+});
+document.getElementById("session-meal-repeat-btn").addEventListener("click", () => {
+  const meal = document.getElementById("session-meal-repeat-btn").dataset.meal;
+  if (!meal) return;
+  sessionFields.pre_workout_meal = meal;
+  sessionFields.ateNothing = false;
+  document.getElementById("session-meal-modal").hidden = true;
+  // Same chain into the hours-since-eating wheel as picking "Next" on a
+  // freshly typed meal (see session-meal-next below) - reusing yesterday's
+  // meal name doesn't mean it was eaten at the same time before this
+  // session too.
+  openMealTimingPicker(document.getElementById("log-meal-field"));
 });
 document.getElementById("session-meal-cancel").addEventListener("click", () => {
   if (checkInFlowActive) checkInCancelled = true;
@@ -3364,11 +3497,65 @@ document.getElementById("log-meal-timing-input").addEventListener("change", (e) 
 });
 initNoteMicButtonGeneric(document.getElementById("session-meal-mic-btn"), document.getElementById("session-meal-input"));
 
-document.getElementById("log-note-chip").addEventListener("click", () => {
+// Highlights whichever quick-pick phrase (see session-note-tag-list in
+// index.html) exactly matches the note field's current text - re-run
+// after every edit (typing, mic dictation, or tapping a chip itself) so
+// the chip row always reflects what's actually in the field rather than
+// just "whichever was last tapped".
+function renderNoteTagChips() {
+  const current = document.getElementById("session-note-input").value.trim();
+  document.querySelectorAll("#session-note-tag-list .note-tag-btn").forEach(btn => {
+    btn.classList.toggle("selected", btn.dataset.tag === current);
+  });
+}
+
+function openSessionNoteModal() {
   document.getElementById("session-note-input").value = sessionFields.notes || "";
   applyCheckInCopy();
+  renderNoteTagChips();
   document.getElementById("session-note-modal").hidden = false;
+}
+
+// Tapping Done surfaces this same modal one last time before the workout
+// actually gets saved, so "how did today's session feel" is asked right
+// when it's freshest instead of relying on her to remember the +Note chip
+// mid-session. Entirely optional either way: Cancel, the backdrop, and
+// Save all just hide the modal and let Done proceed - see the log-done-btn
+// listener below.
+// Same "real set" criteria submitExerciseLog itself uses to decide an
+// exercise is actually loggable (a chip added but never filled in doesn't
+// count) - reused here so Done doesn't ask "how did it feel" over an empty
+// session that's about to get cleaned up rather than saved.
+function hasLoggableExercises() {
+  return [...exercisesContainer.querySelectorAll(".exercise-block")].some(block => {
+    if (!block.querySelector(".ex-exercise").value) return false;
+    const isCardio = block.dataset.exerciseType === "cardio";
+    return [...block.querySelectorAll(".set-row")].some(row => isCardio
+      ? !!parseFloat(row.querySelector(".set-duration").value)
+      : !!parseInt(row.querySelector(".set-reps").value, 10));
+  });
+}
+
+async function promptSessionNoteOnDone() {
+  if (!hasLoggableExercises()) return;
+  const modal = document.getElementById("session-note-modal");
+  if (!modal.hidden) return; // already open (e.g. via the +Note chip) - don't fight with that
+  openSessionNoteModal();
+  await waitUntilHidden(modal);
+}
+
+document.getElementById("log-note-chip").addEventListener("click", openSessionNoteModal);
+document.getElementById("session-note-tag-list").addEventListener("click", (e) => {
+  const btn = e.target.closest(".note-tag-btn");
+  if (!btn) return;
+  const input = document.getElementById("session-note-input");
+  // Tapping an already-selected chip clears it back to an empty note
+  // instead of being stuck re-picking the same phrase - everything here
+  // stays optional.
+  input.value = btn.classList.contains("selected") ? "" : btn.dataset.tag;
+  renderNoteTagChips();
 });
+document.getElementById("session-note-input").addEventListener("input", renderNoteTagChips);
 document.getElementById("session-note-cancel").addEventListener("click", () => { document.getElementById("session-note-modal").hidden = true; });
 document.getElementById("session-note-modal").addEventListener("click", (e) => {
   if (e.target === e.currentTarget) e.currentTarget.hidden = true;
@@ -3486,6 +3673,18 @@ function waitForChange(el) {
   });
 }
 
+// Same as waitForChange, but also resolves (with null) if the option
+// picker gets closed without a selection - Cancel/backdrop never dispatches
+// a "change" event, so a bare waitForChange would hang forever waiting for
+// one. Only safe to call right after the picker's been opened (so opModal
+// isn't already hidden going in - waitUntilHidden would resolve instantly).
+function waitForChangeOrCancel(el) {
+  return Promise.race([
+    waitForChange(el),
+    waitUntilHidden(opModal).then(() => null),
+  ]);
+}
+
 // The "+" chip's flow: muscle picker, then (once picked) the exercise
 // picker for that muscle - the same cascade the old per-block dropdowns
 // used, just driven from outside the block instead of inline in it.
@@ -3500,17 +3699,27 @@ async function promptAddExercise() {
   const muscleHidden = block.querySelector(".ex-muscle");
   const exerciseHidden = block.querySelector(".ex-exercise");
 
-  openOptionPicker(muscleField);
-  const muscle = await waitForChange(muscleHidden);
-  if (!muscle) { block.remove(); return; }
-  await onBlockMuscleChange(block);
+  // addExerciseBlock already prefilled the muscle group from whichever
+  // exercise came right before this one (see its own "prefill" comment) -
+  // skip straight to the exercise picker instead of asking again. The
+  // muscle chip at the top of that picker (see openOptionPicker/
+  // opMuscleChip) still lets her change it, e.g. moving from Chest to
+  // Shoulders mid-workout.
+  if (muscleHidden.value) {
+    await onBlockMuscleChange(block);
+  } else {
+    openOptionPicker(muscleField);
+    const muscle = await waitForChangeOrCancel(muscleHidden);
+    if (!muscle) { block.remove(); return; }
+    await onBlockMuscleChange(block);
+  }
   if (!exerciseField.__options || !exerciseField.__options.length) {
     toast("No exercises for this muscle yet");
     block.remove();
     return;
   }
   openOptionPicker(exerciseField);
-  const exercise = await waitForChange(exerciseHidden);
+  const exercise = await waitForChangeOrCancel(exerciseHidden);
   if (!exercise) { block.remove(); return; }
 
   block.hidden = false;
@@ -3590,7 +3799,10 @@ document.getElementById("log-footer-reset-btn").addEventListener("click", () => 
 });
 
 document.getElementById("log-close-btn").addEventListener("click", () => switchTab("today"));
-document.getElementById("log-done-btn").addEventListener("click", submitExerciseLog);
+document.getElementById("log-done-btn").addEventListener("click", async () => {
+  await promptSessionNoteOnDone();
+  submitExerciseLog();
+});
 document.getElementById("log-add-exercise-btn").addEventListener("click", promptAddExercise);
 document.getElementById("sets-card-delete-btn").addEventListener("click", async () => {
   const block = exercisesContainer.children[currentExerciseIndex];
@@ -3781,6 +3993,7 @@ async function promptSessionFeelAndFood() {
     if (remaining.food) {
       document.getElementById("session-meal-input").value = sessionFields.pre_workout_meal || "";
       applyCheckInCopy();
+      await refreshMealRepeatChip();
       document.getElementById("session-meal-modal").hidden = false;
       await waitUntilHidden(document.getElementById("session-meal-modal"));
       if (checkInCancelled) return false;
