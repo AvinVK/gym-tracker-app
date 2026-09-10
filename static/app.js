@@ -1908,6 +1908,16 @@ function setOptionFieldOptions(container, options, { emptyText, images, defaultO
   }
 }
 
+// Which of the 3 monogram gradient variants (see .mono-variant-1/2/3 in
+// style.css) a no-photo exercise tile gets - keyed by the exercise's own
+// name (not its position in the list) so it stays the same tile to tile
+// across re-renders/re-sorts instead of flickering between variants.
+function monogramVariant(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return (hash % 3) + 1;
+}
+
 function renderOptionPickerList(container, { showAll, query } = {}) {
   const options = container.__options || [];
   const defaultOptions = container.__defaultOptions;
@@ -1956,8 +1966,13 @@ function renderOptionPickerList(container, { showAll, query } = {}) {
     .map(o => {
       const imgUrl = images[o] && images[o][0];
       const usualBadge = usualSet.has(o) ? `<span class="usual-badge">Your usual</span>` : "";
+      // No catalog photo - a letter monogram (in the app's own accent
+      // colors, see .mono-variant-1/2/3) reads as an intentional tile
+      // rather than a broken/empty one, without needing a new icon asset
+      // per exercise.
+      const monogram = `<span class="option-picker-media no-img mono-variant-${monogramVariant(o)}"><span class="mono-letter">${escapeHtml(o.charAt(0).toUpperCase())}</span></span>`;
       const thumb = isMedia
-        ? `<span class="option-picker-media${imgUrl ? "" : " no-img"}">${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy">` : ""}</span>`
+        ? (imgUrl ? `<span class="option-picker-media"><img src="${imgUrl}" alt="" loading="lazy"></span>` : monogram)
         : (imgUrl ? `<img class="option-picker-thumb" src="${imgUrl}" alt="" loading="lazy">` : "");
       return `<button type="button" class="option-picker-item${o === current ? " selected" : ""}" data-value="${escapeHtml(o)}">${usualBadge}${thumb}<span>${escapeHtml(o)}</span></button>`;
     })
