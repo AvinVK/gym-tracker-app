@@ -6234,7 +6234,18 @@ function computeConsistencyInsight(history) {
   const overallDays = Object.values(dayCounts).reduce((a, b) => a + b, 0);
   const overallVisits = Object.values(visitCounts).reduce((a, b) => a + b, 0);
   const overallPct = overallDays ? Math.round((overallVisits / overallDays) * 100) : 0;
-  return { body: `You've worked out on ${pct}% of your ${currentPhase.label.replace(" Phase", "")} days, vs ${overallPct}% overall.` };
+  const phaseLabel = currentPhase.label.replace(" Phase", "");
+  const diff = Math.abs(pct - overallPct);
+  // "X in 10 days" instead of raw percent - two nearby percentages (41%
+  // vs 46%) still make the reader subtract; a days-out-of-10 picture is
+  // something people can actually visualize without doing math.
+  const phaseOutOf10 = Math.round(pct / 10);
+  const overallOutOf10 = Math.round(overallPct / 10);
+  if (diff < 3 || phaseOutOf10 === overallOutOf10) {
+    return { body: `You work out about as often during your ${phaseLabel} phase as you usually do.` };
+  }
+  const direction = pct > overallPct ? "more" : "less";
+  return { body: `You work out ${direction} often during your ${phaseLabel} phase - about ${phaseOutOf10} days out of every 10, vs your usual ${overallOutOf10}.` };
 }
 
 // Points forward instead of just reporting an average - which phase (by
@@ -6284,9 +6295,14 @@ function computeRecentTrendInsight(series, exerciseName) {
     if (p && p.key !== lastPhase.key) { prev = points[i]; prevPhase = p; break; }
   }
   if (!prev) return null;
-  const cmp = last.value > prev.value ? "beat" : last.value < prev.value ? "came in under" : "matched";
+  // Weight-first, plain comparison word ("heavier"/"lighter") instead of
+  // nested parentheticals + terms like "beat"/"came in under" - the number
+  // and the direction should be readable without decoding sentence structure.
+  const cmp = last.value > prev.value ? "heavier" : last.value < prev.value ? "lighter" : "the same weight";
+  const lastPhaseLabel = lastPhase.label.replace(" Phase", "");
+  const prevPhaseLabel = prevPhase.label.replace(" Phase", "");
   return {
-    body: `Your last ${escapeHtml(exerciseName)} session (${lastPhase.label.replace(" Phase", "")}, ${last.value} ${series.unit}) ${cmp} the one before it in ${prevPhase.label.replace(" Phase", "")} (${prev.value} ${series.unit}).`,
+    body: `Your last ${escapeHtml(exerciseName)} (${last.value} ${series.unit}, ${lastPhaseLabel} phase) was ${cmp} than the session before it (${prev.value} ${series.unit}, ${prevPhaseLabel} phase).`,
   };
 }
 
