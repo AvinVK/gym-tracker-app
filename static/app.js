@@ -1918,11 +1918,46 @@ function monogramVariant(name) {
   return (hash % 3) + 1;
 }
 
+// The Exercise picker's default view (see renderOptionPickerList below) -
+// a handful of quick-pick chips (her top EXERCISE_CHIP_COUNT most-used
+// picks for this muscle, see computeUsualExercises, topped up with the
+// rest of the muscle's catalog - already curated-first, see /api/
+// exercises-by-muscle's own ORDER BY - if she has fewer usuals than that,
+// including a brand-new user with none at all) instead of the full photo
+// grid. Reuses the shared .chip pill component (session-strip's own
+// pattern) and the app's existing .today-section-link secondary-link
+// style for "Browse all" - no new button style.
+function renderExercisePickerChips(container, options, current) {
+  const usuals = (container.__chipUsuals || []).filter(name => options.includes(name));
+  const rest = options.filter(name => !usuals.includes(name));
+  const chipNames = [...usuals, ...rest].slice(0, EXERCISE_CHIP_COUNT);
+  const chips = chipNames
+    .map(o => `<button type="button" class="chip option-picker-chip${o === current ? " chip-active" : ""}" data-value="${escapeHtml(o)}">${escapeHtml(o)}</button>`)
+    .join("");
+  opList.innerHTML = `
+    <div class="option-picker-usual-chips">${chips}</div>
+    <button type="button" class="today-section-link option-picker-browse-all-btn">Browse all ${options.length} exercises</button>`;
+}
+
 function renderOptionPickerList(container, { showAll, query } = {}) {
   const options = container.__options || [];
   const defaultOptions = container.__defaultOptions;
   const current = container.querySelector("input[type=hidden]").value;
   const q = (query || "").trim().toLowerCase();
+  const isExerciseField = container.dataset.title === "Exercise";
+
+  // Chips first, grid on demand - typing a search query always jumps
+  // straight to the (unchanged) grid below, same as it already jumps past
+  // the curated default subset elsewhere in this function; "Browse all"
+  // (see the click handler) is the other way in.
+  if (isExerciseField && !q && !container.__browsingAll) {
+    opList.classList.remove("tile-grid", "tile-grid-media");
+    opList.classList.add("chip-view");
+    renderExercisePickerChips(container, options, current);
+    return;
+  }
+  opList.classList.remove("chip-view");
+  if (isExerciseField) opList.classList.add("tile-grid", "tile-grid-media");
 
   let visible;
   if (q) {
@@ -1996,6 +2031,10 @@ function openOptionPicker(container) {
   const isExerciseField = container.dataset.title === "Exercise";
   opList.classList.toggle("tile-grid", isExerciseField || container.dataset.title === "Muscle Group");
   opList.classList.toggle("tile-grid-media", isExerciseField);
+  // Every fresh open starts at the chip view (see renderOptionPickerList) -
+  // reopening the picker later doesn't remember a previous "Browse all"
+  // tap from earlier in the session.
+  if (isExerciseField) container.__browsingAll = false;
   // The Exercise picker shows which muscle group it's currently scoped to
   // (container.__muscle, set by onBlockMuscleChange) as a tappable chip -
   // promptAddExercise skips straight to this picker once a muscle's
@@ -2040,6 +2079,21 @@ opList.addEventListener("click", (e) => {
     renderOptionPickerList(opActiveContainer, { showAll: true });
     return;
   }
+  const browseAllBtn = e.target.closest(".option-picker-browse-all-btn");
+  if (browseAllBtn) {
+    opActiveContainer.__browsingAll = true;
+    renderOptionPickerList(opActiveContainer);
+    return;
+  }
+  const chipBtn = e.target.closest(".option-picker-chip");
+  if (chipBtn) {
+    // Same downstream state update a tile pick gets (setOptionFieldValue's
+    // "change" event drives applyExerciseSelection, draft saving, etc.) -
+    // just reached from a chip instead of a grid tile.
+    setOptionFieldValue(opActiveContainer, chipBtn.dataset.value);
+    closeOptionPicker();
+    return;
+  }
   const addBtn = e.target.closest(".option-picker-add-btn");
   if (addBtn) {
     handleProposeExercise(opActiveContainer, addBtn.dataset.query);
@@ -2073,8 +2127,14 @@ opMuscleChip.addEventListener("click", async () => {
   const block = exerciseField && exerciseField.closest(".exercise-block");
   if (!block) return;
   const muscleField = block.querySelector(".ex-muscle-field");
+  // Suppressed here too (see addExerciseBlock's own use of this flag) -
+  // picking a tile below fires the muscle field's "change" listener
+  // synchronously, which would otherwise kick off its own fetch for the
+  // same muscle right alongside the explicit await two lines down.
+  block.__pendingMuscleChange = true;
   openOptionPicker(muscleField);
   const muscle = await waitForChangeOrCancel(block.querySelector(".ex-muscle"));
+  block.__pendingMuscleChange = false;
   if (muscle) await onBlockMuscleChange(block);
   openOptionPicker(exerciseField);
 });
@@ -2319,19 +2379,27 @@ async function getExerciseHistory() {
   return exerciseHistoryCache;
 }
 
+// How many chips the Exercise picker's default view shows (see
+// renderExercisePickerChips) - the grid's own "Your usual" badge/reorder
+// stays capped at computeUsualExercises' default of 3, this is just how
+// wide the chip row itself is.
+const EXERCISE_CHIP_COUNT = 6;
+
 // The exercises she actually logs most often under a given muscle - up to
-// 3, ranked by how many sets she's logged of each (ties don't matter, the
-// cutoff is what counts). Powers the Exercise picker's "Your usual" tiles
-// (see onBlockMuscleChange/renderOptionPickerList) - a fresh muscle with no
-// history yet just gets no usuals, same as a brand new exercise gets no PR.
-async function computeUsualExercises(muscle) {
+// `limit`, ranked by how many sets she's logged of each (ties don't
+// matter, the cutoff is what counts). Powers the Exercise picker's "Your
+// usual" tile badge/reorder and its default chip row (see
+// onBlockMuscleChange/renderOptionPickerList/renderExercisePickerChips) -
+// a fresh muscle with no history yet just gets no usuals, same as a brand
+// new exercise gets no PR.
+async function computeUsualExercises(muscle, limit = 3) {
   const history = await getExerciseHistory();
   const counts = new Map();
   history.forEach(row => {
     if (row.muscle_group !== muscle) return;
     counts.set(row.exercise, (counts.get(row.exercise) || 0) + 1);
   });
-  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name]) => name);
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([name]) => name);
 }
 
 // Small "PR" badge on the row itself (see the 2b set-row spec) mirroring
@@ -3095,21 +3163,43 @@ const EXERCISE_EXTRA_FIELDS = {
 async function onBlockMuscleChange(block) {
   const muscle = block.querySelector(".ex-muscle").value;
   const exField = block.querySelector(".ex-exercise-field");
+  // This runs redundantly for the same block from several call sites at
+  // once (the muscle field's own "change" listener fires automatically on
+  // top of the explicit awaited calls in promptAddExercise/opMuscleChip),
+  // so two requests for two different muscles can be in flight together.
+  // Without this token, whichever response happened to land last would
+  // win regardless of which muscle it was actually for - on a slow/flaky
+  // connection an older, since-superseded request finishing after the
+  // latest one would silently overwrite the exercise list back to the
+  // wrong (or momentarily empty) muscle right after picking a new one.
+  const token = (exField.__muscleChangeToken = (exField.__muscleChangeToken || 0) + 1);
   if (!muscle) {
     block.__exerciseTypes = {};
     exField.__usualExercises = [];
+    exField.__chipUsuals = [];
     setOptionFieldOptions(exField, [], { emptyText: "Pick a muscle group first" });
     applyExerciseType(block, "strength");
     applyExtraField(block);
     applyLevelMode(block, "level");
     return;
   }
-  const [exercises, usuals] = await Promise.all([
+  const [exercises, usuals, chipUsuals] = await Promise.all([
     api.get(`/api/exercises-by-muscle/${encodeURIComponent(muscle)}`),
     computeUsualExercises(muscle),
+    // Wider cut for the picker's default chip row (see renderExercisePicker
+    // Chips) than the grid's own "Your usual" badge/reorder above - same
+    // ranking, just more of it, since a chip row reads fine at 6 while the
+    // grid badge is meant to stay a short highlight.
+    computeUsualExercises(muscle, EXERCISE_CHIP_COUNT),
   ]);
+  if (exField.__muscleChangeToken !== token) return; // superseded by a later muscle change
   exField.__muscle = muscle;
   exField.__usualExercises = usuals;
+  exField.__chipUsuals = chipUsuals;
+  // Fresh muscle, fresh picker session - always start at the chip view
+  // rather than remembering "was browsing the full grid" from whatever
+  // muscle was picked before.
+  exField.__browsingAll = false;
   block.__exerciseTypes = Object.fromEntries(exercises.map(ex => [ex.exercise, ex.type]));
   const exerciseImages = Object.fromEntries(exercises.map(ex => [ex.exercise, ex.images]));
   // No curated/"Show all" split any more - a second tap just to see the
@@ -3205,7 +3295,12 @@ function addExerciseBlock(container = exercisesContainer) {
   block.querySelector(".ex-exercise-field").__allowPropose = true;
   populateMuscleSelect(block.querySelector(".ex-muscle-field"));
   block.querySelector(".ex-muscle").addEventListener("change", () => {
-    if (restoringDraft) return; // restoreDraft() awaits its own explicit call instead
+    // restoreDraft() and every place that prefills/reassigns this field
+    // programmatically (see __pendingMuscleChange below, and restoringDraft)
+    // already awaits its own explicit onBlockMuscleChange call right after -
+    // without this guard, this "change" listener would fire a second,
+    // redundant fetch for the same muscle right alongside it every time.
+    if (restoringDraft || block.__pendingMuscleChange) return;
     onBlockMuscleChange(block);
   });
   block.querySelector(".ex-exercise").addEventListener("change", () => {
@@ -3265,7 +3360,12 @@ function addExerciseBlock(container = exercisesContainer) {
     const prevBlock = blocks[blocks.length - 2];
     const prevMuscle = prevBlock && prevBlock.querySelector(".ex-muscle").value;
     if (prevMuscle) {
+      // promptAddExercise awaits its own onBlockMuscleChange call right
+      // after seeing this prefilled value - suppress the listener's own
+      // fetch so the two don't both hit the network for the same muscle.
+      block.__pendingMuscleChange = true;
       setOptionFieldValue(block.querySelector(".ex-muscle-field"), prevMuscle);
+      block.__pendingMuscleChange = false;
     }
   }
 
@@ -3427,7 +3527,6 @@ function resetWorkoutFlowUI() {
   savedWorkoutId = null;
   logSessionDate = todayStr;
   sessionFields = { energy_level: "", pre_workout_meal: "", hours_since_meal: "", notes: "", ateNothing: false };
-  stopRestTimer();
   renderLogExerciseChips();
   setActiveExerciseIndex(-1);
   renderSessionStrip();
@@ -3779,8 +3878,13 @@ async function promptAddExercise() {
   if (muscleHidden.value) {
     await onBlockMuscleChange(block);
   } else {
+    // Suppressed for the same reason as opMuscleChip's own picker below -
+    // picking a tile fires the muscle field's "change" listener
+    // synchronously, which would otherwise also fetch this same muscle.
+    block.__pendingMuscleChange = true;
     openOptionPicker(muscleField);
     const muscle = await waitForChangeOrCancel(muscleHidden);
+    block.__pendingMuscleChange = false;
     if (!muscle) { block.remove(); return; }
     await onBlockMuscleChange(block);
   }
@@ -3799,75 +3903,6 @@ async function promptAddExercise() {
   setActiveExerciseIndex(currentExerciseIndex);
   saveExerciseDraft();
 }
-
-// ---------------- Rest timer (2b footer button) ----------------
-const REST_DURATION = 90;
-let restRemaining = 0;
-let restInterval = null;
-let restPaused = false;
-
-function updateRestButtonUI() {
-  const label = document.getElementById("log-footer-btn-label");
-  const fill = document.getElementById("log-footer-btn-fill");
-  const resetBtn = document.getElementById("log-footer-reset-btn");
-  if (restRemaining > 0) {
-    const m = Math.floor(restRemaining / 60), s = restRemaining % 60;
-    label.textContent = `${restPaused ? "Paused" : "Rest"} ${m}:${String(s).padStart(2, "0")}`;
-    fill.style.width = `${((REST_DURATION - restRemaining) / REST_DURATION) * 100}%`;
-    resetBtn.hidden = false;
-  } else {
-    label.textContent = "Start rest";
-    fill.style.width = "0%";
-    resetBtn.hidden = true;
-  }
-}
-
-function tickRest() {
-  restRemaining--;
-  if (restRemaining <= 0) { stopRestTimer(); return; }
-  updateRestButtonUI();
-}
-
-// Full reset back to idle - also what resetWorkoutFlowUI() calls to tear
-// the timer down entirely (e.g. on logout, finishing a session).
-function stopRestTimer() {
-  clearInterval(restInterval);
-  restInterval = null;
-  restRemaining = 0;
-  restPaused = false;
-  updateRestButtonUI();
-}
-
-function startRestTimer() {
-  clearInterval(restInterval);
-  restRemaining = REST_DURATION;
-  restPaused = false;
-  updateRestButtonUI();
-  restInterval = setInterval(tickRest, 1000);
-}
-
-function pauseRestTimer() {
-  clearInterval(restInterval);
-  restInterval = null;
-  restPaused = true;
-  updateRestButtonUI();
-}
-
-function resumeRestTimer() {
-  restPaused = false;
-  updateRestButtonUI();
-  restInterval = setInterval(tickRest, 1000);
-}
-
-document.getElementById("log-footer-btn").addEventListener("click", () => {
-  if (restRemaining <= 0) startRestTimer();
-  else if (restPaused) resumeRestTimer();
-  else pauseRestTimer();
-});
-
-document.getElementById("log-footer-reset-btn").addEventListener("click", () => {
-  stopRestTimer();
-});
 
 document.getElementById("log-close-btn").addEventListener("click", () => switchTab("today"));
 document.getElementById("log-done-btn").addEventListener("click", async () => {
