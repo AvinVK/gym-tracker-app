@@ -200,6 +200,21 @@ const WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "
 // animation on every tab entry, see switchTab) without re-fetching.
 let latestStreakData = null;
 
+// "Sep 1-5" (same month) or "Sep 28 - Oct 2" (spans months) - names the
+// specific period the "What a Diva" line (see refreshStreak) is talking
+// about, since "during periods" alone read like a generic recurring claim
+// rather than one particular period's date range.
+function formatPeriodRange(startIso, endIso) {
+  const start = new Date(startIso + "T00:00:00");
+  const end = new Date(endIso + "T00:00:00");
+  const startLabel = start.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (start.getMonth() === end.getMonth()) {
+    return `${startLabel}-${end.getDate()}`;
+  }
+  const endLabel = end.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return `${startLabel} - ${endLabel}`;
+}
+
 async function refreshStreak() {
   const s = await api.get("/api/streak");
   if (!s || s.error) return;
@@ -215,7 +230,7 @@ async function refreshStreak() {
   powerStat.hidden = !hasPeriodDate || !s.period_power;
   if (hasPeriodDate && s.period_power) {
     document.getElementById("cycle-power-text").textContent =
-      `What a Diva! Went ${s.period_power} day${s.period_power === 1 ? "" : "s"} to the gym during periods.`;
+      `What a Diva! You went to the gym ${s.period_power} day${s.period_power === 1 ? "" : "s"} during your ${formatPeriodRange(s.period_power_start, s.period_power_end)} period.`;
   }
 
   if (document.getElementById("maintab-today").classList.contains("active")) {

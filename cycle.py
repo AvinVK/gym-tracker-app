@@ -126,8 +126,14 @@ def compute_period_power(db, user_id, today=None):
     reason streak state isn't one - logged dates can be added, edited, or
     backfilled at any time, and logging/editing a period should only move
     which days count for *that* cycle, so it's recomputed from the log
-    every time rather than persisted."""
+    every time rather than persisted.
+
+    Returns {"count", "start", "end"} (dates as ISO strings) rather than a
+    bare count - the Today card's "What a Diva" line names this specific
+    period by its date range so it doesn't read like a generic recurring
+    claim (see refreshStreak in app.js)."""
     today = today or date.today()
+    empty = {"count": 0, "start": None, "end": None}
     cycle_length = db.execute(
         "SELECT cycle_length_days FROM users WHERE id = ?", (user_id,)
     ).fetchone()["cycle_length_days"] or DEFAULT_CYCLE_LENGTH_DAYS
@@ -135,10 +141,10 @@ def compute_period_power(db, user_id, today=None):
         "SELECT start_date, length_days FROM period_logs WHERE user_id = ?", (user_id,)
     ).fetchall())
     if not periods:
-        return 0
+        return empty
     governing = governing_period(today, periods)
     if governing is None:
-        return 0
+        return empty
     start, length = governing
     days_since_today = (today - start).days
     applicable_length = length if 0 <= days_since_today < cycle_length else DEFAULT_PERIOD_DAYS
@@ -146,4 +152,5 @@ def compute_period_power(db, user_id, today=None):
     log_dates = [date.fromisoformat(r["date"]) for r in db.execute(
         "SELECT DISTINCT date FROM exercise_log WHERE user_id = ?", (user_id,)
     ).fetchall()]
-    return sum(1 for d in log_dates if start <= d <= period_end)
+    count = sum(1 for d in log_dates if start <= d <= period_end)
+    return {"count": count, "start": start.isoformat(), "end": period_end.isoformat()}

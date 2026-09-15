@@ -16,5 +16,8 @@ def get_streak():
         return err
     db = get_db()
     status = compute_streak_status(db, user_id)
-    status["period_power"] = compute_period_power(db, user_id)
+    power = compute_period_power(db, user_id)
+    status["period_power"] = power["count"]
+    status["period_power_start"] = power["start"]
+    status["period_power_end"] = power["end"]
     return jsonify(status)
