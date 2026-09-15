@@ -2115,8 +2115,24 @@ opList.addEventListener("click", (e) => {
   setOptionFieldValue(opActiveContainer, btn.dataset.value);
   closeOptionPicker();
 });
-document.getElementById("op-cancel").addEventListener("click", closeOptionPicker);
-opModal.addEventListener("click", (e) => { if (e.target === opModal) closeOptionPicker(); });
+// The two genuine "back out with nothing picked" affordances - resolve
+// only the innermost pending waitForChangeOrCancel() (see its own comment
+// and pickerCancelStack below) rather than every pending one, because the
+// muscle-chip flow (opMuscleChip) nests a second wait (repicking the
+// muscle) inside the outer one (picking the exercise) - backing out of
+// just the muscle repick should return to the exercise picker, not also
+// cancel the exercise pick a caller further up (e.g. promptAddExercise)
+// is still waiting on underneath it.
+function cancelActiveOptionPicker() {
+  const resolve = pickerCancelStack.pop();
+  if (resolve) resolve(null);
+  closeOptionPicker();
+}
+document.getElementById("op-cancel").addEventListener("click", cancelActiveOptionPicker);
+opModal.addEventListener("click", (e) => {
+  if (e.target !== opModal) return;
+  cancelActiveOptionPicker();
+});
 
 // Reopens the muscle picker for whichever block the Exercise picker is
 // currently scoped to, then drops straight back into the Exercise picker
@@ -3843,15 +3859,35 @@ function waitForChange(el) {
   });
 }
 
+// Every waitForChangeOrCancel() currently in flight, most-recently-started
+// last - a real Cancel/backdrop tap (see cancelActiveOptionPicker above)
+// always means "back out of whichever pick is on top", so it pops and
+// resolves just that one instead of every pending wait on the shared
+// modal.
+const pickerCancelStack = [];
+
 // Same as waitForChange, but also resolves (with null) if the option
 // picker gets closed without a selection - Cancel/backdrop never dispatches
 // a "change" event, so a bare waitForChange would hang forever waiting for
-// one. Only safe to call right after the picker's been opened (so opModal
-// isn't already hidden going in - waitUntilHidden would resolve instantly).
+// one. Previously inferred "cancelled" from opModal.hidden flipping true,
+// but the muscle-chip flow (opMuscleChip) legitimately closes and reopens
+// this same shared modal mid-flow to let her repick the muscle group -
+// that "hidden" flicker looked identical to a real cancel to whichever
+// caller further up (e.g. promptAddExercise) was still awaiting a pick on
+// a *different* field, wrongly aborting it out from under the still-in-
+// progress exercise pick the instant she so much as changed her mind on
+// the muscle group.
 function waitForChangeOrCancel(el) {
+  let cancelResolve;
+  const cancelPromise = new Promise(resolve => { cancelResolve = resolve; });
+  pickerCancelStack.push(cancelResolve);
+  const unregister = () => {
+    const i = pickerCancelStack.indexOf(cancelResolve);
+    if (i !== -1) pickerCancelStack.splice(i, 1);
+  };
   return Promise.race([
-    waitForChange(el),
-    waitUntilHidden(opModal).then(() => null),
+    waitForChange(el).then(value => { unregister(); return value; }),
+    cancelPromise.then(value => { unregister(); return value; }),
   ]);
 }
 
