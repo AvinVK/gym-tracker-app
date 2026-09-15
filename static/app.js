@@ -4094,7 +4094,30 @@ async function renderTodayLastSession() {
   const groups = groupExerciseLogs(dayRows);
   repeatBtn.hidden = groups.length === 0;
   repeatBtn.textContent = `Repeat ${formatMuscles(last.muscles) || "last"} day`;
-  repeatBtn.onclick = () => startLogSession({ repeatFrom: groups });
+  // startLogSession awaits one exercises-by-muscle fetch per prefilled
+  // group in sequence (see its own loop) - visibly instant for one group,
+  // but a multi-muscle day (Chest/Shoulders/Triceps/Abs, say) can take a
+  // couple of seconds with nothing else on screen showing it's working.
+  repeatBtn.onclick = async () => {
+    setButtonLoading(repeatBtn, true);
+    try {
+      await startLogSession({ repeatFrom: groups });
+    } finally {
+      setButtonLoading(repeatBtn, false);
+    }
+  };
+}
+
+// Small overlay spinner for a button running an async action with no other
+// visible progress indicator - keeps the button's own size (the label text
+// stays in the layout, just hidden) instead of swapping it out, and
+// disables the button against a second tap while the first is still in
+// flight. Spinner color is hardcoded for a dark-card button (see .btn-
+// loading in style.css) - re-check contrast before reusing this on a
+// button with a different background.
+function setButtonLoading(btn, loading) {
+  btn.classList.toggle("btn-loading", loading);
+  btn.disabled = loading;
 }
 
 // Resolves once `el.hidden` becomes true - lets code that opens one of the
@@ -6603,6 +6626,19 @@ function renderExerciseTable() {
   const groups = groupExerciseLogs(currentExerciseLogs);
   document.getElementById("exercise-detail-list").innerHTML = groups.map(exerciseGroupView).join("");
   bindExerciseRowEvents(groups);
+  // Adding an exercise here only ever makes sense as "fix a day I already
+  // logged, just missed one exercise" - a day with nothing actually logged
+  // has no workout_log row to attach a new exercise-log entry to (see
+  // ensureVisitSaved's own reasoning: a day nobody logged anything for
+  // isn't a recorded rest day, it's just not a visit), and letting this
+  // button create one here would fabricate a workout on a day she never
+  // actually trained. Checked against *active* sets, not just group count -
+  // currentExerciseLogs includes soft-deleted ones (include_deleted=1, see
+  // loadExerciseDetail) so a day whose every set got deleted still renders
+  // a group here (with only a "you deleted this set" line), which isn't
+  // "logged that day" either.
+  const hasActiveExercise = groups.some(g => g.sets.some(s => !s.deleted_at));
+  document.getElementById("exercise-detail-add-btn").hidden = !hasActiveExercise;
 }
 
 function bindExerciseRowEvents(groups) {
@@ -6619,6 +6655,170 @@ function bindExerciseRowEvents(groups) {
       loadExerciseDetail(currentDetailDate);
     });
   });
+}
+
+// Asks why a group's being added after the fact, before the muscle/
+// exercise picker cascade below even opens - "I forgot" is one tap, or
+// "Other" reveals a free-text reason that must be non-empty before
+// Continue enables. Resolves to the reason string, or null if she backs
+// out (Cancel/backdrop) without picking either.
+function promptAddExerciseReason() {
+  const modal = document.getElementById("add-exercise-reason-modal");
+  const choiceBtns = [...document.querySelectorAll("#add-exercise-reason-choices .reason-choice-btn")];
+  const otherWrap = document.getElementById("add-exercise-reason-other-wrap");
+  const otherInput = document.getElementById("add-exercise-reason-other-input");
+  const continueBtn = document.getElementById("add-exercise-reason-continue");
+  const cancelBtn = document.getElementById("add-exercise-reason-cancel");
+
+  let selected = null; // "I forgot" | "Other" | null
+  choiceBtns.forEach(btn => btn.classList.remove("chip-active"));
+  otherWrap.hidden = true;
+  otherInput.value = "";
+  continueBtn.disabled = true;
+  modal.hidden = false;
+
+  function updateContinueEnabled() {
+    continueBtn.disabled = selected === null || (selected === "Other" && !otherInput.value.trim());
+  }
+
+  return new Promise(resolve => {
+    function onChoiceClick(e) {
+      selected = e.currentTarget.dataset.reason;
+      choiceBtns.forEach(btn => btn.classList.toggle("chip-active", btn === e.currentTarget));
+      otherWrap.hidden = selected !== "Other";
+      if (selected === "Other") otherInput.focus();
+      updateContinueEnabled();
+    }
+    function onOtherInput() { updateContinueEnabled(); }
+    function onContinue() {
+      cleanup(selected === "Other" ? otherInput.value.trim() : selected);
+    }
+    function onCancel() { cleanup(null); }
+    function cleanup(result) {
+      modal.hidden = true;
+      choiceBtns.forEach(btn => btn.removeEventListener("click", onChoiceClick));
+      otherInput.removeEventListener("input", onOtherInput);
+      continueBtn.removeEventListener("click", onContinue);
+      cancelBtn.removeEventListener("click", onCancel);
+      resolve(result);
+    }
+    choiceBtns.forEach(btn => btn.addEventListener("click", onChoiceClick));
+    otherInput.addEventListener("input", onOtherInput);
+    continueBtn.addEventListener("click", onContinue);
+    cancelBtn.addEventListener("click", onCancel);
+  });
+}
+
+// "+ Add missed exercises" in the History detail view (see renderExerciseTable's
+// own hasActiveExercise gate - only reachable on a day that already has at
+// least one logged exercise, so this can never be how a rest day gets a
+// fabricated workout). Same muscle-then-exercise picker cascade as
+// promptAddExercise on the live Log screen, just landing in a detached
+// holder appended to this list instead of exercisesContainer, and posted
+// straight to this specific date on Save rather than staged in the draft.
+document.getElementById("exercise-detail-add-btn").addEventListener("click", async () => {
+  const reason = await promptAddExerciseReason();
+  if (reason === null) return;
+  startNewGroupAdd(reason);
+});
+
+async function startNewGroupAdd(reason) {
+  const addBtn = document.getElementById("exercise-detail-add-btn");
+  addBtn.hidden = true; // one add in progress at a time
+  const groupEl = document.createElement("div");
+  groupEl.className = "exercise-detail-group";
+  groupEl.innerHTML = `
+    <div class="group-edit-holder"></div>
+    <div class="exercise-set-actions group-edit-save-actions">
+      <button type="button" class="save-btn">Save</button>
+      <button type="button" class="cancel-btn">Cancel</button>
+    </div>`;
+  document.getElementById("exercise-detail-list").appendChild(groupEl);
+  const holder = groupEl.querySelector(".group-edit-holder");
+  const block = addExerciseBlock(holder);
+  block.classList.add("group-edit-mode");
+  const muscleField = block.querySelector(".ex-muscle-field");
+  const exerciseField = block.querySelector(".ex-exercise-field");
+  const muscleHidden = block.querySelector(".ex-muscle");
+  const exerciseHidden = block.querySelector(".ex-exercise");
+
+  const cancel = () => { groupEl.remove(); renderExerciseTable(); };
+
+  // Suppressed for the same reason promptAddExercise's own picker is -
+  // picking a tile fires the muscle field's "change" listener
+  // synchronously, which would otherwise also fetch this same muscle a
+  // second time alongside the explicit await two lines down.
+  block.__pendingMuscleChange = true;
+  openOptionPicker(muscleField);
+  const muscle = await waitForChangeOrCancel(muscleHidden);
+  block.__pendingMuscleChange = false;
+  if (!muscle) { cancel(); return; }
+  await onBlockMuscleChange(block);
+  if (!exerciseField.__options || !exerciseField.__options.length) {
+    toast("No exercises for this muscle yet");
+    cancel();
+    return;
+  }
+  openOptionPicker(exerciseField);
+  const exercise = await waitForChangeOrCancel(exerciseHidden);
+  if (!exercise) { cancel(); return; }
+
+  addSetRow(block);
+  // Pre-filled, not locked in - she can still edit/clear it in the same
+  // Notes field every other exercise block already has, same as any other
+  // note (see saveNewGroup, which just reads whatever's in .ex-notes).
+  const notesInput = block.querySelector(".ex-notes");
+  if (notesInput && reason) notesInput.value = reason;
+  groupEl.querySelector(".group-edit-save-actions .save-btn").addEventListener("click", () => saveNewGroup(block, groupEl));
+  groupEl.querySelector(".group-edit-save-actions .cancel-btn").addEventListener("click", cancel);
+}
+
+// Counterpart to saveGroupEdit's own "new sets" branch, for a group that
+// didn't exist on this date at all before now rather than one gaining
+// extra sets - always a plain POST, never a PUT, since there's no
+// existing exercise_log row here to reconcile against.
+async function saveNewGroup(block, groupEl) {
+  const isCardio = block.dataset.exerciseType === "cardio";
+  const muscle_group = block.querySelector(".ex-muscle").value;
+  const exercise = block.querySelector(".ex-exercise").value;
+  const notes = block.querySelector(".ex-notes") ? block.querySelector(".ex-notes").value : "";
+  const levelOverride = block.dataset.levelMode === "speed" ? CARDIO_SPEED_FIELD : null;
+  const extraField = isCardio ? EXERCISE_EXTRA_FIELDS[exercise] : null;
+  const rows = [...block.querySelectorAll(".set-row")];
+  if (!muscle_group || !exercise || rows.length === 0) {
+    toast("Pick a muscle group, exercise, and at least one set");
+    return;
+  }
+  const sets = rows.map((row, i) => {
+    const setBody = {
+      set_number: i + 1, notes: i === 0 ? notes : "",
+      ...(isCardio ? {
+        duration_minutes: parseFloat(row.querySelector(".set-duration").value) || null,
+        ...(levelOverride
+          ? { [levelOverride.key]: parseFloat(row.querySelector(".set-speed").value) || null }
+          : { intensity_level: parseInt(row.querySelector(".set-level").value, 10) || null }),
+      } : {
+        reps: parseInt(row.querySelector(".set-reps").value, 10) || null,
+        weight_kg: parseWeightKg(row.querySelector(".set-weight").value),
+      }),
+    };
+    if (extraField) {
+      const v = parseFloat(row.querySelector(".set-extra").value);
+      setBody[extraField.key] = isNaN(v) ? null : v;
+    }
+    return setBody;
+  });
+  try {
+    // mark_edited - a brand new exercise added to an already-logged day
+    // after the fact should carry the same Edited badge a value change or
+    // an added set does (see saveGroupEdit's own new-sets branch).
+    await api.post("/api/exercise-log", { date: currentDetailDate, exercises: [{ muscle_group, exercise, sets }], mark_edited: true });
+    exerciseHistoryCache = null; // stale after this add - Your Performance re-fetches next time it's opened
+    toast("Added");
+    loadExerciseDetail(currentDetailDate);
+  } catch (err) {
+    toast(err.message);
+  }
 }
 
 // Swaps an exercise group's card into the exact same block used to log

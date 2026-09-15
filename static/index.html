@@ -187,6 +187,23 @@
   </div>
 </div>
 
+<div id="add-exercise-reason-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>Why are you adding this?</h2>
+    <div class="reason-choice-group" id="add-exercise-reason-choices">
+      <button type="button" class="chip reason-choice-btn" data-reason="I forgot">I forgot</button>
+      <button type="button" class="chip reason-choice-btn" data-reason="Other">Other</button>
+    </div>
+    <div class="note-field" id="add-exercise-reason-other-wrap" hidden>
+      <input type="text" id="add-exercise-reason-other-input" placeholder="What happened?">
+    </div>
+    <div class="confirm-actions">
+      <button type="button" class="secondary" id="add-exercise-reason-cancel">Cancel</button>
+      <button type="button" class="primary" id="add-exercise-reason-continue" disabled>Continue</button>
+    </div>
+  </div>
+</div>
+
 <div id="streak-info-modal" class="modal-overlay" hidden>
   <div class="modal-card">
     <h2>How Streaks Work</h2>
@@ -679,6 +696,7 @@
         <button type="button" class="secondary back-btn" id="exercise-detail-back">&larr; Back</button>
       </div>
       <div id="exercise-detail-list"></div>
+      <button type="button" class="today-section-link exercise-detail-add-btn" id="exercise-detail-add-btn" hidden>+ Add missed exercises</button>
     </div>
   </section>
 

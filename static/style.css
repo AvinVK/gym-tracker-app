@@ -377,6 +377,38 @@ a.today-avatar-menu-item { display: block; text-decoration: none; }
 }
 .today-secondary-btn:hover { background: var(--surface-2); }
 
+/* Toggled by setButtonLoading() in app.js while a button's onclick is
+   still awaiting something with no other visible progress (e.g. Repeat's
+   per-exercise-group fetches) - hides the label without changing the
+   button's size (text stays in the flow, just invisible) and spins a
+   small ring in its place instead. border-top-color is hardcoded to
+   var(--ink) rather than currentColor, since color itself goes
+   transparent below - fine for a dark-card button like .today-secondary-
+   btn, but re-check contrast before reusing this on a lighter button. */
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+.btn-loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255, 255, 255, .2);
+  border-top-color: var(--ink);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .btn-loading::after { animation: btn-spinner-rotate .7s linear infinite; }
+}
+@keyframes btn-spinner-rotate {
+  to { transform: rotate(360deg); }
+}
+
 .today-last-session-wrap { padding: 20px 16px 24px; }
 .today-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .today-section-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-2); }
@@ -518,6 +550,12 @@ a.today-avatar-menu-item { display: block; text-decoration: none; }
   transition: background .15s ease, border-color .15s ease;
 }
 .log-add-exercise-btn:hover { background: var(--surface-3); border-color: var(--accent-purple); }
+/* History's own "+ Add Exercise" (see exercise-detail-add-btn in app.js) -
+   a plain left-aligned text link under the existing list of groups, not a
+   big tap target like the Log screen's empty-state button above (there's
+   already a full exercise list here, this is just a small "one more"
+   affordance, not the primary action on the screen). */
+.exercise-detail-add-btn { display: block; margin-top: 12px; }
 .log-add-exercise-plus { font-size: 19px; line-height: 1; }
 .log-add-exercise-hint { margin: 10px 0 0; font-size: 12.5px; color: var(--muted); text-align: center; }
 
@@ -1791,6 +1829,14 @@ main {
   width: auto;
   margin-top: 0;
 }
+
+/* "Why are you adding this?" prompt (see promptAddExerciseReason in
+   app.js) - reuses the shared .chip pill for the two preset reasons and
+   .note-field's input styling for "Other"'s free text, rather than new
+   one-off styles for either. */
+.reason-choice-group { display: flex; gap: 8px; margin-bottom: 16px; }
+#add-exercise-reason-other-wrap { margin-bottom: 16px; }
+#add-exercise-reason-modal .confirm-actions { margin-top: 0; }
 
 .field-optional {
   text-transform: none;
