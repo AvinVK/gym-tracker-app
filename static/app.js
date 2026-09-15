@@ -644,6 +644,10 @@ async function handleLogout() {
 
 async function checkAuth() {
   const user = await api.get("/api/me");
+  // Stops the splash logo's loading ring (see index.html/style.css) now
+  // that we actually know the outcome - a slow connection otherwise left
+  // it looking frozen with nothing to show she's still waiting on anything.
+  document.getElementById("landing-splash").classList.add("auth-check-done");
   if (user) {
     await onLoggedIn(user);
   } else {
@@ -6327,9 +6331,10 @@ function computeConsistencyInsight(history) {
   // something people can actually visualize without doing math.
   const phaseOutOf10 = Math.round(pct / 10);
   const overallOutOf10 = Math.round(overallPct / 10);
-  if (diff < 3 || phaseOutOf10 === overallOutOf10) {
-    return { body: `You work out about as often during your ${phaseLabel} phase as you usually do.` };
-  }
+  // "About the same as usual" isn't a claim worth a slide - same as every
+  // other compute*Insight here, no meaningful difference means no filler,
+  // not a slide that just says nothing happened.
+  if (diff < 3 || phaseOutOf10 === overallOutOf10) return null;
   const direction = pct > overallPct ? "more" : "less";
   return { body: `You work out ${direction} often during your ${phaseLabel} phase - about ${phaseOutOf10} days out of every 10, vs your usual ${overallOutOf10}.` };
 }

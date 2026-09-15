@@ -1504,28 +1504,41 @@ main {
   justify-content: center;
   gap: 14px;
 }
+.landing-splash-logo-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .landing-splash-logo {
   width: 140px;
   height: auto;
   object-fit: contain;
 }
-.landing-splash-name {
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--ink);
+/* Ring around the logo while checkAuth()'s /api/me call is still in
+   flight (see the "auth-check-done" toggle in app.js) - a slow/flaky
+   connection otherwise leaves this splash looking frozen instead of
+   working, since it's not actually paced by anything visible. Sized a
+   bit past the logo's own diameter so it reads as surrounding it rather
+   than overlapping. Fades out (not just display:none) so a fast, already-
+   resolved checkAuth doesn't cut it off mid-spin. */
+.landing-splash-spinner {
+  position: absolute;
+  width: 168px;
+  height: 168px;
+  border-radius: 50%;
+  border: 4px solid rgba(183, 177, 246, .18);
+  border-top-color: var(--accent-purple);
+  transition: opacity .25s ease;
 }
-.landing-splash-tagline {
-  margin: 0;
-  font-size: 14.5px;
-  font-weight: 500;
-  color: var(--muted);
-  letter-spacing: .01em;
+.landing-splash.auth-check-done .landing-splash-spinner {
+  opacity: 0;
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .landing-splash-logo { animation: landing-pop-in .65s cubic-bezier(.34, 1.56, .64, 1) both; }
-  .landing-splash-name { animation: landing-fade-up .5s ease both .18s; }
-  .landing-splash-tagline { animation: landing-fade-up .5s ease both .3s; }
+  .landing-splash-spinner { animation: landing-spinner-rotate 1s linear infinite; }
 
   /* Sliding open: the splash shrinks/fades away while the main panel's
      content reveals in a staggered sequence, so the transition reads as
@@ -1555,6 +1568,9 @@ main {
 }
 @keyframes landing-splash-out {
   to { opacity: 0; transform: scale(.92); }
+}
+@keyframes landing-spinner-rotate {
+  to { transform: rotate(360deg); }
 }
 
 .landing-brand {
@@ -3851,6 +3867,13 @@ button:disabled {
 }
 
 /* ---------------- Pending exercise approvals (admin only) ---------------- */
+/* Several rows (one per pending proposal, each with its own fields and a
+   collapsible reject panel - see loadPendingExercises in app.js) can add
+   up to more than the viewport's height, and .modal-card has no scroll of
+   its own - without this the excess rows spilled past both the card and
+   the screen edges instead of scrolling within the card, same fix
+   .phase-info-card already uses for the same reason. */
+#card-pending-exercises .modal-card { max-height: 82vh; overflow-y: auto; }
 .pending-exercise-row {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -3875,9 +3898,12 @@ button:disabled {
   font-size: 12.5px;
   font-weight: 700;
   color: var(--ink);
+  min-width: 0;
 }
 .pending-exercise-fields input,
 .pending-exercise-fields select {
+  width: 100%;
+  min-width: 0;
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -3910,9 +3936,12 @@ button:disabled {
   font-weight: 700;
   color: var(--ink);
   margin-bottom: 8px;
+  min-width: 0;
 }
 .pending-exercise-reject-panel input,
 .pending-exercise-reject-panel select {
+  width: 100%;
+  min-width: 0;
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
